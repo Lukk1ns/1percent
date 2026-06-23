@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Countdown } from "@/components/Countdown";
+import { MemberCounter } from "@/components/MemberCounter";
 import {
   EVENT_DATE,
   EVENT_PAYOFF,
@@ -55,8 +56,10 @@ export default function LandingPage() {
         Ci sei o no?
       </Link>
 
+      <MemberCounter />
+
       <p
-        className="relative z-10 mt-10 text-xs uppercase tracking-widest text-brand-gray animate-fade-up"
+        className="relative z-10 mt-6 text-xs uppercase tracking-widest text-brand-gray animate-fade-up"
         style={{ animationDelay: "0.6s" }}
       >
         {dateLabel} · {VENUE_NAME} · {VENUE_CITY}
