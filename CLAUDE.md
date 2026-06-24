@@ -84,6 +84,7 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 | `/login` | Accesso per membri esistenti (magic link email) |
 | `/privacy` | Privacy policy GDPR + cancellazione dati |
 | `/admin/login` | Login staff |
+| `/admin/dashboard` | Lista membri, modifica alias, elimina (solo admin) |
 | `/admin/scan` | Scanner QR per validare ingressi |
 | `/auth/callback` | Handler redirect magic link email |
 
@@ -105,6 +106,9 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 - `checkin(token)` — valida un QR all'ingresso (solo admin)
 - `delete_my_profile()` — cancella i dati dell'utente (GDPR)
 - `is_admin()` — controlla se chi chiama è nello staff
+- `admin_members()` — tutti i membri (id, alias, avatar_id, member_number, created_at, email)
+- `admin_delete_member(uuid)` — elimina un membro e il suo pass
+- `admin_update_alias(uuid, text)` — modifica l'alias di un membro
 
 ---
 

@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
       setError("Credenziali non valide.");
       setLoading(false);
     } else {
-      router.push("/admin/scan");
+      router.push("/admin/dashboard");
     }
   }
 
