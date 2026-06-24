@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Countdown } from "@/components/Countdown";
 import { MemberCounter } from "@/components/MemberCounter";
 import { EntrySequence } from "@/components/EntrySequence";
+import { LiveFeed } from "@/components/LiveFeed";
 import {
   EVENT_DATE,
   EVENT_PAYOFF,
@@ -91,12 +92,22 @@ export default function LandingPage() {
           <MemberCounter />
         </div>
 
+        <LiveFeed />
+
         <p
-          className="relative z-10 mt-4 text-[10px] uppercase tracking-widest text-brand-gray/50 animate-fade-up"
+          className="relative z-10 mt-6 text-[10px] uppercase tracking-widest text-brand-gray/50 animate-fade-up"
           style={{ animationDelay: "0.9s" }}
         >
           {dateLabel} · {VENUE_NAME} · {VENUE_CITY}
         </p>
+
+        <Link
+          href="/login"
+          className="relative z-10 mt-6 text-[10px] uppercase tracking-widest text-brand-gray/30 hover:text-brand-gray/60 transition-colors animate-fade-up"
+          style={{ animationDelay: "1.1s" }}
+        >
+          Già dell&apos;1%? Rientra →
+        </Link>
       </main>
     </>
   );
