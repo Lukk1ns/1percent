@@ -95,12 +95,12 @@ export default function PassPage() {
         Mostra questo schermo all&apos;ingresso. Il QR verrà scansionato dallo staff.
       </p>
 
-      <button
-        onClick={() => router.push("/card")}
-        className="mt-8 text-xs uppercase tracking-widest text-brand-gray border border-white/10 px-6 py-3 hover:border-white/30 transition-all"
-      >
-        ← La tua card
-      </button>
+      <nav className="w-full max-w-xs mt-10 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
+        <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
+        <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
+        <button onClick={() => router.push("/pass")} className="text-brand-red">Pass</button>
+        <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>
+      </nav>
     </main>
   );
 }
