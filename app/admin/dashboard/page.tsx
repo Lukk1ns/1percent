@@ -21,10 +21,12 @@ export default function AdminDashboardPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAlias, setEditAlias] = useState("");
   const [working, setWorking] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
     const supabase = createClient();
-    const { data } = await supabase.rpc("admin_members");
+    const { data, error: err } = await supabase.rpc("admin_members");
+    if (err) setError("Errore caricamento: " + err.message);
     if (data) setMembers(data as Member[]);
     setLoading(false);
   }
@@ -41,8 +43,10 @@ export default function AdminDashboardPage() {
   async function handleDelete(id: string, alias: string) {
     if (!confirm(`Elimina "${alias}"? Il pass verrà revocato.`)) return;
     setWorking(id);
+    setError(null);
     const supabase = createClient();
-    await supabase.rpc("admin_delete_member", { p_profile_id: id });
+    const { error: err } = await supabase.rpc("admin_delete_member", { p_profile_id: id });
+    if (err) { setError("Errore delete: " + err.message); setWorking(null); return; }
     await load();
     setWorking(null);
   }
@@ -88,6 +92,12 @@ export default function AdminDashboardPage() {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="mb-4 border border-brand-red/50 bg-brand-red/10 p-3 text-brand-red text-xs">
+          {error}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 mb-8">
