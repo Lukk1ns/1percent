@@ -7,6 +7,8 @@ import { Countdown } from "@/components/Countdown";
 import { MemberCounter } from "@/components/MemberCounter";
 import { EntrySequence } from "@/components/EntrySequence";
 import { LiveFeed } from "@/components/LiveFeed";
+import { PostitBoard } from "@/components/PostitBoard";
+import { PostForm } from "@/components/PostForm";
 import {
   EVENT_DATE,
   EVENT_PAYOFF,
@@ -16,6 +18,7 @@ import {
 
 export default function LandingPage() {
   const [entered, setEntered] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const handleDone = useCallback(() => setEntered(true), []);
 
   const dateLabel = EVENT_DATE.toLocaleDateString("it-IT", {
@@ -27,6 +30,8 @@ export default function LandingPage() {
   return (
     <>
       {!entered && <EntrySequence onDone={handleDone} />}
+      {entered && <PostitBoard />}
+      {showForm && <PostForm onClose={() => setShowForm(false)} />}
 
       <main
         className={`relative flex-1 flex flex-col items-center justify-center overflow-hidden px-6 py-16 text-center transition-opacity duration-700 ${entered ? "opacity-100" : "opacity-0"}`}
@@ -128,6 +133,14 @@ export default function LandingPage() {
         >
           Già dell&apos;1%? Rientra →
         </Link>
+
+        <button
+          onClick={() => setShowForm(true)}
+          className="relative z-10 mt-4 text-[10px] uppercase tracking-widest text-brand-gray/25 hover:text-brand-gray/50 transition-colors animate-fade-up"
+          style={{ animationDelay: "1.2s", fontFamily: "var(--font-caveat)", fontSize: "0.8rem" }}
+        >
+          ✏️ lascia un segno sulla bacheca
+        </button>
       </main>
     </>
   );

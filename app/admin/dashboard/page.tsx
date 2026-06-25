@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 
+type Post = {
+  id: string;
+  text: string;
+  alias: string;
+  avatar_id: string;
+  created_at: string;
+};
+
 type Member = {
   id: string;
   alias: string;
@@ -16,7 +24,9 @@ type Member = {
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const [tab, setTab] = useState<"members" | "posts">("members");
   const [members, setMembers] = useState<Member[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAlias, setEditAlias] = useState("");
@@ -25,10 +35,30 @@ export default function AdminDashboardPage() {
 
   async function load() {
     const supabase = createClient();
-    const { data, error: err } = await supabase.rpc("admin_members");
-    if (err) setError("Errore caricamento: " + err.message);
-    if (data) setMembers(data as Member[]);
+    const [membersRes, postsRes] = await Promise.all([
+      supabase.rpc("admin_members"),
+      supabase.rpc("admin_pending_posts"),
+    ]);
+    if (membersRes.error) setError("Errore caricamento: " + membersRes.error.message);
+    if (membersRes.data) setMembers(membersRes.data as Member[]);
+    if (postsRes.data) setPosts(postsRes.data as Post[]);
     setLoading(false);
+  }
+
+  async function handleApprovePost(id: string) {
+    setWorking(id);
+    const supabase = createClient();
+    await supabase.rpc("admin_approve_post", { p_post_id: id });
+    await load();
+    setWorking(null);
+  }
+
+  async function handleRejectPost(id: string) {
+    setWorking(id);
+    const supabase = createClient();
+    await supabase.rpc("admin_reject_post", { p_post_id: id });
+    await load();
+    setWorking(null);
   }
 
   useEffect(() => {
@@ -99,6 +129,27 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+      {/* Tab */}
+      <div className="flex gap-0 mb-8 border border-white/10">
+        <button
+          onClick={() => setTab("members")}
+          className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all ${tab === "members" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
+        >
+          Membri
+        </button>
+        <button
+          onClick={() => setTab("posts")}
+          className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all relative ${tab === "posts" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
+        >
+          Bacheca
+          {posts.length > 0 && (
+            <span className="absolute top-1 right-3 bg-yellow-400 text-black text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              {posts.length}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 mb-8">
         <div className="border border-white/10 p-4">
@@ -113,7 +164,57 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* Bacheca - post in attesa */}
+      {tab === "posts" && (
+        <>
+          <p className="text-xs uppercase tracking-widest text-brand-gray mb-4">
+            Post in attesa di approvazione
+          </p>
+          {posts.length === 0 ? (
+            <p className="text-brand-gray/40 text-sm">Nessun messaggio in attesa.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {posts.map((post) => {
+                const avatar = getAvatar(post.avatar_id);
+                const isBusy = working === post.id;
+                return (
+                  <div key={post.id} className="border border-white/10 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span>{avatar.emoji}</span>
+                      <span className="text-white text-sm font-medium">{post.alias}</span>
+                    </div>
+                    <p
+                      className="text-yellow-200 text-base mb-3 leading-snug"
+                      style={{ fontFamily: "var(--font-caveat)" }}
+                    >
+                      "{post.text}"
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleApprovePost(post.id)}
+                        disabled={isBusy}
+                        className="text-[10px] uppercase tracking-widest text-green-400 border border-green-400/30 px-3 py-1.5 hover:bg-green-400/10 transition-all disabled:opacity-40"
+                      >
+                        {isBusy ? "…" : "✓ Approva"}
+                      </button>
+                      <button
+                        onClick={() => handleRejectPost(post.id)}
+                        disabled={isBusy}
+                        className="text-[10px] uppercase tracking-widest text-brand-red border border-brand-red/30 px-3 py-1.5 hover:bg-brand-red/10 transition-all disabled:opacity-40"
+                      >
+                        {isBusy ? "…" : "✕ Elimina"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
       {/* Lista membri */}
+      {tab === "members" && <>
       <p className="text-xs uppercase tracking-widest text-brand-gray mb-4">
         Tutti i membri — dal più recente
       </p>
@@ -205,6 +306,7 @@ export default function AdminDashboardPage() {
           })}
         </div>
       )}
+      </>}
     </main>
   );
 }
