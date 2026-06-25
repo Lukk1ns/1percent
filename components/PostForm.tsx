@@ -49,7 +49,7 @@ export function PostForm({ onClose }: Props) {
     const supabase = createClient();
     const { error: err } = await supabase.rpc("create_post", { p_text: text.trim() });
     if (err) {
-      setError("Qualcosa è andato storto. Riprova.");
+      setError(err.message || "Errore sconosciuto.");
     } else {
       setSent(true);
     }

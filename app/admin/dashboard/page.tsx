@@ -39,8 +39,9 @@ export default function AdminDashboardPage() {
       supabase.rpc("admin_members"),
       supabase.rpc("admin_pending_posts"),
     ]);
-    if (membersRes.error) setError("Errore caricamento: " + membersRes.error.message);
+    if (membersRes.error) setError("Errore membri: " + membersRes.error.message);
     if (membersRes.data) setMembers(membersRes.data as Member[]);
+    if (postsRes.error) setError("Errore bacheca: " + postsRes.error.message);
     if (postsRes.data) setPosts(postsRes.data as Post[]);
     setLoading(false);
   }
