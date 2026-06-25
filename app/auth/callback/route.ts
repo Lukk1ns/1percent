@@ -24,6 +24,13 @@ export async function GET(request: Request) {
     if (profile) {
       return NextResponse.redirect(new URL("/card", url.origin));
     }
+
+    // Utente rientrato via magic link: UUID diverso dall'anonimo originale.
+    // link_email_account() trova il profilo per email e aggiorna l'UUID.
+    const { data: linked } = await supabase.rpc("link_email_account");
+    if (linked) {
+      return NextResponse.redirect(new URL("/card", url.origin));
+    }
   }
 
   return NextResponse.redirect(new URL("/unisciti", url.origin));

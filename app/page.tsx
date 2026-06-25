@@ -128,7 +128,7 @@ export default function LandingPage() {
 
         <Link
           href="/login"
-          className="relative z-10 mt-6 text-[10px] uppercase tracking-widest text-brand-gray/30 hover:text-brand-gray/60 transition-colors animate-fade-up"
+          className="relative z-10 mt-6 text-xs uppercase tracking-widest text-brand-gray hover:text-white transition-colors animate-fade-up"
           style={{ animationDelay: "1.1s" }}
         >
           Già dell&apos;1%? Rientra →
@@ -136,8 +136,8 @@ export default function LandingPage() {
 
         <button
           onClick={() => setShowForm(true)}
-          className="relative z-10 mt-4 text-[10px] uppercase tracking-widest text-brand-gray/25 hover:text-brand-gray/50 transition-colors animate-fade-up"
-          style={{ animationDelay: "1.2s", fontFamily: "var(--font-caveat)", fontSize: "0.8rem" }}
+          className="relative z-10 mt-3 text-sm text-brand-gray/70 hover:text-white transition-colors animate-fade-up"
+          style={{ animationDelay: "1.2s", fontFamily: "var(--font-caveat)" }}
         >
           ✏️ lascia un segno sulla bacheca
         </button>
