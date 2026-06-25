@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Countdown } from "@/components/Countdown";
 import { MemberCounter } from "@/components/MemberCounter";
@@ -60,23 +59,22 @@ export default function LandingPage() {
           {EVENT_PAYOFF}
         </p>
 
-        {/* Logo */}
-        <div
-          className="relative z-10 mt-3 animate-fade-up"
-          style={{ width: "clamp(220px, 60vw, 400px)", animationDelay: "0.1s" }}
+        {/* Logo "1%" testuale — glow che segue le lettere + glitch cromatico */}
+        <h1
+          className="glitch font-display relative z-10 mt-2 animate-fade-up leading-none select-none"
+          data-text="1%"
+          aria-label="1%"
+          style={{
+            animationDelay: "0.1s",
+            fontSize: "clamp(6rem, 27vw, 15rem)",
+            color: "#E0181F",
+            letterSpacing: "-0.02em",
+            textShadow:
+              "0 0 8px rgba(224,24,31,0.9), 0 0 28px rgba(224,24,31,0.6), 0 0 64px rgba(224,24,31,0.35)",
+          }}
         >
-          <Image
-            src="/logo.png"
-            alt="1%"
-            width={400}
-            height={400}
-            priority
-            className="w-full h-auto"
-            style={{
-              filter: "drop-shadow(0 0 30px rgba(224,24,31,0.9)) drop-shadow(0 0 80px rgba(224,24,31,0.5))",
-            }}
-          />
-        </div>
+          1%
+        </h1>
 
         {/* Data evento */}
         <div
