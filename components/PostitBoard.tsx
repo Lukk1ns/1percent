@@ -12,16 +12,20 @@ type Post = {
   created_at: string;
 };
 
-// Posizioni e rotazioni deterministiche dal post ID
-function layout(id: string) {
+// Disposizione: colonne alternate sinistra/destra, distanziate in verticale,
+// ancorate ai bordi così nessun post-it esce dallo schermo. Niente sovrapposizioni.
+function layout(index: number, total: number, id: string) {
   let h = 5381;
   for (let i = 0; i < id.length; i++) h = ((h * 33) ^ id.charCodeAt(i)) >>> 0;
-  const side = h % 2;
-  // Sinistra 2-18%, destra 68-85%
-  const x = side === 0 ? 2 + (h % 16) : 68 + (h % 17);
-  const y = 3 + ((h >> 5) % 84);
-  const rot = ((h >> 11) % 17) - 8;
-  return { x, y, rot };
+  const rot = ((h >> 11) % 13) - 6; // leggera rotazione -6..+6°
+  const side = index % 2; // 0 = sinistra, 1 = destra
+  const col = Math.floor(index / 2);
+  const colCount = Math.ceil(total / 2);
+  const span = 68; // distribuiti tra 8% e 76% dell'altezza
+  const step = colCount > 1 ? span / (colCount - 1) : 0;
+  const jitter = (h % 7) - 3; // piccolo scarto naturale
+  const y = Math.max(4, Math.min(80, 8 + step * col + jitter));
+  return { side, y, rot };
 }
 
 export function PostitBoard() {
@@ -53,18 +57,19 @@ export function PostitBoard() {
 
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-      {posts.map((post) => {
-        const { x, y, rot } = layout(post.id);
+      {posts.map((post, index) => {
+        const { side, y, rot } = layout(index, posts.length, post.id);
         const avatar = getAvatar(post.avatar_id);
+        const pos = side === 0 ? { left: "1.25rem" } : { right: "1.25rem" };
         return (
           <div
             key={post.id}
-            className="absolute w-36 select-none"
+            className="absolute w-28 sm:w-32 select-none"
             style={{
-              left: `${x}%`,
+              ...pos,
               top: `${y}%`,
               transform: `rotate(${rot}deg)`,
-              opacity: 0.82,
+              opacity: 0.88,
             }}
           >
             <div
