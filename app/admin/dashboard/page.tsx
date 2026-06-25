@@ -32,6 +32,8 @@ export default function AdminDashboardPage() {
   const [editAlias, setEditAlias] = useState("");
   const [working, setWorking] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   async function load() {
     const supabase = createClient();
@@ -68,6 +70,9 @@ export default function AdminDashboardPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.email) { router.replace("/admin/login"); return; }
+      setUserEmail(user.email);
+      const { data: adminCheck } = await supabase.rpc("is_admin");
+      setIsAdmin(adminCheck as boolean);
       load();
       // Aggiorna automaticamente ogni 10s così i nuovi post-it compaiono da soli
       interval = setInterval(load, 10000);
@@ -111,6 +116,14 @@ export default function AdminDashboardPage() {
         <div>
           <h1 className="font-display text-brand-red text-3xl">Admin</h1>
           <p className="text-brand-gray text-xs uppercase tracking-widest">Dashboard 1%</p>
+          {userEmail && (
+            <p className="text-[10px] mt-1 font-mono break-all">
+              <span className="text-brand-gray/60">{userEmail}</span>{" "}
+              <span className={isAdmin ? "text-green-400" : "text-brand-red"}>
+                {isAdmin ? "· staff ✓" : "· NON staff ✗"}
+              </span>
+            </p>
+          )}
         </div>
         <div className="flex gap-3">
           <button
