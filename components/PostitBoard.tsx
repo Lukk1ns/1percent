@@ -45,7 +45,7 @@ export function PostitBoard() {
       .channel("posts-approved")
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "posts" },
+        { event: "*", schema: "public", table: "posts" },
         () => load()
       )
       .subscribe();

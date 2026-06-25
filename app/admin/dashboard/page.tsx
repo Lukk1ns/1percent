@@ -27,6 +27,7 @@ export default function AdminDashboardPage() {
   const [tab, setTab] = useState<"members" | "posts">("members");
   const [members, setMembers] = useState<Member[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [approvedPosts, setApprovedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAlias, setEditAlias] = useState("");
@@ -37,14 +38,16 @@ export default function AdminDashboardPage() {
 
   async function load() {
     const supabase = createClient();
-    const [membersRes, postsRes] = await Promise.all([
+    const [membersRes, postsRes, approvedRes] = await Promise.all([
       supabase.rpc("admin_members"),
       supabase.rpc("admin_pending_posts"),
+      supabase.rpc("approved_posts"),
     ]);
     if (membersRes.error) setError("Errore membri: " + membersRes.error.message);
     if (membersRes.data) setMembers(membersRes.data as Member[]);
     if (postsRes.error) setError("Errore bacheca: " + postsRes.error.message);
     if (postsRes.data) setPosts(postsRes.data as Post[]);
+    if (approvedRes.data) setApprovedPosts(approvedRes.data as Post[]);
     setLoading(false);
   }
 
@@ -57,6 +60,15 @@ export default function AdminDashboardPage() {
   }
 
   async function handleRejectPost(id: string) {
+    setWorking(id);
+    const supabase = createClient();
+    await supabase.rpc("admin_reject_post", { p_post_id: id });
+    await load();
+    setWorking(null);
+  }
+
+  async function handleRemoveApproved(id: string) {
+    if (!confirm("Rimuovere questo post-it dalla bacheca? Sparirà dalla home.")) return;
     setWorking(id);
     const supabase = createClient();
     await supabase.rpc("admin_reject_post", { p_post_id: id });
@@ -231,6 +243,44 @@ export default function AdminDashboardPage() {
                         {isBusy ? "…" : "✕ Elimina"}
                       </button>
                     </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Post già online sulla bacheca */}
+          <p className="text-xs uppercase tracking-widest text-brand-gray mt-10 mb-4">
+            Post online sulla bacheca ({approvedPosts.length})
+          </p>
+          {approvedPosts.length === 0 ? (
+            <p className="text-brand-gray/40 text-sm">Nessun post online.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {approvedPosts.map((post) => {
+                const avatar = getAvatar(post.avatar_id);
+                const isBusy = working === post.id;
+                return (
+                  <div key={post.id} className="border border-white/8 p-4 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span>{avatar.emoji}</span>
+                        <span className="text-white text-sm font-medium">{post.alias}</span>
+                      </div>
+                      <p
+                        className="text-yellow-200 text-base leading-snug break-words"
+                        style={{ fontFamily: "var(--font-caveat)" }}
+                      >
+                        "{post.text}"
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveApproved(post.id)}
+                      disabled={isBusy}
+                      className="flex-shrink-0 text-[10px] uppercase tracking-widest text-brand-red border border-brand-red/30 px-3 py-1.5 hover:bg-brand-red/10 transition-all disabled:opacity-40"
+                    >
+                      {isBusy ? "…" : "✕ Rimuovi"}
+                    </button>
                   </div>
                 );
               })}
