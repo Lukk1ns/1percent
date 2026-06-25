@@ -63,12 +63,16 @@ export default function AdminDashboardPage() {
   }
 
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
     (async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.email) { router.replace("/admin/login"); return; }
       load();
+      // Aggiorna automaticamente ogni 10s così i nuovi post-it compaiono da soli
+      interval = setInterval(load, 10000);
     })();
+    return () => { if (interval) clearInterval(interval); };
   }, [router]);
 
   async function handleDelete(id: string, alias: string) {
@@ -168,9 +172,17 @@ export default function AdminDashboardPage() {
       {/* Bacheca - post in attesa */}
       {tab === "posts" && (
         <>
-          <p className="text-xs uppercase tracking-widest text-brand-gray mb-4">
-            Post in attesa di approvazione
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs uppercase tracking-widest text-brand-gray">
+              Post in attesa di approvazione
+            </p>
+            <button
+              onClick={() => load()}
+              className="text-[10px] uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-1.5 hover:border-white/30 transition-all"
+            >
+              ↻ Aggiorna
+            </button>
+          </div>
           {posts.length === 0 ? (
             <p className="text-brand-gray/40 text-sm">Nessun messaggio in attesa.</p>
           ) : (
