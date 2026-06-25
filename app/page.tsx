@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Countdown } from "@/components/Countdown";
 import { MemberCounter } from "@/components/MemberCounter";
@@ -54,14 +55,20 @@ export default function LandingPage() {
           {EVENT_PAYOFF}
         </p>
 
-        {/* Wordmark con glitch */}
-        <h1
-          className="glitch relative z-10 font-display text-brand-red leading-none mt-3 animate-fade-up"
-          data-text="1%"
-          style={{ fontSize: "clamp(6rem, 30vw, 13rem)", animationDelay: "0.1s" }}
+        {/* Logo */}
+        <div
+          className="relative z-10 mt-3 animate-fade-up"
+          style={{ width: "clamp(220px, 60vw, 420px)", animationDelay: "0.1s" }}
         >
-          1%
-        </h1>
+          <Image
+            src="/logo .png"
+            alt="1%"
+            width={420}
+            height={420}
+            priority
+            className="w-full h-auto"
+          />
+        </div>
 
         {/* Claim con typewriter */}
         <div

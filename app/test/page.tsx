@@ -3,13 +3,20 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { QUIZ_QUESTIONS } from "@/lib/quiz";
+import { computeArchetype } from "@/lib/archetypes";
 import { createClient } from "@/lib/supabase/client";
+
+type ChoiceAnswers = Record<string, string>;
+type HybridAnswer = { text: string; tag: string };
+type AllAnswers = { q1?: string; q2?: string; q3?: HybridAnswer; q4?: HybridAnswer };
 
 export default function TestPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<AllAnswers>({});
   const [selected, setSelected] = useState<string | null>(null);
+  const [hybridText, setHybridText] = useState("");
+  const [hybridTag, setHybridTag] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [visible, setVisible] = useState(true);
@@ -18,22 +25,21 @@ export default function TestPage() {
     if (!sessionStorage.getItem("reg_draft")) router.replace("/unisciti");
   }, [router]);
 
-  async function handleAnswer(optionId: string) {
-    if (selected) return;
-    setSelected(optionId);
+  function resetStepState() {
+    setSelected(null);
+    setHybridText("");
+    setHybridTag(null);
+    setVisible(true);
+  }
 
-    await new Promise((r) => setTimeout(r, 500));
+  async function advance(newAnswers: AllAnswers) {
     setVisible(false);
     await new Promise((r) => setTimeout(r, 300));
 
-    const question = QUIZ_QUESTIONS[step];
-    const newAnswers = { ...answers, [question.id]: optionId };
-    setAnswers(newAnswers);
-
     if (step < QUIZ_QUESTIONS.length - 1) {
+      setAnswers(newAnswers);
       setStep(step + 1);
-      setSelected(null);
-      setVisible(true);
+      resetStepState();
       return;
     }
 
@@ -44,13 +50,16 @@ export default function TestPage() {
       const draft = JSON.parse(sessionStorage.getItem("reg_draft") ?? "{}");
       const supabase = createClient();
 
+      const archetype = computeArchetype(newAnswers);
+      const quizPayload = { ...newAnswers, archetype };
+
       const { error: signInError } = await supabase.auth.signInAnonymously();
       if (signInError) throw signInError;
 
       const { data, error: rpcError } = await supabase.rpc("join_one_percent", {
         p_alias: draft.alias,
         p_avatar_id: draft.avatarId,
-        p_quiz_answers: newAnswers,
+        p_quiz_answers: quizPayload,
         p_email: draft.email ?? null,
         p_phone: draft.phone ?? null,
         p_referral_code: draft.refCode ?? null,
@@ -63,8 +72,7 @@ export default function TestPage() {
           throw rpcError;
         }
         setLoading(false);
-        setSelected(null);
-        setVisible(true);
+        resetStepState();
         return;
       }
 
@@ -75,9 +83,26 @@ export default function TestPage() {
       setError("Qualcosa è andato storto. Riprova.");
       console.error(e);
       setLoading(false);
-      setSelected(null);
-      setVisible(true);
+      resetStepState();
     }
+  }
+
+  async function handleChoiceAnswer(optionId: string) {
+    if (selected) return;
+    setSelected(optionId);
+    await new Promise((r) => setTimeout(r, 500));
+    const newAnswers = { ...answers, [QUIZ_QUESTIONS[step].id]: optionId } as AllAnswers;
+    await advance(newAnswers);
+  }
+
+  async function handleHybridSubmit() {
+    if (!hybridTag) return;
+    const q = QUIZ_QUESTIONS[step];
+    const newAnswers = {
+      ...answers,
+      [q.id]: { text: hybridText.trim(), tag: hybridTag },
+    } as AllAnswers;
+    await advance(newAnswers);
   }
 
   if (loading) {
@@ -118,7 +143,6 @@ export default function TestPage() {
         </p>
       </div>
 
-      {/* Domanda + opzioni */}
       <div
         className={`flex-1 flex flex-col justify-between px-6 pb-10 transition-all duration-300 ${visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}
       >
@@ -129,34 +153,84 @@ export default function TestPage() {
           {q.text}
         </h2>
 
-        <div className="flex flex-col gap-3 mt-auto">
-          {q.options.map((opt, i) => {
-            const isSelected = selected === opt.id;
-            return (
-              <button
-                key={opt.id}
-                onClick={() => handleAnswer(opt.id)}
-                disabled={!!selected}
-                className={`group relative w-full text-left px-5 py-5 text-sm transition-all duration-200 border ${
-                  isSelected
-                    ? "border-brand-red bg-brand-red text-white scale-[1.02]"
-                    : selected
-                      ? "border-white/5 text-white/20"
-                      : "border-white/10 text-white hover:border-brand-red/60 hover:bg-brand-red/5 active:scale-[0.98]"
-                }`}
-                style={{ animationDelay: `${i * 0.07}s` }}
-              >
-                <span className="text-brand-red/40 text-xs font-mono mr-3 group-hover:text-brand-red transition-colors">
-                  {String.fromCharCode(65 + i)}
-                </span>
-                {opt.text}
-                {isSelected && (
-                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-white">✓</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {q.type === "choice" && (
+          <div className="flex flex-col gap-3 mt-auto">
+            {q.options.map((opt, i) => {
+              const isSelected = selected === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => handleChoiceAnswer(opt.id)}
+                  disabled={!!selected}
+                  className={`group relative w-full text-left px-5 py-5 text-sm transition-all duration-200 border ${
+                    isSelected
+                      ? "border-brand-red bg-brand-red text-white scale-[1.02]"
+                      : selected
+                        ? "border-white/5 text-white/20"
+                        : "border-white/10 text-white hover:border-brand-red/60 hover:bg-brand-red/5 active:scale-[0.98]"
+                  }`}
+                  style={{ animationDelay: `${i * 0.07}s` }}
+                >
+                  <span className="text-brand-red/40 text-xs font-mono mr-3 group-hover:text-brand-red transition-colors">
+                    {String.fromCharCode(65 + i)}
+                  </span>
+                  {opt.text}
+                  {isSelected && (
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-white">✓</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {q.type === "hybrid" && (
+          <div className="flex flex-col gap-5 mt-auto">
+            {/* Testo libero opzionale */}
+            <textarea
+              placeholder={q.placeholder}
+              value={hybridText}
+              onChange={(e) => setHybridText(e.target.value)}
+              maxLength={120}
+              rows={2}
+              className="w-full bg-transparent border border-white/10 text-sm text-white placeholder-brand-gray/40 px-4 py-3 outline-none focus:border-brand-red/60 transition-colors resize-none"
+            />
+
+            {/* Tag obbligatorio */}
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-brand-gray mb-3">
+                In una parola:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {q.tags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setHybridTag(tag)}
+                    className={`px-4 py-2 text-xs border transition-all ${
+                      hybridTag === tag
+                        ? "border-brand-red bg-brand-red text-white"
+                        : "border-white/20 text-white/70 hover:border-brand-red/60"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={handleHybridSubmit}
+              disabled={!hybridTag}
+              className={`w-full py-4 text-sm font-semibold uppercase tracking-widest transition-all ${
+                hybridTag
+                  ? "bg-brand-red text-white hover:scale-[1.02] active:scale-95"
+                  : "bg-white/5 text-white/20 cursor-not-allowed"
+              }`}
+            >
+              Avanti →
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="mt-6 text-center">

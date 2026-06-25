@@ -12,6 +12,7 @@ type Profile = {
   avatar_id: string;
   referral_code: string;
   created_at: string;
+  quiz_answers?: { archetype?: string };
 };
 
 export default function CardPage() {
@@ -30,7 +31,7 @@ export default function CardPage() {
 
       const { data } = await supabase
         .from("profiles")
-        .select("member_number,alias,avatar_id,referral_code,created_at")
+        .select("member_number,alias,avatar_id,referral_code,created_at,quiz_answers")
         .eq("id", user.id)
         .single();
 
@@ -102,6 +103,7 @@ export default function CardPage() {
     year: "numeric",
   });
   const memberNum = `#${String(profile.member_number).padStart(4, "0")}`;
+  const archetype = profile.quiz_answers?.archetype;
 
   return (
     <main className="flex-1 flex flex-col items-center px-4 py-8">
@@ -164,6 +166,9 @@ export default function CardPage() {
           >
             {profile.alias}
           </h2>
+          {archetype && (
+            <p className="text-[10px] uppercase tracking-[0.25em] text-brand-red/80">{archetype}</p>
+          )}
           {/* Linea decorativa */}
           <div className="w-12 h-px bg-brand-red/40" />
         </div>
@@ -211,7 +216,7 @@ export default function CardPage() {
           onClick={() => router.push("/pass")}
           className="w-full border border-brand-red text-brand-red py-4 text-sm font-semibold uppercase tracking-widest hover:bg-brand-red hover:text-white transition-all"
         >
-          Pass d&apos;ingresso →
+          Pass estrazione →
         </button>
         <button
           onClick={handleShareLink}

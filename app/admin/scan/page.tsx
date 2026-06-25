@@ -4,13 +4,15 @@ import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
+import { drawPrize, type Prize } from "@/lib/prizes";
 
-type CheckinResult = {
+type ScanResult = {
   ok: boolean;
   reason?: string;
   alias?: string;
   avatar_id?: string;
   member_number?: number;
+  prize?: Prize | null;
 };
 
 function ScanContent() {
@@ -19,7 +21,7 @@ function ScanContent() {
   const tokenFromUrl = params.get("token");
 
   const scannerRef = useRef<unknown>(null);
-  const [result, setResult] = useState<CheckinResult | null>(null);
+  const [result, setResult] = useState<ScanResult | null>(null);
   const [scannerReady, setScannerReady] = useState(false);
 
   async function processToken(token: string) {
@@ -28,25 +30,25 @@ function ScanContent() {
     if (error) {
       setResult({ ok: false, reason: "error" });
     } else {
-      setResult(data as CheckinResult);
+      const checkin = data as { ok: boolean; reason?: string; alias?: string; avatar_id?: string; member_number?: number };
+      setResult({
+        ...checkin,
+        prize: checkin.ok ? drawPrize() : undefined,
+      });
     }
-    // Reset automatico dopo 4 secondi
     setTimeout(() => {
       setResult(null);
-      // Rimuovi token dall'URL senza reload
       router.replace("/admin/scan");
-    }, 4000);
+    }, 6000);
   }
 
-  // Se il QR è stato scansionato con la fotocamera nativa (token in URL)
   useEffect(() => {
     if (tokenFromUrl) processToken(tokenFromUrl);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenFromUrl]);
 
-  // Scanner fotocamera in-app via html5-qrcode
   useEffect(() => {
-    if (tokenFromUrl) return; // Già gestito sopra
+    if (tokenFromUrl) return;
     let html5Scanner: { clear: () => void } | null = null;
 
     import("html5-qrcode").then(({ Html5QrcodeScanner }) => {
@@ -58,13 +60,12 @@ function ScanContent() {
       scanner.render(
         (decodedText: string) => {
           scanner.clear().catch(() => null);
-          // Estrai il token dal testo (URL o token raw)
           let token = decodedText;
           try {
             const url = new URL(decodedText);
             token = url.searchParams.get("token") ?? decodedText;
           } catch {
-            // Non è un URL, usa il testo direttamente
+            // testo raw, usalo direttamente
           }
           processToken(token);
         },
@@ -87,7 +88,7 @@ function ScanContent() {
   return (
     <main className="flex-1 flex flex-col items-center px-6 py-8">
       <div className="w-full max-w-xs flex items-center justify-between mb-8">
-        <h1 className="font-display text-brand-red text-3xl">Scanner</h1>
+        <h1 className="font-display text-brand-red text-3xl">Estrazione</h1>
         <button
           onClick={handleLogout}
           className="text-xs text-brand-gray uppercase tracking-widest border border-white/10 px-3 py-1"
@@ -96,35 +97,44 @@ function ScanContent() {
         </button>
       </div>
 
-      {/* Risultato checkin */}
       {result && (
         <div
           className={`w-full max-w-xs p-6 mb-6 border text-center animate-fade-up ${
             result.ok
-              ? "border-green-500 bg-green-500/10"
-              : "border-brand-red bg-brand-red/10"
+              ? "border-brand-red bg-brand-red/10"
+              : "border-white/20 bg-white/5"
           }`}
         >
           {result.ok ? (
             <>
-              <p className="text-green-400 text-4xl mb-2">✓</p>
-              <p className="text-lg mb-1">
+              <p className="text-brand-gray text-xs uppercase tracking-widest mb-1">
                 {result.avatar_id && getAvatar(result.avatar_id).emoji}{" "}
-                <strong>{result.alias}</strong>
+                <strong className="text-white">{result.alias}</strong>{" "}
+                — #{String(result.member_number ?? 0).padStart(4, "0")}
               </p>
-              <p className="text-brand-gray text-sm">
-                Membro #{String(result.member_number ?? 0).padStart(4, "0")}
-              </p>
-              <p className="text-green-400 text-xs uppercase tracking-widest mt-2">
-                Accesso valido
-              </p>
+
+              {result.prize ? (
+                <>
+                  <p className="text-brand-red text-xs uppercase tracking-widest mt-4 mb-2">Ha vinto</p>
+                  <p style={{ fontSize: "4rem", lineHeight: 1 }}>{result.prize.emoji}</p>
+                  <p className="font-display text-white text-3xl mt-2 tracking-widest">
+                    {result.prize.label}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-brand-gray text-xs uppercase tracking-widest mt-4 mb-1">Nessun premio</p>
+                  <p className="text-4xl mt-1">😔</p>
+                  <p className="text-brand-gray/60 text-xs mt-2">Ci riprova alla prossima serata</p>
+                </>
+              )}
             </>
           ) : (
             <>
-              <p className="text-brand-red text-4xl mb-2">✗</p>
+              <p className="text-white/50 text-4xl mb-2">✗</p>
               <p className="text-white font-semibold">
                 {result.reason === "already_checked_in"
-                  ? "Già entrato"
+                  ? "QR già utilizzato"
                   : result.reason === "not_found"
                     ? "QR non trovato"
                     : "Errore"}
@@ -137,7 +147,6 @@ function ScanContent() {
         </div>
       )}
 
-      {/* Camera scanner */}
       {!result && !tokenFromUrl && (
         <>
           <div
@@ -151,15 +160,14 @@ function ScanContent() {
             </p>
           )}
           <p className="text-xs text-brand-gray/60 mt-4 text-center max-w-xs">
-            Punta la fotocamera sul QR del membro oppure usa la fotocamera del
-            telefono e il link si aprirà qui.
+            Scansiona il QR del membro per estrarre il premio.
           </p>
         </>
       )}
 
       {tokenFromUrl && !result && (
         <p className="text-brand-gray text-sm animate-pulse-glow">
-          Verifica in corso…
+          Estrazione in corso…
         </p>
       )}
     </main>

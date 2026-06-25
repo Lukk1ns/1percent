@@ -1,44 +1,44 @@
-export type QuizQuestion = {
-  id: string;
-  text: string;
-  options: { id: string; text: string }[];
-};
+export type QuizOption = { id: string; text: string };
+
+export type QuizQuestion =
+  | { id: string; type: "choice"; text: string; options: QuizOption[] }
+  | { id: string; type: "hybrid"; text: string; placeholder: string; tags: string[] };
 
 export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "q1",
-    text: "Mercoledì sera — cosa fai di solito?",
+    type: "choice",
+    text: "Cosa ti aspetti da una serata?",
     options: [
-      { id: "a", text: "Resto a casa, domani si lavora" },
-      { id: "b", text: "Dipende, se c'è qualcosa di valido" },
-      { id: "c", text: "Esco comunque. Il resto è scuse" },
+      { id: "a", text: "Bere bene" },
+      { id: "b", text: "Conoscere gente interessante" },
+      { id: "c", text: "Ballare e basta" },
+      { id: "d", text: "Stare per i fatti miei in mezzo alla gente" },
     ],
   },
   {
     id: "q2",
-    text: "Come scegli dove andare?",
+    type: "choice",
+    text: "In una serata, cosa fa davvero la differenza?",
     options: [
-      { id: "a", text: "Aspetto che qualcuno organizzi qualcosa" },
-      { id: "b", text: "Seguo il gruppo, di solito" },
-      { id: "c", text: "Se mi va, vado. Punto" },
+      { id: "a", text: "La musica" },
+      { id: "b", text: "I drink" },
+      { id: "c", text: "Le persone giuste" },
+      { id: "d", text: "Il vibe — non si spiega, o c'è o non c'è" },
     ],
   },
   {
     id: "q3",
-    text: "Il 99% stasera è a casa. Tu?",
-    options: [
-      { id: "a", text: "Anche io, onestamente" },
-      { id: "b", text: "Forse esco, non so ancora" },
-      { id: "c", text: "Già fuori nella mia testa" },
-    ],
+    type: "hybrid",
+    text: "Le serate pazze…",
+    placeholder: "Raccontaci (opzionale)",
+    tags: ["Le vivo", "Le osservo", "Le provoco", "Le evito"],
   },
   {
     id: "q4",
-    text: "Cosa cerchi in una serata?",
-    options: [
-      { id: "a", text: "Relax, niente di troppo" },
-      { id: "b", text: "Divertimento con le persone giuste" },
-      { id: "c", text: "Qualcosa che il 99% non capisce" },
-    ],
+    type: "hybrid",
+    text: "Cosa proprio non sopporti?",
+    placeholder: "Sfogati (opzionale)",
+    tags: ["Il caos", "La musica sbagliata", "Le serate che finiscono troppo presto", "Chi sta sul telefono tutta la sera"],
   },
 ];

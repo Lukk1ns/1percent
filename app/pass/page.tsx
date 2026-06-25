@@ -70,9 +70,12 @@ export default function PassPage() {
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">
-        il tuo pass d&apos;ingresso
+        il tuo pass per l&apos;estrazione
       </p>
-      <h1 className="font-display text-brand-red text-5xl mb-6">1%</h1>
+      <h1 className="font-display text-brand-red text-5xl mb-2">1%</h1>
+      <p className="text-xs text-brand-gray/60 mb-6 max-w-xs text-center">
+        Appena entri, portati all&apos;angolo accoglienza e fai scansionare il QR — potresti vincere qualcosa.
+      </p>
 
       {/* QR */}
       <div
@@ -91,8 +94,8 @@ export default function PassPage() {
         </div>
       </div>
 
-      <p className="text-xs text-brand-gray/60 mt-6 max-w-xs">
-        Mostra questo schermo all&apos;ingresso. Il QR verrà scansionato dallo staff.
+      <p className="text-xs text-brand-gray/60 mt-4 max-w-xs text-center">
+        Il QR è valido una sola volta.
       </p>
 
       <nav className="w-full max-w-xs mt-10 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
