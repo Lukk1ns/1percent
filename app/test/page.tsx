@@ -61,7 +61,7 @@ export default function TestPage() {
         p_avatar_id: draft.avatarId,
         p_quiz_answers: quizPayload,
         p_email: draft.email ?? null,
-        p_phone: draft.phone ?? null,
+        p_gender: draft.gender ?? null,
         p_referral_code: draft.refCode ?? null,
       });
 

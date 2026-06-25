@@ -12,7 +12,7 @@ function JoinForm() {
   const [alias, setAlias] = useState("");
   const [avatarId, setAvatarId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [gender, setGender] = useState<"M" | "F" | null>(null);
   const [consent, setConsent] = useState(false);
   const [aliasError, setAliasError] = useState("");
 
@@ -29,6 +29,14 @@ function JoinForm() {
       setAliasError("Scegli un avatar.");
       return false;
     }
+    if (!gender) {
+      setAliasError("Seleziona M o F.");
+      return false;
+    }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setAliasError("Inserisci una email valida — ti serve per rientrare.");
+      return false;
+    }
     if (!consent) {
       setAliasError("Devi accettare la privacy policy per continuare.");
       return false;
@@ -43,8 +51,8 @@ function JoinForm() {
       JSON.stringify({
         alias: alias.trim().toLowerCase(),
         avatarId,
-        email: email.trim() || null,
-        phone: phone.trim() || null,
+        email: email.trim(),
+        gender,
         refCode: refCode || null,
       }),
     );
@@ -106,30 +114,39 @@ function JoinForm() {
         </div>
       </div>
 
-      {/* Contatti opzionali */}
-      <details className="w-full mb-8 group">
-        <summary className="text-xs uppercase tracking-widest text-brand-gray cursor-pointer select-none list-none flex items-center gap-2">
-          <span className="text-brand-red">+</span> Vuoi ricevere il pass via
-          email o WhatsApp?{" "}
-          <span className="text-brand-gray/50">(opzionale)</span>
-        </summary>
-        <div className="mt-4 flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder="email (opzionale)"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-transparent border-b border-white/20 text-sm text-white placeholder-brand-gray/50 pb-2 outline-none focus:border-brand-red transition-colors"
-          />
-          <input
-            type="tel"
-            placeholder="telefono (opzionale)"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full bg-transparent border-b border-white/20 text-sm text-white placeholder-brand-gray/50 pb-2 outline-none focus:border-brand-red transition-colors"
-          />
+      {/* Genere */}
+      <div className="w-full mb-8">
+        <p className="text-xs uppercase tracking-widest text-brand-gray mb-4">Sei</p>
+        <div className="flex gap-3">
+          {(["M", "F"] as const).map((g) => (
+            <button
+              key={g}
+              onClick={() => { setGender(g); setAliasError(""); }}
+              className={`flex-1 py-4 text-sm font-semibold uppercase tracking-widest border transition-all ${
+                gender === g
+                  ? "border-brand-red bg-brand-red text-white"
+                  : "border-white/10 text-brand-gray hover:border-brand-red/60"
+              }`}
+            >
+              {g === "M" ? "Maschio" : "Femmina"}
+            </button>
+          ))}
         </div>
-      </details>
+      </div>
+
+      {/* Email obbligatoria */}
+      <div className="w-full mb-8">
+        <input
+          type="email"
+          placeholder="la tua email *"
+          value={email}
+          onChange={(e) => { setEmail(e.target.value); setAliasError(""); }}
+          className="w-full bg-transparent border-b-2 border-white/20 text-sm text-white placeholder-brand-gray/50 pb-2 outline-none focus:border-brand-red transition-colors"
+        />
+        <p className="text-[10px] text-brand-gray/40 mt-2 uppercase tracking-widest">
+          Serve per rientrare dal sito — niente spam
+        </p>
+      </div>
 
       {/* Consenso privacy */}
       <label className="w-full flex items-start gap-3 mb-8 cursor-pointer">

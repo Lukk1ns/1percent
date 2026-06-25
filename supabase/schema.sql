@@ -28,6 +28,7 @@ create table public.profiles (
   quiz_answers jsonb,
   email text,
   phone text,
+  gender text check (gender in ('M', 'F')),
   referral_code text not null unique default substr(md5(gen_random_uuid()::text), 1, 8),
   referred_by uuid references public.profiles (id) on delete set null,
   consent_privacy_at timestamptz not null default now(),
@@ -122,7 +123,7 @@ create or replace function public.join_one_percent(
   p_avatar_id text,
   p_quiz_answers jsonb,
   p_email text default null,
-  p_phone text default null,
+  p_gender text default null,
   p_referral_code text default null
 )
 returns jsonb
@@ -147,8 +148,8 @@ begin
     select id into v_referrer_id from public.profiles where referral_code = p_referral_code;
   end if;
 
-  insert into public.profiles (id, alias, avatar_id, quiz_answers, email, phone, referred_by)
-  values (auth.uid(), p_alias, p_avatar_id, p_quiz_answers, p_email, p_phone, v_referrer_id)
+  insert into public.profiles (id, alias, avatar_id, quiz_answers, email, gender, referred_by)
+  values (auth.uid(), p_alias, p_avatar_id, p_quiz_answers, p_email, p_gender, v_referrer_id)
   returning * into v_profile;
 
   insert into public.passes (profile_id)
@@ -167,6 +168,37 @@ end;
 $$;
 
 grant execute on function public.join_one_percent(text, text, jsonb, text, text, text) to authenticated;
+
+-- ============================================================
+-- MIGRATION v2 — da eseguire su Supabase SQL Editor
+-- se il database era già stato creato con lo schema v1
+-- ============================================================
+--
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender text check (gender in ('M', 'F'));
+--
+-- CREATE OR REPLACE FUNCTION public.join_one_percent(
+--   p_alias text, p_avatar_id text, p_quiz_answers jsonb,
+--   p_email text default null, p_gender text default null, p_referral_code text default null
+-- ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+-- declare
+--   v_referrer_id uuid; v_profile public.profiles; v_pass public.passes;
+-- begin
+--   if auth.uid() is null then raise exception 'Sessione non valida'; end if;
+--   if exists (select 1 from public.profiles where id = auth.uid()) then
+--     raise exception 'Esiste già un profilo per questa sessione'; end if;
+--   if p_referral_code is not null then
+--     select id into v_referrer_id from public.profiles where referral_code = p_referral_code; end if;
+--   insert into public.profiles (id, alias, avatar_id, quiz_answers, email, gender, referred_by)
+--   values (auth.uid(), p_alias, p_avatar_id, p_quiz_answers, p_email, p_gender, v_referrer_id)
+--   returning * into v_profile;
+--   insert into public.passes (profile_id) values (v_profile.id) returning * into v_pass;
+--   return jsonb_build_object('member_number', v_profile.member_number, 'alias', v_profile.alias,
+--     'avatar_id', v_profile.avatar_id, 'referral_code', v_profile.referral_code,
+--     'qr_token', v_pass.qr_token, 'created_at', v_profile.created_at);
+-- end; $$;
+--
+-- DROP FUNCTION IF EXISTS public.join_one_percent(text,text,jsonb,text,text,text);
+-- GRANT EXECUTE ON FUNCTION public.join_one_percent(text,text,jsonb,text,text,text) TO authenticated;
 
 -- Diritto alla cancellazione (GDPR): anonimizza il profilo e
 -- rimuove il pass. Mantiene il numero membro per non rompere
