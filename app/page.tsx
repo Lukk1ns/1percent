@@ -58,16 +58,29 @@ export default function LandingPage() {
         {/* Logo */}
         <div
           className="relative z-10 mt-3 animate-fade-up"
-          style={{ width: "clamp(220px, 60vw, 420px)", animationDelay: "0.1s" }}
+          style={{ width: "clamp(220px, 60vw, 400px)", animationDelay: "0.1s" }}
         >
           <Image
-            src="/logo .png"
+            src="/logo.png"
             alt="1%"
-            width={420}
-            height={420}
+            width={400}
+            height={400}
             priority
             className="w-full h-auto"
+            style={{
+              filter: "drop-shadow(0 0 30px rgba(224,24,31,0.9)) drop-shadow(0 0 80px rgba(224,24,31,0.5))",
+            }}
           />
+        </div>
+
+        {/* Data evento */}
+        <div
+          className="relative z-10 mt-4 animate-fade-up"
+          style={{ animationDelay: "0.2s" }}
+        >
+          <p className="font-display text-white uppercase tracking-[0.12em]" style={{ fontSize: "clamp(1.4rem, 6vw, 2.8rem)" }}>
+            Mercoledì 1 Luglio
+          </p>
         </div>
 
         {/* Claim con typewriter */}
