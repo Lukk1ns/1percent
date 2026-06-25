@@ -21,7 +21,12 @@ export default function LoginPage() {
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     if (err) {
-      setError("Qualcosa è andato storto. Riprova.");
+      const msg = err.message?.toLowerCase() ?? "";
+      if (msg.includes("rate") || msg.includes("limit") || err.status === 429) {
+        setError("Troppe richieste in poco tempo. Aspetta qualche minuto e riprova.");
+      } else {
+        setError(err.message || "Qualcosa è andato storto. Riprova.");
+      }
     } else {
       setSent(true);
     }

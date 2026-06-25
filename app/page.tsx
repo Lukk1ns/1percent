@@ -136,10 +136,24 @@ export default function LandingPage() {
 
         <button
           onClick={() => setShowForm(true)}
-          className="relative z-10 mt-3 text-sm text-brand-gray/70 hover:text-white transition-colors animate-fade-up"
-          style={{ animationDelay: "1.2s", fontFamily: "var(--font-caveat)" }}
+          className="group relative z-10 mt-8 animate-fade-up"
+          style={{ animationDelay: "1.2s" }}
+          aria-label="Lascia un segno sulla bacheca"
         >
-          ✏️ lascia un segno sulla bacheca
+          <span
+            className="block px-6 py-4 text-black transition-transform group-hover:scale-105 group-hover:-rotate-1"
+            style={{
+              background: "#FFF176",
+              boxShadow: "3px 4px 12px rgba(0,0,0,0.5)",
+              transform: "rotate(-2deg)",
+              fontFamily: "var(--font-caveat)",
+              fontSize: "1.35rem",
+              lineHeight: 1.1,
+            }}
+          >
+            ✏️ Lascia un segno
+            <span className="block text-base text-black/60">scrivi sulla bacheca →</span>
+          </span>
         </button>
       </main>
     </>
