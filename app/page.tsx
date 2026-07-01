@@ -132,14 +132,6 @@ export default function LandingPage() {
           Già dell&apos;1%? Rientra →
         </Link>
 
-        <Link
-          href="/mosaico"
-          className="relative z-10 mt-3 text-xs uppercase tracking-widest text-brand-gray/70 hover:text-brand-red transition-colors animate-fade-up"
-          style={{ animationDelay: "1.15s" }}
-        >
-          Il muro dell&apos;1% →
-        </Link>
-
         <button
           onClick={() => setShowForm(true)}
           className="group relative z-10 mt-8 animate-fade-up"
