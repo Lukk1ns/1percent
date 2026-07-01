@@ -4,6 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  // Destinazione interna richiesta (es. /admin/dashboard per lo staff).
+  const nextParam = url.searchParams.get("next");
+  const next = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+    ? nextParam
+    : null;
 
   if (code) {
     const supabase = await createClient();
@@ -15,6 +20,12 @@ export async function GET(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
+    // Rientro staff via magic link: vai alla destinazione richiesta.
+    // L'autorizzazione vera è nella dashboard e nelle RPC (is_admin()).
+    if (next) {
+      return NextResponse.redirect(new URL(next, url.origin));
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("id")
