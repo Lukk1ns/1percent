@@ -82,7 +82,7 @@ export default function LandingPage() {
           style={{ animationDelay: "0.2s" }}
         >
           <p className="font-display text-white uppercase tracking-[0.12em]" style={{ fontSize: "clamp(1.4rem, 6vw, 2.8rem)" }}>
-            Mercoledì 1 Luglio
+            Mercoledì 8 Luglio
           </p>
         </div>
 

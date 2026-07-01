@@ -4,6 +4,41 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
+import { QUIZ_QUESTIONS } from "@/lib/quiz";
+
+type HybridAnswer = { text?: string; tag?: string };
+type QuizAnswers = {
+  q1?: string;
+  q2?: string;
+  q3?: HybridAnswer;
+  q4?: HybridAnswer;
+  archetype?: string;
+};
+
+type AnswerMember = {
+  id: string;
+  alias: string;
+  avatar_id: string | null;
+  member_number: number;
+  quiz_answers: QuizAnswers | null;
+  created_at: string;
+};
+
+// Testo leggibile di una risposta a scelta multipla (q1/q2).
+function choiceLabel(qId: string, optId?: string): string {
+  const q = QUIZ_QUESTIONS.find((x) => x.id === qId);
+  if (!q || q.type !== "choice" || !optId) return "—";
+  return q.options.find((o) => o.id === optId)?.text ?? "—";
+}
+
+function questionText(qId: string): string {
+  return QUIZ_QUESTIONS.find((x) => x.id === qId)?.text ?? qId;
+}
+
+// C'è testo libero scritto nelle domande aperte?
+function hasFreeText(a: QuizAnswers | null): boolean {
+  return Boolean(a?.q3?.text?.trim() || a?.q4?.text?.trim());
+}
 
 type Post = {
   id: string;
@@ -24,8 +59,10 @@ type Member = {
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<"members" | "posts">("members");
+  const [tab, setTab] = useState<"members" | "posts" | "answers">("members");
   const [members, setMembers] = useState<Member[]>([]);
+  const [answerMembers, setAnswerMembers] = useState<AnswerMember[]>([]);
+  const [onlyWritten, setOnlyWritten] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [approvedPosts, setApprovedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,13 +73,15 @@ export default function AdminDashboardPage() {
 
   async function load() {
     const supabase = createClient();
-    const [membersRes, postsRes, approvedRes] = await Promise.all([
+    const [membersRes, postsRes, approvedRes, answersRes] = await Promise.all([
       supabase.rpc("admin_members"),
       supabase.rpc("admin_pending_posts"),
       supabase.rpc("approved_posts"),
+      supabase.rpc("admin_quiz_answers"),
     ]);
     if (membersRes.error) setError("Errore membri: " + membersRes.error.message);
     if (membersRes.data) setMembers(membersRes.data as Member[]);
+    if (answersRes.data) setAnswerMembers(answersRes.data as AnswerMember[]);
     if (postsRes.error) setError("Errore bacheca: " + postsRes.error.message);
     if (postsRes.data) setPosts(postsRes.data as Post[]);
     if (approvedRes.data) setApprovedPosts(approvedRes.data as Post[]);
@@ -165,6 +204,12 @@ export default function AdminDashboardPage() {
             </span>
           )}
         </button>
+        <button
+          onClick={() => setTab("answers")}
+          className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all ${tab === "answers" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
+        >
+          Risposte
+        </button>
       </div>
 
       {/* Stats */}
@@ -275,6 +320,124 @@ export default function AdminDashboardPage() {
           )}
         </>
       )}
+
+      {/* Risposte al quiz */}
+      {tab === "answers" && (() => {
+        const written = answerMembers.filter((m) => hasFreeText(m.quiz_answers));
+        const shown = onlyWritten ? written : answerMembers;
+
+        // Distribuzione archetipi (per il marketing)
+        const archCounts: Record<string, number> = {};
+        for (const m of answerMembers) {
+          const a = m.quiz_answers?.archetype;
+          if (a) archCounts[a] = (archCounts[a] ?? 0) + 1;
+        }
+        const archSorted = Object.entries(archCounts).sort((x, y) => y[1] - x[1]);
+
+        return (
+          <>
+            {/* Riepilogo */}
+            <div className="border border-white/10 p-4 mb-6">
+              <p className="text-sm text-white mb-1">
+                <span className="text-brand-red font-display text-xl">{written.length}</span>
+                {" "}membri su {answerMembers.length} hanno <span className="text-white">scritto qualcosa</span> nelle domande aperte.
+              </p>
+              {archSorted.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {archSorted.map(([arch, n]) => (
+                    <span key={arch} className="text-[10px] uppercase tracking-widest border border-white/15 px-2 py-1 text-brand-gray">
+                      {arch} · <span className="text-white">{n}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Filtro */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs uppercase tracking-widest text-brand-gray">
+                {onlyWritten ? "Solo chi ha scritto" : "Tutte le risposte"} — dal più recente
+              </p>
+              <button
+                onClick={() => setOnlyWritten((v) => !v)}
+                className={`text-[10px] uppercase tracking-widest px-3 py-1.5 border transition-all ${onlyWritten ? "border-brand-red text-brand-red bg-brand-red/10" : "border-white/10 text-brand-gray hover:border-white/30"}`}
+              >
+                {onlyWritten ? "✓ Solo scritte" : "Solo scritte"}
+              </button>
+            </div>
+
+            {loading ? (
+              <p className="text-brand-gray text-sm animate-pulse-glow">Caricamento…</p>
+            ) : answerMembers.length === 0 ? (
+              <p className="text-brand-gray/40 text-sm">
+                Nessuna risposta. Se è la prima volta, esegui lo script
+                {" "}<span className="text-brand-gray">supabase/admin_quiz_answers.sql</span>{" "}
+                nel SQL Editor di Supabase.
+              </p>
+            ) : shown.length === 0 ? (
+              <p className="text-brand-gray/40 text-sm">Nessuno ha ancora scritto testo libero.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {shown.map((m) => {
+                  const a = m.quiz_answers ?? {};
+                  const avatar = m.avatar_id ? getAvatar(m.avatar_id) : null;
+                  const date = new Date(m.created_at).toLocaleDateString("it-IT", {
+                    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                  });
+                  return (
+                    <div key={m.id} className="border border-white/8 p-4">
+                      {/* Header membro */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">{avatar?.emoji ?? "?"}</span>
+                        <span className="text-white text-sm font-medium">{m.alias}</span>
+                        {a.archetype && (
+                          <span className="text-[9px] uppercase tracking-widest text-brand-red border border-brand-red/40 px-1.5 py-0.5">
+                            {a.archetype}
+                          </span>
+                        )}
+                        <span className="text-brand-gray/40 text-[10px] ml-auto">
+                          #{String(m.member_number).padStart(4, "0")} · {date}
+                        </span>
+                      </div>
+
+                      {/* Domande a scelta */}
+                      <div className="flex flex-col gap-2">
+                        {(["q1", "q2"] as const).map((qId) => (
+                          <div key={qId}>
+                            <p className="text-brand-gray/60 text-[11px]">{questionText(qId)}</p>
+                            <p className="text-white/90 text-sm">{choiceLabel(qId, a[qId])}</p>
+                          </div>
+                        ))}
+
+                        {/* Domande aperte */}
+                        {(["q3", "q4"] as const).map((qId) => {
+                          const ans = a[qId];
+                          return (
+                            <div key={qId}>
+                              <p className="text-brand-gray/60 text-[11px]">{questionText(qId)}</p>
+                              <p className="text-white/90 text-sm">
+                                <span className="text-brand-red">{ans?.tag ?? "—"}</span>
+                                {ans?.text?.trim() && (
+                                  <span
+                                    className="block text-yellow-200 mt-0.5"
+                                    style={{ fontFamily: "var(--font-caveat)", fontSize: "1.05rem" }}
+                                  >
+                                    “{ans.text.trim()}”
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Lista membri */}
       {tab === "members" && <>
