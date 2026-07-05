@@ -22,6 +22,7 @@ export default function CardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -44,34 +45,36 @@ export default function CardPage() {
   async function handleSaveCard() {
     if (!cardRef.current) return;
     setSaving(true);
+    setSaveError(null);
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(cardRef.current, {
+      const { domToBlob } = await import("modern-screenshot");
+      const blob = await domToBlob(cardRef.current, {
         backgroundColor: "#0a0a0a",
         scale: 3,
-        useCORS: true,
+        type: "image/png",
       });
+      if (!blob) throw new Error("Immagine vuota");
 
-      // Su mobile usa Web Share API con il file immagine
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const file = new File([blob], "1percent-card.png", { type: "image/png" });
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ files: [file], title: "La mia card 1%" });
-        } else {
-          // Fallback desktop: download diretto
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "1percent-card.png";
-          a.click();
-          URL.revokeObjectURL(url);
-        }
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
-      }, "image/png");
+      const file = new File([blob], "1percent-card.png", { type: "image/png" });
+      // Su mobile: apre il pannello di condivisione con il file immagine
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "La mia card 1%" });
+      } else {
+        // Desktop: scarica direttamente nella cartella Download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "1percent-card.png";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (e) {
+      // L'utente che annulla il pannello di condivisione non è un errore
+      if (e instanceof DOMException && e.name === "AbortError") return;
       console.error(e);
+      setSaveError("Non è riuscito a salvare la card. Fai uno screenshot come backup.");
     } finally {
       setSaving(false);
     }
@@ -212,6 +215,9 @@ export default function CardPage() {
         >
           {saving ? "Preparazione…" : saved ? "Salvata ✓" : "Salva card"}
         </button>
+        {saveError && (
+          <p className="text-center text-xs text-brand-red">{saveError}</p>
+        )}
         <button
           onClick={() => router.push("/pass")}
           className="w-full border border-brand-red text-brand-red py-4 text-sm font-semibold uppercase tracking-widest hover:bg-brand-red hover:text-white transition-all"
