@@ -81,6 +81,7 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 | `/card` | Card membro digitale (screenshottabile, salvabile) |
 | `/pass` | QR pass ingresso |
 | `/invita` | Link referral personale + contatore inviti |
+| `/membri` | Il Muro: tutti i membri, classifica poke 👊, poke 1/giorno |
 | `/login` | Accesso per membri esistenti (magic link email) |
 | `/privacy` | Privacy policy GDPR + cancellazione dati |
 | `/admin/login` | Login staff |
@@ -97,6 +98,7 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 | `profiles` | Ogni membro: alias, avatar, numero progressivo, email, referral_code, referred_by |
 | `passes` | QR token univoco per ingresso, status (valid/checked_in) |
 | `admins` | Email degli staff autorizzati a validare QR |
+| `pokes` | Poke 👊 tra membri: from/to, 1 al giorno per coppia (unique su data IT), flag seen. RLS: solo il ricevente legge i propri. SQL in `supabase/pokes.sql` |
 
 ### Funzioni RPC (chiamate dal sito)
 - `join_one_percent(...)` — crea profilo + pass in un colpo solo
@@ -109,6 +111,10 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 - `admin_members()` — tutti i membri (id, alias, avatar_id, member_number, created_at, email)
 - `admin_delete_member(uuid)` — elimina un membro e il suo pass
 - `admin_update_alias(uuid, text)` — modifica l'alias di un membro
+- `send_poke(member_number)` — lascia un poke (ritorna ok/already/self/not_found/not_member)
+- `members_wall()` — tutti i membri con conteggio poke + già-pokato-oggi (solo membri)
+- `my_pokes_received(limit)` — chi mi ha pokato (solo il ricevente)
+- `unseen_pokes_count()` / `mark_pokes_seen()` — badge notifiche poke
 
 ---
 
