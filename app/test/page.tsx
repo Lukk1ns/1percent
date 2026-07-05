@@ -126,12 +126,15 @@ export default function TestPage() {
   return (
     <main className="flex-1 flex flex-col overflow-hidden">
       {/* Progress */}
-      <div className="flex h-px">
+      <div className="flex h-[3px] gap-1 px-1">
         {QUIZ_QUESTIONS.map((_, i) => (
           <div
             key={i}
-            className="flex-1 transition-colors duration-700"
-            style={{ background: i <= step ? "#e0181f" : "rgba(255,255,255,0.08)" }}
+            className="flex-1 transition-all duration-700"
+            style={{
+              background: i <= step ? "#e0181f" : "rgba(255,255,255,0.08)",
+              boxShadow: i <= step ? "0 0 10px rgba(224,24,31,0.6)" : "none",
+            }}
           />
         ))}
       </div>
@@ -221,11 +224,7 @@ export default function TestPage() {
             <button
               onClick={handleHybridSubmit}
               disabled={!hybridTag}
-              className={`w-full py-4 text-sm font-semibold uppercase tracking-widest transition-all ${
-                hybridTag
-                  ? "bg-brand-red text-white hover:scale-[1.02] active:scale-95"
-                  : "bg-white/5 text-white/20 cursor-not-allowed"
-              }`}
+              className={`btn w-full ${hybridTag ? "btn-primary" : "btn-ghost"}`}
             >
               Avanti →
             </button>

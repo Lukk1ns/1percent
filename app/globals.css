@@ -3,6 +3,7 @@
 :root {
   --background: #0a0a0a;
   --foreground: #f5f5f5;
+  --red: #e0181f;
 }
 
 @theme inline {
@@ -70,21 +71,21 @@ body::after {
 /* ── Glitch su "1%" ──────────────────────────────────────── */
 @keyframes glitch-main {
   0%, 90%, 100% { transform: translate(0); }
-  91%           { transform: translate(-3px, 1px); }
-  93%           { transform: translate(3px, -1px); }
+  91%           { transform: translate(-3px, 1px) skewX(-2deg); }
+  93%           { transform: translate(3px, -1px) skewX(2deg); }
   95%           { transform: translate(-2px, 2px); }
   97%           { transform: translate(2px, -2px); }
 }
 @keyframes glitch-red {
   0%, 90%, 100% { transform: translate(0); opacity: 0; }
-  91%           { transform: translate(4px, -2px); opacity: 0.7; }
-  95%           { transform: translate(-3px, 2px); opacity: 0.5; }
+  91%           { transform: translate(5px, -2px); opacity: 0.8; }
+  95%           { transform: translate(-4px, 2px); opacity: 0.5; }
   97%           { transform: translate(2px, -1px); opacity: 0; }
 }
 @keyframes glitch-blue {
   0%, 90%, 100% { transform: translate(0); opacity: 0; }
-  91%           { transform: translate(-4px, 2px); opacity: 0.5; }
-  95%           { transform: translate(3px, -2px); opacity: 0.4; }
+  91%           { transform: translate(-5px, 2px); opacity: 0.6; }
+  95%           { transform: translate(4px, -2px); opacity: 0.4; }
   97%           { transform: translate(-2px, 1px); opacity: 0; }
 }
 
@@ -147,4 +148,252 @@ body::after {
 }
 .page-transition {
   animation: page-in 0.45s ease-out both;
+}
+
+/* ════════════════════════════════════════════════════════════
+   V2 — DESIGN SYSTEM "1%"
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Sfondo atmosferico: aurore rosse che vagano ──────────── */
+@keyframes aurora-a {
+  0%, 100% { transform: translate(-12%, -8%) scale(1); }
+  33%      { transform: translate(10%, 6%) scale(1.25); }
+  66%      { transform: translate(-4%, 12%) scale(0.9); }
+}
+@keyframes aurora-b {
+  0%, 100% { transform: translate(10%, 10%) scale(1.1); }
+  50%      { transform: translate(-10%, -6%) scale(0.85); }
+}
+.aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  will-change: transform;
+  pointer-events: none;
+}
+.aurora-a {
+  width: 60vmax; height: 60vmax;
+  left: -15vmax; top: -20vmax;
+  background: radial-gradient(circle, rgba(224,24,31,0.14), transparent 65%);
+  animation: aurora-a 26s ease-in-out infinite;
+}
+.aurora-b {
+  width: 50vmax; height: 50vmax;
+  right: -18vmax; bottom: -18vmax;
+  background: radial-gradient(circle, rgba(224,24,31,0.10), transparent 65%);
+  animation: aurora-b 32s ease-in-out infinite;
+}
+
+/* Griglia prospettica sottile */
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(224,24,31,0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(224,24,31,0.5) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.03;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 75%);
+}
+
+/* Scanline che scende ogni tanto */
+@keyframes scan-sweep {
+  0%   { top: -10%; opacity: 0; }
+  5%   { opacity: 0.5; }
+  45%  { opacity: 0.5; }
+  50%  { top: 110%; opacity: 0; }
+  100% { top: 110%; opacity: 0; }
+}
+.scan-sweep {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(224,24,31,0.35), transparent);
+  box-shadow: 0 0 18px rgba(224,24,31,0.25);
+  animation: scan-sweep 9s linear infinite;
+}
+
+/* ── Bottoni V2: angolo tagliato + sweep luminoso ─────────── */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  overflow: hidden;
+  isolation: isolate;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  transition: transform 0.2s ease, box-shadow 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.96); }
+
+/* sweep di luce al passaggio */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%);
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+}
+.btn:hover::after { transform: translateX(120%); }
+
+.btn-primary {
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 0 0 rgba(224,24,31,0);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 34px rgba(224,24,31,0.55), 0 6px 20px rgba(0,0,0,0.4);
+}
+
+.btn-outline {
+  background: rgba(224,24,31,0.04);
+  color: #fff;
+  border: 1px solid rgba(224,24,31,0.55);
+}
+.btn-outline:hover {
+  transform: translateY(-2px);
+  border-color: var(--red);
+  background: rgba(224,24,31,0.12);
+  box-shadow: 0 0 24px rgba(224,24,31,0.25);
+}
+
+.btn-ghost {
+  background: rgba(255,255,255,0.02);
+  color: var(--color-brand-gray);
+  border: 1px solid rgba(255,255,255,0.14);
+}
+.btn-ghost:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.4);
+  transform: translateY(-2px);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Anello pulsante attorno alla CTA principale */
+@keyframes cta-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(224,24,31,0.45); }
+  70%  { box-shadow: 0 0 0 16px rgba(224,24,31,0); }
+  100% { box-shadow: 0 0 0 0 rgba(224,24,31,0); }
+}
+.cta-pulse { animation: cta-pulse 2.4s ease-out infinite; }
+
+/* ── Ticker / marquee ─────────────────────────────────────── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+.marquee-reverse { animation-direction: reverse; }
+
+/* ── Countdown: cifre che rotolano ────────────────────────── */
+@keyframes digit-in {
+  from { transform: translateY(-70%); opacity: 0; filter: blur(3px); }
+  to   { transform: translateY(0); opacity: 1; filter: blur(0); }
+}
+.digit-in {
+  display: inline-block;
+  animation: digit-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.count-cell {
+  position: relative;
+  border: 1px solid rgba(224,24,31,0.22);
+  background: linear-gradient(180deg, rgba(224,24,31,0.07), rgba(224,24,31,0.015));
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+/* ── Card membro: sheen olografico ────────────────────────── */
+.tilt-wrap {
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+.holo-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    420px circle at var(--mx, 50%) var(--my, 30%),
+    rgba(255,255,255,0.10),
+    rgba(224,24,31,0.05) 35%,
+    transparent 70%
+  );
+  transition: opacity 0.3s ease;
+}
+
+/* ── Bordo animato (per QR / frame speciali) ──────────────── */
+@keyframes corner-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.25; }
+}
+.corner-blink { animation: corner-blink 2s ease-in-out infinite; }
+
+/* ── Input V2 ─────────────────────────────────────────────── */
+.input-line {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid rgba(255,255,255,0.18);
+  color: #fff;
+  padding-bottom: 0.5rem;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.input-line:focus {
+  border-color: var(--red);
+  box-shadow: 0 12px 18px -14px rgba(224,24,31,0.55);
+}
+.input-line::placeholder { color: rgba(163,163,163,0.5); }
+
+/* ── Testo con riflesso metallico ─────────────────────────── */
+@keyframes shine-text {
+  from { background-position: 200% center; }
+  to   { background-position: -200% center; }
+}
+.shine-text {
+  background: linear-gradient(100deg, #fff 40%, #ffb3b6 50%, #fff 60%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shine-text 5s linear infinite;
+}
+
+/* ── Flash finale entry sequence ──────────────────────────── */
+@keyframes white-flash {
+  0%   { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+.white-flash {
+  animation: white-flash 0.5s ease-out both;
+}
+
+/* ── Riduzione movimento ──────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .aurora, .scan-sweep, .marquee, .glitch, .glitch::before, .glitch::after,
+  .cta-pulse, .shine-text, .animate-pulse-glow {
+    animation: none !important;
+  }
 }

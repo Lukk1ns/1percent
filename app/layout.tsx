@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Inter, Caveat } from "next/font/google";
+import { Backdrop } from "@/components/Backdrop";
 import "./globals.css";
 
 const anton = Anton({
@@ -40,6 +41,7 @@ export default function RootLayout({
       className={`${anton.variable} ${inter.variable} ${caveat.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
+        <Backdrop />
         {children}
       </body>
     </html>

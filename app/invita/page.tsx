@@ -69,13 +69,13 @@ export default function InvitaPage() {
       <div className="w-full flex flex-col gap-3">
         <button
           onClick={handleShare}
-          className="w-full bg-brand-red py-4 text-sm font-semibold uppercase tracking-widest text-white hover:scale-[1.02] active:scale-95 transition-transform"
+          className="btn btn-primary w-full"
         >
           Condividi
         </button>
         <button
           onClick={handleCopy}
-          className="w-full border border-white/10 text-brand-gray py-4 text-sm uppercase tracking-widest hover:border-white/30 transition-all"
+          className="btn btn-ghost w-full"
         >
           {copied ? "Copiato ✓" : "Copia link"}
         </button>
