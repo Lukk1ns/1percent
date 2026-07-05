@@ -9,6 +9,7 @@ import { LiveFeed } from "@/components/LiveFeed";
 import { PostitBoard } from "@/components/PostitBoard";
 import { PostForm } from "@/components/PostForm";
 import { Marquee } from "@/components/Marquee";
+import { PokeAlert } from "@/components/PokeAlert";
 import { createClient } from "@/lib/supabase/client";
 import {
   EVENT_DATE,
@@ -62,6 +63,7 @@ export default function LandingPage() {
     <>
       {!entered && <EntrySequence onDone={handleDone} />}
       {entered && <PostitBoard />}
+      {entered && <PokeAlert />}
       {showForm && <PostForm onClose={() => setShowForm(false)} />}
 
       <main
@@ -157,6 +159,9 @@ export default function LandingPage() {
               </Link>
               <Link href="/pass" className="btn btn-outline">
                 Il tuo pass
+              </Link>
+              <Link href="/membri" className="btn btn-outline">
+                Il muro 👊
               </Link>
               <Link href="/invita" className="btn btn-ghost">
                 Invita

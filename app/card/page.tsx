@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
+import { PokeAlert } from "@/components/PokeAlert";
 import { VENUE_NAME, VENUE_CITY } from "@/lib/event";
 
 type Profile = {
@@ -132,6 +133,7 @@ export default function CardPage() {
 
   return (
     <main className="flex-1 flex flex-col items-center px-4 py-8">
+      <PokeAlert />
 
       {/* Wrapper tilt 3D — segue il puntatore, lo screenshot resta sulla card interna */}
       <div
@@ -271,6 +273,7 @@ export default function CardPage() {
         <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
         <button onClick={() => router.push("/card")} className="text-brand-red">Card</button>
         <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">Pass</button>
+        <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
         <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>
       </nav>
     </main>
