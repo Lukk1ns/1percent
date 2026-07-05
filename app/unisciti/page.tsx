@@ -80,7 +80,7 @@ function JoinForm() {
             setAlias(e.target.value);
             setAliasError("");
           }}
-          className="w-full bg-transparent border-b-2 border-brand-gray text-xl text-white placeholder-brand-gray/50 pb-2 outline-none focus:border-brand-red transition-colors"
+          className="input-line text-xl"
           autoFocus
           autoComplete="off"
           autoCapitalize="none"
@@ -100,11 +100,12 @@ function JoinForm() {
                 setAvatarId(av.id);
                 setAliasError("");
               }}
-              className={`aspect-square flex items-center justify-center text-2xl border transition-all ${
+              className={`aspect-square flex items-center justify-center text-2xl border transition-all duration-200 ${
                 avatarId === av.id
-                  ? "border-brand-red bg-brand-red/20 scale-110"
-                  : "border-white/10 hover:border-white/30"
+                  ? "border-brand-red bg-brand-red/20 scale-110 shadow-[0_0_18px_rgba(224,24,31,0.4)]"
+                  : "border-white/10 hover:border-white/30 hover:scale-105 active:scale-95"
               }`}
+              style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}
               aria-label={av.label}
               title={av.label}
             >
@@ -141,7 +142,7 @@ function JoinForm() {
           placeholder="la tua email *"
           value={email}
           onChange={(e) => { setEmail(e.target.value); setAliasError(""); }}
-          className="w-full bg-transparent border-b-2 border-white/20 text-sm text-white placeholder-brand-gray/50 pb-2 outline-none focus:border-brand-red transition-colors"
+          className="input-line text-sm"
         />
         <p className="text-[10px] text-brand-gray/40 mt-2 uppercase tracking-widest">
           Serve per rientrare dal sito — niente spam
@@ -174,7 +175,7 @@ function JoinForm() {
 
       <button
         onClick={handleNext}
-        className="w-full bg-brand-red py-4 text-sm font-semibold uppercase tracking-widest text-white transition-transform hover:scale-[1.02] active:scale-95"
+        className="btn btn-primary w-full"
       >
         Avanti →
       </button>

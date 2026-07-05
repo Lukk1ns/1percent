@@ -18,6 +18,28 @@ type Profile = {
 export default function CardPage() {
   const router = useRouter();
   const cardRef = useRef<HTMLDivElement>(null);
+  const tiltRef = useRef<HTMLDivElement>(null);
+
+  // Tilt 3D: la card si inclina seguendo il puntatore/dito.
+  // Il transform sta sul wrapper esterno, così lo screenshot non ne risente.
+  function handleTiltMove(e: React.PointerEvent<HTMLDivElement>) {
+    const el = tiltRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    el.style.transform = `perspective(900px) rotateY(${(px - 0.5) * 14}deg) rotateX(${(0.5 - py) * 12}deg)`;
+    el.style.setProperty("--mx", `${px * 100}%`);
+    el.style.setProperty("--my", `${py * 100}%`);
+  }
+
+  function handleTiltEnd() {
+    const el = tiltRef.current;
+    if (!el) return;
+    el.style.transform = "perspective(900px) rotateY(0deg) rotateX(0deg)";
+    el.style.setProperty("--mx", "50%");
+    el.style.setProperty("--my", "30%");
+  }
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -111,10 +133,18 @@ export default function CardPage() {
   return (
     <main className="flex-1 flex flex-col items-center px-4 py-8">
 
+      {/* Wrapper tilt 3D — segue il puntatore, lo screenshot resta sulla card interna */}
+      <div
+        ref={tiltRef}
+        className="tilt-wrap relative w-full max-w-sm animate-fade-up"
+        onPointerMove={handleTiltMove}
+        onPointerLeave={handleTiltEnd}
+        onPointerUp={handleTiltEnd}
+      >
       {/* Card — ottimizzata per screenshot/salvataggio */}
       <div
         ref={cardRef}
-        className="w-full max-w-sm relative flex flex-col justify-between p-7 border border-brand-red/50 overflow-hidden"
+        className="w-full relative flex flex-col justify-between p-7 border border-brand-red/50 overflow-hidden"
         style={{
           aspectRatio: "3/4",
           background: "linear-gradient(145deg, #0f0101 0%, #1a0303 50%, #0a0a0a 100%)",
@@ -206,12 +236,16 @@ export default function CardPage() {
         <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-brand-red/60" aria-hidden />
       </div>
 
+      {/* Riflesso olografico che segue il puntatore (fuori dallo screenshot) */}
+      <div className="holo-sheen" aria-hidden />
+      </div>
+
       {/* Azioni */}
       <div className="w-full max-w-sm mt-6 flex flex-col gap-3">
         <button
           onClick={handleSaveCard}
           disabled={saving}
-          className="w-full bg-brand-red py-4 text-sm font-semibold uppercase tracking-widest text-white hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+          className="btn btn-primary w-full"
         >
           {saving ? "Preparazione…" : saved ? "Salvata ✓" : "Salva card"}
         </button>
@@ -220,13 +254,13 @@ export default function CardPage() {
         )}
         <button
           onClick={() => router.push("/pass")}
-          className="w-full border border-brand-red text-brand-red py-4 text-sm font-semibold uppercase tracking-widest hover:bg-brand-red hover:text-white transition-all"
+          className="btn btn-outline w-full"
         >
           Pass estrazione →
         </button>
         <button
           onClick={handleShareLink}
-          className="w-full border border-white/10 text-brand-gray py-4 text-sm uppercase tracking-widest hover:border-white/30 transition-all"
+          className="btn btn-ghost w-full"
         >
           Porta un altro 1%
         </button>

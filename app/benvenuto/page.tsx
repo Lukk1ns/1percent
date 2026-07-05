@@ -33,7 +33,10 @@ export default function BenvenutoPage() {
       {phase === "reveal" ? (
         <div className="flex flex-col items-center animate-fade-up">
           <div className="text-7xl mb-6">{avatar.emoji}</div>
-          <h1 className="font-display text-brand-red text-5xl leading-tight">
+          <h1
+            className="font-display text-brand-red text-5xl leading-tight"
+            style={{ textShadow: "0 0 20px rgba(224,24,31,0.6), 0 0 60px rgba(224,24,31,0.3)" }}
+          >
             Benvenuto
             <br />
             nell'1%
@@ -54,7 +57,7 @@ export default function BenvenutoPage() {
           <h2 className="font-display text-3xl text-white">{member.alias}</h2>
           <button
             onClick={() => router.push("/card")}
-            className="mt-4 bg-brand-red px-10 py-4 text-sm font-semibold uppercase tracking-widest text-white hover:scale-105 active:scale-95 transition-transform"
+            className="btn btn-primary cta-pulse mt-4 px-10"
           >
             La tua card →
           </button>

@@ -10,6 +10,7 @@ function randomChar() {
 export function EntrySequence({ onDone }: { onDone: () => void }) {
   const [display, setDisplay] = useState("___");
   const [line, setLine] = useState("ACCESSO IN CORSO");
+  const [flash, setFlash] = useState(false);
 
   useEffect(() => {
     let frame = 0;
@@ -36,7 +37,8 @@ export function EntrySequence({ onDone }: { onDone: () => void }) {
         setLine("ACCESSO CONFERMATO");
       } else {
         clearInterval(interval);
-        onDone();
+        setFlash(true);
+        setTimeout(onDone, 200);
       }
     }, 80);
 
@@ -45,6 +47,14 @@ export function EntrySequence({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
+      {/* Flash rosso finale */}
+      {flash && (
+        <div
+          className="white-flash absolute inset-0 pointer-events-none"
+          style={{ background: "rgba(224,24,31,0.55)" }}
+          aria-hidden
+        />
+      )}
       {/* Scanline */}
       <div
         className="absolute inset-0 pointer-events-none"

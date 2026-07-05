@@ -61,13 +61,13 @@ export default function LoginPage() {
           onChange={(e) => setEmail(e.target.value)}
           required
           autoFocus
-          className="bg-transparent border-b-2 border-white/20 text-white placeholder-brand-gray/50 pb-2 outline-none focus:border-brand-red transition-colors text-sm"
+          className="input-line text-sm"
         />
         {error && <p className="text-brand-red text-sm">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="mt-2 bg-brand-red py-4 text-sm font-semibold uppercase tracking-widest text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+          className="btn btn-primary mt-2 w-full"
         >
           {loading ? "Invio…" : "Mandami il link"}
         </button>

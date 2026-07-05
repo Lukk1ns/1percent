@@ -77,12 +77,19 @@ export default function PassPage() {
         Appena entri, portati all&apos;angolo accoglienza e fai scansionare il QR — potresti vincere qualcosa.
       </p>
 
-      {/* QR */}
+      {/* QR con cornice scanner */}
       <div
-        className="p-4 mb-6 border border-brand-red/30"
-        style={{ background: "#0a0a0a" }}
+        className="relative p-5 mb-6 border border-brand-red/25 animate-fade-up"
+        style={{
+          background: "#0a0a0a",
+          boxShadow: "0 0 40px rgba(224,24,31,0.15), inset 0 0 30px rgba(224,24,31,0.04)",
+        }}
       >
         <canvas ref={canvasRef} />
+        <span className="corner-blink absolute -top-px -left-px w-5 h-5 border-t-2 border-l-2 border-brand-red" aria-hidden />
+        <span className="corner-blink absolute -top-px -right-px w-5 h-5 border-t-2 border-r-2 border-brand-red" aria-hidden style={{ animationDelay: "0.5s" }} />
+        <span className="corner-blink absolute -bottom-px -left-px w-5 h-5 border-b-2 border-l-2 border-brand-red" aria-hidden style={{ animationDelay: "1s" }} />
+        <span className="corner-blink absolute -bottom-px -right-px w-5 h-5 border-b-2 border-r-2 border-brand-red" aria-hidden style={{ animationDelay: "1.5s" }} />
       </div>
 
       {/* Info membro */}
