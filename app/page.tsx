@@ -18,11 +18,8 @@ import {
 } from "@/lib/event";
 
 const TICKER = [
-  "not for everyone",
-  "mercoledì 08.07",
-  VENUE_NAME,
-  "il 99% resta a casa",
-  "ingresso con pass",
+  "08.07 il nuovo mercoledì 1%",
+  "partecipa all'estrazione nell'area benvenuto e ritira il tuo regalo",
 ];
 
 export default function LandingPage() {

@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  // Formato token_hash: funziona anche se la mail viene aperta in un
+  // browser diverso da quello che l'ha richiesta (niente verifier PKCE).
+  const tokenHash = url.searchParams.get("token_hash");
+  const otpType = url.searchParams.get("type") as EmailOtpType | null;
   // Destinazione interna richiesta (es. /admin/dashboard per lo staff).
   const nextParam = url.searchParams.get("next");
   const next = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
@@ -13,6 +18,9 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient();
     await supabase.auth.exchangeCodeForSession(code);
+  } else if (tokenHash && otpType) {
+    const supabase = await createClient();
+    await supabase.auth.verifyOtp({ type: otpType, token_hash: tokenHash });
   }
 
   // Se ha già un profilo → card, altrimenti → registrazione
