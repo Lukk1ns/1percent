@@ -21,10 +21,15 @@ function Digit({ value }: { value: string }) {
   );
 }
 
+const ZERO = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+
 export function Countdown({ target }: { target: Date }) {
-  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(target));
+  // Parte da zero (uguale su server e client → niente mismatch di hydration),
+  // poi al mount calcola il valore reale e avvia il tick al secondo.
+  const [timeLeft, setTimeLeft] = useState(ZERO);
 
   useEffect(() => {
+    setTimeLeft(getTimeLeft(target));
     const interval = setInterval(() => setTimeLeft(getTimeLeft(target)), 1000);
     return () => clearInterval(interval);
   }, [target]);
