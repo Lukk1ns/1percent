@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Countdown } from "@/components/Countdown";
 import { MemberCounter } from "@/components/MemberCounter";
@@ -8,6 +8,7 @@ import { EntrySequence } from "@/components/EntrySequence";
 import { LiveFeed } from "@/components/LiveFeed";
 import { PostitBoard } from "@/components/PostitBoard";
 import { PostForm } from "@/components/PostForm";
+import { createClient } from "@/lib/supabase/client";
 import {
   EVENT_DATE,
   EVENT_PAYOFF,
@@ -18,7 +19,23 @@ import {
 export default function LandingPage() {
   const [entered, setEntered] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  // null = ancora da verificare, true/false = esito controllo login
+  const [isMember, setIsMember] = useState<boolean | null>(null);
   const handleDone = useCallback(() => setEntered(true), []);
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setIsMember(false); return; }
+      const { data } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+      setIsMember(Boolean(data));
+    })();
+  }, []);
 
   const dateLabel = EVENT_DATE.toLocaleDateString("it-IT", {
     weekday: "long",
@@ -103,13 +120,39 @@ export default function LandingPage() {
           <Countdown target={EVENT_DATE} />
         </div>
 
-        <Link
-          href="/unisciti"
-          className="relative z-10 mt-10 inline-flex items-center gap-2 bg-brand-red px-8 py-4 text-sm font-semibold uppercase tracking-widest text-white transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(224,24,31,0.5)] active:scale-95 animate-fade-up"
-          style={{ animationDelay: "0.65s" }}
-        >
-          Ci sei o no?
-        </Link>
+        {isMember ? (
+          <div
+            className="relative z-10 mt-10 flex flex-col items-center gap-3 animate-fade-up sm:flex-row"
+            style={{ animationDelay: "0.65s" }}
+          >
+            <Link
+              href="/card"
+              className="inline-flex items-center gap-2 bg-brand-red px-8 py-4 text-sm font-semibold uppercase tracking-widest text-white transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(224,24,31,0.5)] active:scale-95"
+            >
+              La tua card
+            </Link>
+            <Link
+              href="/pass"
+              className="inline-flex items-center gap-2 border border-brand-red/60 px-8 py-4 text-sm font-semibold uppercase tracking-widest text-white transition-all hover:scale-105 hover:border-brand-red active:scale-95"
+            >
+              Il tuo pass
+            </Link>
+            <Link
+              href="/invita"
+              className="inline-flex items-center gap-2 border border-white/20 px-8 py-4 text-sm font-semibold uppercase tracking-widest text-brand-gray transition-all hover:scale-105 hover:text-white active:scale-95"
+            >
+              Invita
+            </Link>
+          </div>
+        ) : (
+          <Link
+            href="/unisciti"
+            className="relative z-10 mt-10 inline-flex items-center gap-2 bg-brand-red px-8 py-4 text-sm font-semibold uppercase tracking-widest text-white transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(224,24,31,0.5)] active:scale-95 animate-fade-up"
+            style={{ animationDelay: "0.65s" }}
+          >
+            Ci sei o no?
+          </Link>
+        )}
 
         <div className="relative z-10 animate-fade-up" style={{ animationDelay: "0.8s" }}>
           <MemberCounter />
@@ -124,13 +167,15 @@ export default function LandingPage() {
           {dateLabel} · {VENUE_NAME} · {VENUE_CITY}
         </p>
 
-        <Link
-          href="/login"
-          className="relative z-10 mt-6 text-xs uppercase tracking-widest text-brand-gray hover:text-white transition-colors animate-fade-up"
-          style={{ animationDelay: "1.1s" }}
-        >
-          Già dell&apos;1%? Rientra →
-        </Link>
+        {!isMember && (
+          <Link
+            href="/login"
+            className="relative z-10 mt-6 text-xs uppercase tracking-widest text-brand-gray hover:text-white transition-colors animate-fade-up"
+            style={{ animationDelay: "1.1s" }}
+          >
+            Già dell&apos;1%? Rientra →
+          </Link>
+        )}
 
         <button
           onClick={() => setShowForm(true)}
