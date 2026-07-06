@@ -81,7 +81,10 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 | `/card` | Card membro digitale (screenshottabile, salvabile) |
 | `/pass` | QR pass ingresso |
 | `/invita` | Link referral personale + contatore inviti |
-| `/membri` | Il Muro: tutti i membri, classifica poke 👊, poke 1/giorno |
+| `/membri` | Il Muro: volti sfocati di tutti i membri, classifica poke 👊, poke 1/giorno |
+| `/profilo` | Il proprio profilo: upload foto (sfocata per gli altri), bio |
+| `/profilo/prova` | Interna, non linkata: confronto 3 livelli di blur |
+| `/u/[alias]` | Profilo pubblico di un membro (solo per membri) |
 | `/login` | Accesso per membri esistenti (magic link email) |
 | `/privacy` | Privacy policy GDPR + cancellazione dati |
 | `/admin/login` | Login staff |
@@ -100,6 +103,8 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 | `admins` | Email degli staff autorizzati a validare QR |
 | `pokes` | Poke 👊 tra membri: from/to, 1 al giorno per coppia (unique su data IT), flag seen. RLS: solo il ricevente legge i propri. SQL in `supabase/pokes.sql` |
 
+**Storage** (SQL in `supabase/volti.sql`): bucket `volti` (foto nitide, PRIVATO) + `volti-blur` (foto sfocate generate dal server, PUBBLICO). Path sempre `<uuid>/volto.webp`. Il blur è fatto con sharp nell'API route `/api/volto` (mai CSS), EXIF strippati. Livello blur: `BLUR_SIGMA` in `lib/volto.ts`.
+
 ### Funzioni RPC (chiamate dal sito)
 - `join_one_percent(...)` — crea profilo + pass in un colpo solo
 - `member_count()` — numero totale membri (per il contatore live)
@@ -115,6 +120,11 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 - `members_wall()` — tutti i membri con conteggio poke + già-pokato-oggi (solo membri)
 - `my_pokes_received(limit)` — chi mi ha pokato (solo il ricevente)
 - `unseen_pokes_count()` / `mark_pokes_seen()` — badge notifiche poke
+- `set_my_photo()` / `clear_my_photo()` — registra/rimuove la foto profilo (file inclusi)
+- `update_my_bio(text)` — bio max 120 char
+- `public_profile(alias)` — dati per /u/[alias] (solo membri, niente PII)
+- `admin_remove_photo(uuid)` — staff rimuove una foto inappropriata
+- `members_wall()` v2 — ora include photo_blur_path/photo_updated_at
 
 ---
 
@@ -165,3 +175,13 @@ npm run dev
 - Titolare dati GDPR: Papi on the Beach / QFB SRL
 - Sessione: anonima Supabase con opzione email per persistenza cross-device
 - Nessun messaggio privato in Fase 1 (sicurezza minori)
+
+---
+
+## Fase A social "I Volti" (6 luglio 2026) — SUPERA due decisioni Fase 1
+
+Progetto completo in `~/Desktop/ClaudeLukkins/PROPOSTE/proposta_social_1percent.md`.
+Foto profilo OPZIONALE e sfocata (consenso esplicito + autodichiarazione 16+ al caricamento).
+La foto nitida non lascia mai il server verso terzi: bucket privato + URL firmati (solo proprietario; in Fase B i "Legami" da poke reciproco).
+⚠️ Dopo il deploy serve incollare `supabase/volti.sql` nel SQL Editor (colonne profiles: photo_blur_path, photo_updated_at, photo_consent_at, bio). Finché non è fatto: /profilo rimbalza a /unisciti (colonne mancanti), /u/[alias] dà "Nessuno qui", il muro resta a emoji.
+Prossime fasi: B = Legami (reveal foto con poke reciproco), C = messaggi richiesta+accetta.
