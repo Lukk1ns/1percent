@@ -88,7 +88,8 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, updatedAt });
 }
 
-// Rimozione: la RPC cancella file (entrambi i bucket) e colonne.
+// Rimozione: i file via Storage API (Supabase vieta il delete SQL
+// sulle tabelle storage), le colonne via RPC.
 export async function DELETE() {
   const supabase = await createClient();
   const {
@@ -98,9 +99,18 @@ export async function DELETE() {
     return NextResponse.json({ error: "no-session" }, { status: 401 });
   }
 
+  const path = voltoPath(user.id);
+  await Promise.all([
+    supabase.storage.from("volti").remove([path]),
+    supabase.storage.from("volti-blur").remove([path]),
+  ]);
+
   const { error } = await supabase.rpc("clear_my_photo");
   if (error) {
-    return NextResponse.json({ error: "delete-failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "delete-failed", detail: error.message },
+      { status: 500 },
+    );
   }
   return NextResponse.json({ ok: true });
 }

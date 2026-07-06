@@ -131,6 +131,12 @@ export default function AdminDashboardPage() {
     if (!confirm(`Rimuovere la foto di ${report.reported_alias}? Tornerà all'emoji.`)) return;
     setWorking(report.id);
     const supabase = createClient();
+    // File via Storage API (policy admin), colonne via RPC
+    const path = `${report.reported_id}/volto.webp`;
+    await Promise.all([
+      supabase.storage.from("volti").remove([path]),
+      supabase.storage.from("volti-blur").remove([path]),
+    ]).catch(() => {});
     await supabase.rpc("admin_remove_photo", { p_profile: report.reported_id });
     await load();
     setWorking(null);

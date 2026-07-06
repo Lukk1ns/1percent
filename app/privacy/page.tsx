@@ -16,6 +16,12 @@ export default function PrivacyPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+      // Le foto vanno rimosse via Storage API (Supabase vieta il
+      // delete SQL sulle tabelle storage); poi la RPC pulisce il resto.
+      await Promise.all([
+        supabase.storage.from("volti").remove([`${user.id}/volto.webp`]),
+        supabase.storage.from("volti-blur").remove([`${user.id}/volto.webp`]),
+      ]).catch(() => {});
       await supabase.rpc("delete_my_profile");
       await supabase.auth.signOut();
     }
