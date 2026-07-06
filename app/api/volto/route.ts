@@ -37,18 +37,23 @@ export async function GET() {
     supabase.storage.from("volti-blur").list(user.id),
   ]);
 
+  // URL esattamente come li usa il sito (compreso il ?v= cache-busting)
+  let blurUrl: string | null = null;
   let blurUrlStatus: number | string = "n/a";
   if (prof?.photo_blur_path) {
+    const v = prof.photo_updated_at ? new Date(prof.photo_updated_at).getTime() : 0;
+    blurUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/volti-blur/${prof.photo_blur_path}${v ? `?v=${v}` : ""}`;
     try {
-      const r = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/volti-blur/${prof.photo_blur_path}`,
-        { method: "HEAD" },
-      );
+      const r = await fetch(blurUrl, { method: "HEAD" });
       blurUrlStatus = r.status;
     } catch {
       blurUrlStatus = "fetch-error";
     }
   }
+
+  const { data: signed, error: signErr } = await supabase.storage
+    .from("volti")
+    .createSignedUrl(`${user.id}/volto.webp`, 300);
 
   return NextResponse.json({
     diagnostica: "stato foto profilo",
@@ -59,6 +64,8 @@ export async function GET() {
     file_nitida_presente: (filesClear ?? []).some((f) => f.name === "volto.webp"),
     file_sfocata_presente: (filesBlur ?? []).some((f) => f.name === "volto.webp"),
     url_sfocata_risponde: blurUrlStatus,
+    url_sfocata: blurUrl,
+    url_nitida_firmata: signErr ? `FAIL: ${signErr.message}` : (signed?.signedUrl ?? null),
   });
 }
 
