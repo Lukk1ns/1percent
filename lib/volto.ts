@@ -13,10 +13,11 @@ export const BLUR_LEVELS = [
   { id: "leggero", sigma: 4 },
   { id: "medio", sigma: 6 },
   { id: "forte", sigma: 9 },
+  { id: "extra", sigma: 11 },
 ] as const;
 
-// Livello attivo: "il giusto per non capire chi è, ma che si intravveda".
-export const BLUR_SIGMA = 6;
+// Livello attivo, scelto da Luka: "più forte del forte".
+export const BLUR_SIGMA = 11;
 
 // Iscritto prima dell'opening (8 luglio 2026) = Founding Member.
 export const FOUNDING_CUTOFF = "2026-07-09T00:00:00+02:00";
