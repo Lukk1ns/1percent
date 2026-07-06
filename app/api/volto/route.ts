@@ -15,6 +15,53 @@ export const runtime = "nodejs";
 
 const MAX_BYTES = 6 * 1024 * 1024;
 
+// Diagnostica: GET /api/volto → stato reale della propria foto
+// (profilo + esistenza file nei bucket). Solo per il proprietario.
+export async function GET() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "no-session (fai login e riapri)" }, { status: 401 });
+  }
+
+  const { data: prof, error: profErr } = await supabase
+    .from("profiles")
+    .select("alias,photo_blur_path,photo_updated_at")
+    .eq("id", user.id)
+    .single();
+
+  const [{ data: filesClear }, { data: filesBlur }] = await Promise.all([
+    supabase.storage.from("volti").list(user.id),
+    supabase.storage.from("volti-blur").list(user.id),
+  ]);
+
+  let blurUrlStatus: number | string = "n/a";
+  if (prof?.photo_blur_path) {
+    try {
+      const r = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/volti-blur/${prof.photo_blur_path}`,
+        { method: "HEAD" },
+      );
+      blurUrlStatus = r.status;
+    } catch {
+      blurUrlStatus = "fetch-error";
+    }
+  }
+
+  return NextResponse.json({
+    diagnostica: "stato foto profilo",
+    alias: prof?.alias ?? null,
+    profilo_trovato: !profErr,
+    foto_registrata: !!prof?.photo_blur_path,
+    registrata_il: prof?.photo_updated_at ?? null,
+    file_nitida_presente: (filesClear ?? []).some((f) => f.name === "volto.webp"),
+    file_sfocata_presente: (filesBlur ?? []).some((f) => f.name === "volto.webp"),
+    url_sfocata_risponde: blurUrlStatus,
+  });
+}
+
 export async function POST(req: Request) {
   const supabase = await createClient();
   const {
