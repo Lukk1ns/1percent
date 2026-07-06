@@ -4,11 +4,14 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
+import Volto from "@/components/Volto";
 
 type WallRow = {
   member_number: number;
   alias: string;
   avatar_id: string;
+  photo_blur_path?: string | null;
+  photo_updated_at?: string | null;
   poke_count: number;
   poked_by_me_today: boolean;
   is_me: boolean;
@@ -214,7 +217,19 @@ function MembriWall() {
                 style={{ minWidth: "5.2rem" }}
               >
                 <span className="text-lg">{MEDALS[idx]}</span>
-                <span className={`${isFirst ? "text-2xl" : "text-xl"} mt-1`}>{getAvatar(r.avatar_id).emoji}</span>
+                <button
+                  onClick={() => router.push(`/u/${encodeURIComponent(r.alias)}`)}
+                  className="mt-1 hover:scale-105 transition-transform"
+                  aria-label={`Profilo di ${r.alias}`}
+                >
+                  <Volto
+                    photoBlurPath={r.photo_blur_path}
+                    photoUpdatedAt={r.photo_updated_at}
+                    avatarId={r.avatar_id}
+                    size={isFirst ? 44 : 36}
+                    alt={r.alias}
+                  />
+                </button>
                 <span className="text-xs text-white font-mono mt-1 max-w-[5rem] truncate">{r.alias}</span>
                 <span className="font-display text-brand-red text-lg mt-0.5" style={{ textShadow: "0 0 12px rgba(224,24,31,0.4)" }}>
                   {r.poke_count} 👊
@@ -247,11 +262,23 @@ function MembriWall() {
               style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}
             >
               <span className="text-[10px] font-mono text-brand-gray/50 w-7">#{rank}</span>
-              <span className="text-lg">{getAvatar(r.avatar_id).emoji}</span>
-              <span className="text-sm text-white/85 font-mono truncate">
-                {r.alias}
-                {r.is_me && <span className="text-brand-red/70 text-[10px] ml-1.5">tu</span>}
-              </span>
+              <button
+                onClick={() => router.push(`/u/${encodeURIComponent(r.alias)}`)}
+                className="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-opacity"
+                aria-label={`Profilo di ${r.alias}`}
+              >
+                <Volto
+                  photoBlurPath={r.photo_blur_path}
+                  photoUpdatedAt={r.photo_updated_at}
+                  avatarId={r.avatar_id}
+                  size={30}
+                  alt={r.alias}
+                />
+                <span className="text-sm text-white/85 font-mono truncate">
+                  {r.alias}
+                  {r.is_me && <span className="text-brand-red/70 text-[10px] ml-1.5">tu</span>}
+                </span>
+              </button>
               <span className="ml-auto text-xs text-brand-gray tabular-nums whitespace-nowrap">
                 {r.poke_count} 👊
               </span>
@@ -283,6 +310,7 @@ function MembriWall() {
         <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
         <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">Pass</button>
         <button onClick={() => router.push("/membri")} className="text-brand-red">Muro</button>
+        <button onClick={() => router.push("/profilo")} className="hover:text-brand-gray transition-colors">Profilo</button>
         <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>
       </nav>
     </main>
