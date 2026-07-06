@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { FOUNDING_CUTOFF } from "@/lib/volto";
 import { fetchLegami } from "@/lib/legami";
 import Volto from "@/components/Volto";
 import RevealLegame from "@/components/RevealLegame";
@@ -187,7 +186,6 @@ export default function ProfiloPubblicoPage() {
     );
   }
 
-  const isFounder = new Date(p.created_at) < new Date(FOUNDING_CUTOFF);
   const showRank = Number(p.poke_count) > 0;
 
   return (
@@ -224,11 +222,6 @@ export default function ProfiloPubblicoPage() {
             style={{ textShadow: "0 0 8px rgba(224,24,31,0.6)" }}
           >
             🔗 legame
-          </span>
-        )}
-        {isFounder && (
-          <span className="px-2 py-1 text-[9px] uppercase tracking-widest border border-brand-red/50 text-brand-red">
-            founder
           </span>
         )}
         {p.archetype && (

@@ -20,9 +20,6 @@ export const BLUR_LEVELS = [
 // Livello attivo, scelto da Luka: "ancora più sfocato" (7 lug 2026).
 export const BLUR_SIGMA = 14;
 
-// Iscritto prima dell'opening (8 luglio 2026) = Founding Member.
-export const FOUNDING_CUTOFF = "2026-07-09T00:00:00+02:00";
-
 // URL pubblico della foto sfocata (+ cache-busting quando viene ricaricata).
 export function voltoBlurUrl(
   photoBlurPath: string,

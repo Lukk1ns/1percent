@@ -163,6 +163,9 @@ export default function LandingPage() {
               <Link href="/membri" className="btn btn-outline">
                 Il muro 👊
               </Link>
+              <Link href="/profilo" className="btn btn-outline">
+                Il tuo profilo
+              </Link>
               <Link href="/invita" className="btn btn-ghost">
                 Invita
               </Link>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { getAvatar } from "@/lib/avatars";
 import { voltoBlurUrl } from "@/lib/volto";
 
@@ -30,9 +31,13 @@ export default function Volto({
   alt = "",
   className = "",
 }: Props) {
+  // Se l'immagine non si carica (file mancante, rete), niente icona
+  // rotta del browser: si torna all'emoji.
+  const [broken, setBroken] = useState(false);
+
   const blurred =
     blurSrc ?? (photoBlurPath ? voltoBlurUrl(photoBlurPath, photoUpdatedAt) : null);
-  const src = clearUrl ?? blurred;
+  const src = broken ? null : (clearUrl ?? blurred);
 
   if (!src) {
     // Fallback: avatar emoji (set originale)
@@ -61,6 +66,7 @@ export default function Volto({
         className="w-full h-full object-cover select-none"
         draggable={false}
         loading="lazy"
+        onError={() => setBroken(true)}
       />
       {/* Velo rosso brand solo sulle foto sfocate */}
       {!clearUrl && (
