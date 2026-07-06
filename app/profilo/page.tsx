@@ -314,12 +314,18 @@ export default function ProfiloPage() {
         </div>
       </section>
 
-      {/* ---- Link al profilo pubblico ---- */}
+      {/* ---- Link al profilo pubblico e ai legami ---- */}
       <button
         onClick={() => router.push(`/u/${encodeURIComponent(profile.alias)}`)}
         className="btn btn-outline w-full"
       >
         Guarda come ti vedono gli altri →
+      </button>
+      <button
+        onClick={() => router.push("/legami")}
+        className="btn btn-ghost w-full mt-3 text-xs"
+      >
+        🔗 I tuoi legami
       </button>
 
       {/* Nav bottom */}

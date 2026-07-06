@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { FOUNDING_CUTOFF } from "@/lib/volto";
+import { fetchLegami } from "@/lib/legami";
 import Volto from "@/components/Volto";
+import RevealLegame from "@/components/RevealLegame";
 
 type PublicProfile = {
   member_number: number;
@@ -29,6 +31,9 @@ export default function ProfiloPubblicoPage() {
   const [p, setP] = useState<PublicProfile | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasLink, setHasLink] = useState(false);
+  const [clearUrl, setClearUrl] = useState<string | null>(null);
+  const [reveal, setReveal] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -48,6 +53,14 @@ export default function ProfiloPubblicoPage() {
       return;
     }
     setP(row as PublicProfile);
+
+    // Legame? Allora il volto è nitido (URL firmato: lo decide il server).
+    const prof = row as PublicProfile;
+    if (!prof.is_me) {
+      const res = await fetchLegami(supabase);
+      setHasLink(res.legami.some((l) => l.member_number === prof.member_number));
+      setClearUrl(res.clearUrls.get(prof.member_number) ?? null);
+    }
     setLoading(false);
   }, [alias, router]);
 
@@ -66,6 +79,15 @@ export default function ProfiloPubblicoPage() {
     const { data, error } = await supabase.rpc("send_poke", {
       p_member_number: p.member_number,
     });
+    if (data === "link") {
+      // Poke reciproco: rivelazione
+      const res = await fetchLegami(supabase);
+      const url = res.clearUrls.get(p.member_number) ?? null;
+      setHasLink(true);
+      setClearUrl(url);
+      setReveal(true);
+      return;
+    }
     if (error || (data !== "ok" && data !== "already")) {
       setP((prev) =>
         prev
@@ -105,10 +127,19 @@ export default function ProfiloPubblicoPage() {
 
   return (
     <main className="flex-1 flex flex-col items-center px-4 py-10 w-full max-w-md mx-auto">
+      {reveal && (
+        <RevealLegame
+          alias={p.alias}
+          clearUrl={clearUrl}
+          avatarId={p.avatar_id}
+          onClose={() => setReveal(false)}
+        />
+      )}
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-6">membro dell&apos;1%</p>
 
-      {/* Il volto */}
+      {/* Il volto (nitido solo se c'è il Legame) */}
       <Volto
+        clearUrl={clearUrl}
         photoBlurPath={p.photo_blur_path}
         photoUpdatedAt={p.photo_updated_at}
         avatarId={p.avatar_id}
@@ -122,6 +153,14 @@ export default function ProfiloPubblicoPage() {
 
       {/* Badge */}
       <div className="flex gap-2 mt-3">
+        {hasLink && (
+          <span
+            className="px-2 py-1 text-[9px] uppercase tracking-widest bg-brand-red/15 border border-brand-red text-white"
+            style={{ textShadow: "0 0 8px rgba(224,24,31,0.6)" }}
+          >
+            🔗 legame
+          </span>
+        )}
         {isFounder && (
           <span className="px-2 py-1 text-[9px] uppercase tracking-widest border border-brand-red/50 text-brand-red">
             founder

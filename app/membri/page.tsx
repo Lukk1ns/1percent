@@ -4,7 +4,9 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
+import { fetchLegami, type Legame } from "@/lib/legami";
 import Volto from "@/components/Volto";
+import RevealLegame from "@/components/RevealLegame";
 
 type WallRow = {
   member_number: number;
@@ -38,13 +40,25 @@ function MembriWall() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [wallError, setWallError] = useState(false);
+  const [legami, setLegami] = useState<Legame[]>([]);
+  const [clearUrls, setClearUrls] = useState<Map<number, string>>(new Map());
+  const [reveal, setReveal] = useState<{ alias: string; clearUrl: string | null; avatarId: string | null } | null>(null);
   const userIdRef = useRef<string | null>(null);
+  const legamiCountRef = useRef(0);
 
   const loadWall = useCallback(async () => {
     const supabase = createClient();
     const { data, error } = await supabase.rpc("members_wall");
     if (error) { setWallError(true); return; }
     setRows((data ?? []) as WallRow[]);
+  }, []);
+
+  const loadLegami = useCallback(async () => {
+    const supabase = createClient();
+    const res = await fetchLegami(supabase);
+    setLegami(res.legami);
+    setClearUrls(res.clearUrls);
+    return res;
   }, []);
 
   const loadReceived = useCallback(async () => {
@@ -69,7 +83,8 @@ function MembriWall() {
       if (!profile) { router.replace("/unisciti"); return; }
       userIdRef.current = user.id;
 
-      await Promise.all([loadWall(), loadReceived()]);
+      const [, , resLegami] = await Promise.all([loadWall(), loadReceived(), loadLegami()]);
+      legamiCountRef.current = resLegami.legami.length;
       setLoading(false);
 
       // Arrivo dalla notifica: apro subito la lista e segno i poke come visti
@@ -79,13 +94,28 @@ function MembriWall() {
         await supabase.rpc("mark_pokes_seen");
       }
 
-      // Poke in arrivo in tempo reale (la RLS fa passare solo i miei)
+      // Poke in arrivo in tempo reale (la RLS fa passare solo i miei).
+      // Se il poke ricevuto chiude un cerchio → rivelazione anche per me.
       channel = supabase
         .channel("my_pokes")
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "pokes", filter: `to_profile=eq.${user.id}` },
-          () => { loadReceived(); loadWall(); },
+          async () => {
+            loadReceived();
+            loadWall();
+            const prima = legamiCountRef.current;
+            const res = await loadLegami();
+            legamiCountRef.current = res.legami.length;
+            if (res.legami.length > prima && res.legami[0]) {
+              const nuovo = res.legami[0];
+              setReveal({
+                alias: nuovo.alias,
+                clearUrl: res.clearUrls.get(nuovo.member_number) ?? null,
+                avatarId: nuovo.avatar_id,
+              });
+            }
+          },
         )
         .subscribe();
     })();
@@ -93,7 +123,7 @@ function MembriWall() {
     return () => {
       if (channel) createClient().removeChannel(channel);
     };
-  }, [router, loadWall, loadReceived, autoOpenReceived]);
+  }, [router, loadWall, loadReceived, loadLegami, autoOpenReceived]);
 
   async function handlePoke(target: WallRow) {
     if (target.is_me || target.poked_by_me_today) return;
@@ -109,6 +139,18 @@ function MembriWall() {
     const { data, error } = await supabase.rpc("send_poke", {
       p_member_number: target.member_number,
     });
+    if (data === "link") {
+      // Poke reciproco: il cerchio si chiude → rivelazione
+      const res = await loadLegami();
+      legamiCountRef.current = res.legami.length;
+      const nuovo = res.legami.find((l) => l.member_number === target.member_number);
+      setReveal({
+        alias: target.alias,
+        clearUrl: nuovo ? (res.clearUrls.get(nuovo.member_number) ?? null) : null,
+        avatarId: nuovo?.avatar_id ?? target.avatar_id,
+      });
+      return;
+    }
     if (error || (data !== "ok" && data !== "already")) {
       // Rollback se qualcosa è andato storto
       setRows((prev) =>
@@ -156,6 +198,14 @@ function MembriWall() {
 
   return (
     <main className="flex-1 flex flex-col items-center px-4 py-10 w-full max-w-md mx-auto">
+      {reveal && (
+        <RevealLegame
+          alias={reveal.alias}
+          clearUrl={reveal.clearUrl}
+          avatarId={reveal.avatarId}
+          onClose={() => setReveal(null)}
+        />
+      )}
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">il muro</p>
       <h1 className="font-display text-brand-red text-5xl mb-3">1%</h1>
       <p className="text-brand-gray text-sm text-center mb-1 max-w-xs">
@@ -164,6 +214,16 @@ function MembriWall() {
       <p className="text-brand-gray/60 text-xs text-center mb-8 max-w-xs">
         Gli altri vedono solo i numeri. Chi lo riceve scopre chi sei.
       </p>
+
+      {/* I miei legami */}
+      {legami.length > 0 && (
+        <button
+          onClick={() => router.push("/legami")}
+          className="btn btn-outline w-full mb-3"
+        >
+          🔗 I tuoi legami: {legami.length}
+        </button>
+      )}
 
       {/* I miei poke ricevuti */}
       {received.length > 0 && (
@@ -223,6 +283,7 @@ function MembriWall() {
                   aria-label={`Profilo di ${r.alias}`}
                 >
                   <Volto
+                    clearUrl={clearUrls.get(r.member_number) ?? null}
                     photoBlurPath={r.photo_blur_path}
                     photoUpdatedAt={r.photo_updated_at}
                     avatarId={r.avatar_id}
@@ -268,6 +329,7 @@ function MembriWall() {
                 aria-label={`Profilo di ${r.alias}`}
               >
                 <Volto
+                  clearUrl={clearUrls.get(r.member_number) ?? null}
                   photoBlurPath={r.photo_blur_path}
                   photoUpdatedAt={r.photo_updated_at}
                   avatarId={r.avatar_id}
