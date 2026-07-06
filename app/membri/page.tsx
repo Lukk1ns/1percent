@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 
@@ -23,8 +23,11 @@ type ReceivedPoke = {
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
-export default function MembriPage() {
+function MembriWall() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Arrivando dalla notifica (?ricevuti=1) apro subito la lista "chi ti ha pokato"
+  const autoOpenReceived = searchParams.get("ricevuti") === "1";
   const [rows, setRows] = useState<WallRow[]>([]);
   const [received, setReceived] = useState<ReceivedPoke[]>([]);
   const [unseen, setUnseen] = useState(0);
@@ -66,6 +69,13 @@ export default function MembriPage() {
       await Promise.all([loadWall(), loadReceived()]);
       setLoading(false);
 
+      // Arrivo dalla notifica: apro subito la lista e segno i poke come visti
+      if (autoOpenReceived) {
+        setShowReceived(true);
+        setUnseen(0);
+        await supabase.rpc("mark_pokes_seen");
+      }
+
       // Poke in arrivo in tempo reale (la RLS fa passare solo i miei)
       channel = supabase
         .channel("my_pokes")
@@ -80,7 +90,7 @@ export default function MembriPage() {
     return () => {
       if (channel) createClient().removeChannel(channel);
     };
-  }, [router, loadWall, loadReceived]);
+  }, [router, loadWall, loadReceived, autoOpenReceived]);
 
   async function handlePoke(target: WallRow) {
     if (target.is_me || target.poked_by_me_today) return;
@@ -276,5 +286,19 @@ export default function MembriPage() {
         <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>
       </nav>
     </main>
+  );
+}
+
+export default function MembriPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex-1 flex items-center justify-center">
+          <div className="font-display text-brand-red text-6xl animate-pulse-glow">1%</div>
+        </main>
+      }
+    >
+      <MembriWall />
+    </Suspense>
   );
 }

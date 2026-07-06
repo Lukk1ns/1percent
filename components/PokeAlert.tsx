@@ -26,7 +26,7 @@ export function PokeAlert() {
 
   return (
     <Link
-      href="/membri"
+      href="/membri?ricevuti=1"
       className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-white border border-brand-red/60 bg-black/85 backdrop-blur-sm animate-fade-up"
       style={{
         clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",

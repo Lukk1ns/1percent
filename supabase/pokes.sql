@@ -176,3 +176,19 @@ as $$
 $$;
 
 grant execute on function public.mark_pokes_seen() to authenticated;
+
+-- ------------------------------------------------------------
+-- pokes_received_count: totale poke ricevuti (visti + non visti).
+-- Per il contatore sempre visibile sulla card.
+-- ------------------------------------------------------------
+create or replace function public.pokes_received_count()
+returns integer
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select count(*)::int from pokes where to_profile = auth.uid();
+$$;
+
+grant execute on function public.pokes_received_count() to authenticated;

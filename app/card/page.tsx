@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 import { PokeAlert } from "@/components/PokeAlert";
+import { PokeCounter } from "@/components/PokeCounter";
 import { VENUE_NAME, VENUE_CITY } from "@/lib/event";
 
 type Profile = {
@@ -244,6 +245,7 @@ export default function CardPage() {
 
       {/* Azioni */}
       <div className="w-full max-w-sm mt-6 flex flex-col gap-3">
+        <PokeCounter />
         <button
           onClick={handleSaveCard}
           disabled={saving}
