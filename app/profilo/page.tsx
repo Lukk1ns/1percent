@@ -39,6 +39,9 @@ export default function ProfiloPage() {
   const [bioSaved, setBioSaved] = useState(false);
   const [bioSaving, setBioSaving] = useState(false);
 
+  // Elimina profilo
+  const [deleting, setDeleting] = useState(false);
+
   const loadProfile = useCallback(async () => {
     const supabase = createClient();
     const {
@@ -143,6 +146,26 @@ export default function ProfiloPage() {
       setLoading(true);
       await loadProfile();
     }
+  }
+
+  async function handleDeleteProfile() {
+    if (!window.confirm("Eliminare il tuo profilo? Spariranno foto, pass, poke, legami e messaggi. Non si torna indietro.")) return;
+    if (!window.confirm("Sicuro sicuro? Questa è definitiva.")) return;
+    setDeleting(true);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      // Foto via Storage API (Supabase vieta il delete SQL), poi la RPC
+      await Promise.all([
+        supabase.storage.from("volti").remove([`${user.id}/volto.webp`]),
+        supabase.storage.from("volti-blur").remove([`${user.id}/volto.webp`]),
+      ]).catch(() => {});
+      await supabase.rpc("delete_my_profile");
+      await supabase.auth.signOut();
+    }
+    router.replace("/");
   }
 
   async function handleSaveBio() {
@@ -347,6 +370,20 @@ export default function ProfiloPage() {
         <button onClick={() => router.push("/profilo")} className="text-brand-red">Profilo</button>
         <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>
       </nav>
+
+      {/* ---- Zona pericolosa: elimina profilo ---- */}
+      <div className="w-full mt-8 pt-6 border-t border-white/5 flex flex-col items-center">
+        <button
+          onClick={handleDeleteProfile}
+          disabled={deleting}
+          className="text-[10px] uppercase tracking-widest text-brand-gray/40 hover:text-brand-red transition-colors"
+        >
+          {deleting ? "elimino..." : "elimina il mio profilo"}
+        </button>
+        <p className="text-[9px] text-brand-gray/30 mt-2 text-center max-w-xs">
+          Cancella tutto: foto, pass, poke, legami e messaggi. Definitivo.
+        </p>
+      </div>
     </main>
   );
 }

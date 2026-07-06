@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
-import { PokeAlert } from "@/components/PokeAlert";
 import { PokeCounter } from "@/components/PokeCounter";
 import { VENUE_NAME, VENUE_CITY } from "@/lib/event";
 
@@ -134,8 +133,6 @@ export default function CardPage() {
 
   return (
     <main className="flex-1 flex flex-col items-center px-4 py-8">
-      <PokeAlert />
-
       {/* Wrapper tilt 3D — segue il puntatore, lo screenshot resta sulla card interna */}
       <div
         ref={tiltRef}

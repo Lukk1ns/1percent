@@ -9,7 +9,6 @@ import { LiveFeed } from "@/components/LiveFeed";
 import { PostitBoard } from "@/components/PostitBoard";
 import { PostForm } from "@/components/PostForm";
 import { Marquee } from "@/components/Marquee";
-import { PokeAlert } from "@/components/PokeAlert";
 import { createClient } from "@/lib/supabase/client";
 import {
   EVENT_DATE,
@@ -63,7 +62,6 @@ export default function LandingPage() {
     <>
       {!entered && <EntrySequence onDone={handleDone} />}
       {entered && <PostitBoard />}
-      {entered && <PokeAlert />}
       {showForm && <PostForm onClose={() => setShowForm(false)} />}
 
       <main
