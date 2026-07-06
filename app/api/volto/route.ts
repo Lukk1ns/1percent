@@ -120,8 +120,8 @@ export async function POST(req: Request) {
   // binari dell'immagine si corrompono (→ webp illeggibile). Il Blob
   // è sempre trattato come binario.
   const path = voltoPath(user.id);
-  const clearBlob = new Blob([clear], { type: "image/webp" });
-  const blurredBlob = new Blob([blurred], { type: "image/webp" });
+  const clearBlob = new Blob([new Uint8Array(clear)], { type: "image/webp" });
+  const blurredBlob = new Blob([new Uint8Array(blurred)], { type: "image/webp" });
   const [up1, up2] = await Promise.all([
     supabase.storage
       .from("volti")
