@@ -34,6 +34,10 @@ export default function ProfiloPubblicoPage() {
   const [hasLink, setHasLink] = useState(false);
   const [clearUrl, setClearUrl] = useState<string | null>(null);
   const [reveal, setReveal] = useState(false);
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeText, setComposeText] = useState("");
+  const [composeInfo, setComposeInfo] = useState<string | null>(null);
+  const [composeSending, setComposeSending] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -99,6 +103,67 @@ export default function ProfiloPubblicoPage() {
           : prev,
       );
     }
+  }
+
+  async function handleSendRequest() {
+    if (!p || !composeText.trim() || composeSending) return;
+    setComposeSending(true);
+    setComposeInfo(null);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("send_chat_request", {
+      p_member_number: p.member_number,
+      p_message: composeText.trim(),
+    });
+    setComposeSending(false);
+    if (error || !data?.status) {
+      setComposeInfo("Qualcosa è andato storto. Riprova.");
+      return;
+    }
+    switch (data.status) {
+      case "legame_open":
+      case "exists":
+        router.push(`/messaggi/${data.conversation_id}`);
+        return;
+      case "ok":
+        setShowCompose(false);
+        setComposeText("");
+        setComposeInfo("Richiesta inviata. Se accetta, la chat si apre.");
+        return;
+      case "pending":
+        setComposeInfo("Richiesta già inviata. Ora si aspetta.");
+        return;
+      case "cooldown":
+        setComposeInfo("Ha già detto no. Riprova tra un mese — o mai.");
+        return;
+      case "limit_pending":
+        setComposeInfo("Hai già 3 richieste in attesa. Calma.");
+        return;
+      case "limit_daily":
+        setComposeInfo("10 richieste in un giorno bastano.");
+        return;
+      default:
+        setComposeInfo("Non si può, per ora.");
+    }
+  }
+
+  async function handleBlock() {
+    if (!p) return;
+    if (!window.confirm(`Bloccare ${p.alias}? Sparite l'uno per l'altro.`)) return;
+    const supabase = createClient();
+    await supabase.rpc("block_member", { p_member_number: p.member_number });
+    router.replace("/membri");
+  }
+
+  async function handleReport() {
+    if (!p) return;
+    const reason = window.prompt(`Perché segnali ${p.alias}? (arriva solo allo staff)`);
+    if (!reason?.trim()) return;
+    const supabase = createClient();
+    const { data } = await supabase.rpc("report_member", {
+      p_member_number: p.member_number,
+      p_reason: reason.trim(),
+    });
+    setComposeInfo(data === "ok" ? "Segnalazione inviata allo staff." : "Segnalazione non inviata.");
   }
 
   if (loading) {
@@ -219,9 +284,52 @@ export default function ProfiloPubblicoPage() {
           >
             {p.poked_by_me_today ? "✓ pokato oggi" : "👊 Poke"}
           </button>
-          <p className="text-brand-gray/40 text-[10px] uppercase tracking-widest">
-            messaggi — presto
-          </p>
+
+          {!showCompose ? (
+            <button onClick={() => { setShowCompose(true); setComposeInfo(null); }} className="btn btn-outline w-full">
+              ✉️ Scrivi
+            </button>
+          ) : (
+            <div className="w-full animate-fade-up">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-brand-gray/60 mb-2">
+                {hasLink ? "legame: la chat si apre subito" : "il primo messaggio arriva come richiesta"}
+              </p>
+              <textarea
+                value={composeText}
+                onChange={(e) => setComposeText(e.target.value.slice(0, 280))}
+                placeholder={hasLink ? "scrivi..." : "una frase buona. ne hai una sola."}
+                rows={2}
+                className="input-line text-sm w-full resize-none"
+                autoFocus
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-[10px] text-brand-gray/40 font-mono">{composeText.length}/280</span>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowCompose(false)} className="btn btn-ghost text-[10px]">
+                    Annulla
+                  </button>
+                  <button
+                    onClick={handleSendRequest}
+                    disabled={!composeText.trim() || composeSending}
+                    className={`btn text-[10px] ${composeText.trim() ? "btn-primary" : "btn-outline opacity-40"}`}
+                  >
+                    {composeSending ? "..." : "Invia"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {composeInfo && <p className="text-brand-red text-xs text-center">{composeInfo}</p>}
+
+          <div className="flex gap-4 mt-2">
+            <button onClick={handleReport} className="text-[9px] uppercase tracking-widest text-brand-gray/40 hover:text-white transition-colors">
+              segnala
+            </button>
+            <button onClick={handleBlock} className="text-[9px] uppercase tracking-widest text-brand-gray/40 hover:text-brand-red transition-colors">
+              blocca
+            </button>
+          </div>
         </div>
       )}
 
@@ -230,8 +338,8 @@ export default function ProfiloPubblicoPage() {
         <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
         <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
         <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
+        <button onClick={() => router.push("/messaggi")} className="hover:text-brand-gray transition-colors">Chat</button>
         <button onClick={() => router.push("/profilo")} className="hover:text-brand-gray transition-colors">Profilo</button>
-        <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>
       </nav>
     </main>
   );

@@ -333,6 +333,7 @@ export default function ProfiloPage() {
         <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
         <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
         <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
+        <button onClick={() => router.push("/messaggi")} className="hover:text-brand-gray transition-colors">Chat</button>
         <button onClick={() => router.push("/profilo")} className="text-brand-red">Profilo</button>
         <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>
       </nav>

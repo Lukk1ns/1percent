@@ -57,9 +57,21 @@ type Member = {
   email: string | null;
 };
 
+type Report = {
+  id: string;
+  reporter_alias: string;
+  reported_alias: string;
+  reported_id: string;
+  reported_number: number;
+  reason: string;
+  status: string;
+  created_at: string;
+};
+
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<"members" | "posts" | "answers">("members");
+  const [tab, setTab] = useState<"members" | "posts" | "answers" | "reports">("members");
+  const [reports, setReports] = useState<Report[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [answerMembers, setAnswerMembers] = useState<AnswerMember[]>([]);
   const [onlyWritten, setOnlyWritten] = useState(false);
@@ -73,12 +85,15 @@ export default function AdminDashboardPage() {
 
   async function load() {
     const supabase = createClient();
-    const [membersRes, postsRes, approvedRes, answersRes] = await Promise.all([
+    const [membersRes, postsRes, approvedRes, answersRes, reportsRes] = await Promise.all([
       supabase.rpc("admin_members"),
       supabase.rpc("admin_pending_posts"),
       supabase.rpc("approved_posts"),
       supabase.rpc("admin_quiz_answers"),
+      supabase.rpc("admin_reports"),
     ]);
+    // reportsRes può fallire finché messaggi.sql non è stato eseguito: non blocca il resto
+    if (reportsRes.data) setReports(reportsRes.data as Report[]);
     if (membersRes.error) setError("Errore membri: " + membersRes.error.message);
     if (membersRes.data) setMembers(membersRes.data as Member[]);
     if (answersRes.data) setAnswerMembers(answersRes.data as AnswerMember[]);
@@ -100,6 +115,23 @@ export default function AdminDashboardPage() {
     setWorking(id);
     const supabase = createClient();
     await supabase.rpc("admin_reject_post", { p_post_id: id });
+    await load();
+    setWorking(null);
+  }
+
+  async function handleCloseReport(id: string) {
+    setWorking(id);
+    const supabase = createClient();
+    await supabase.rpc("admin_close_report", { p_report: id });
+    await load();
+    setWorking(null);
+  }
+
+  async function handleRemovePhoto(report: Report) {
+    if (!confirm(`Rimuovere la foto di ${report.reported_alias}? Tornerà all'emoji.`)) return;
+    setWorking(report.id);
+    const supabase = createClient();
+    await supabase.rpc("admin_remove_photo", { p_profile: report.reported_id });
     await load();
     setWorking(null);
   }
@@ -210,6 +242,17 @@ export default function AdminDashboardPage() {
         >
           Risposte
         </button>
+        <button
+          onClick={() => setTab("reports")}
+          className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all relative ${tab === "reports" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
+        >
+          Segnalaz.
+          {reports.filter((r) => r.status === "open").length > 0 && (
+            <span className="absolute top-1 right-3 bg-yellow-400 text-black text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              {reports.filter((r) => r.status === "open").length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Stats */}
@@ -225,6 +268,62 @@ export default function AdminDashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Segnalazioni */}
+      {tab === "reports" && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs uppercase tracking-widest text-brand-gray">
+              Segnalazioni dei membri
+            </p>
+            <button
+              onClick={() => load()}
+              className="text-[10px] uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-1.5 hover:border-white/30 transition-all"
+            >
+              ↻ Aggiorna
+            </button>
+          </div>
+          {reports.length === 0 ? (
+            <p className="text-brand-gray/40 text-sm">Nessuna segnalazione. Buon segno.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {reports.map((r) => {
+                const isBusy = working === r.id;
+                return (
+                  <div key={r.id} className={`border p-4 ${r.status === "open" ? "border-yellow-400/40" : "border-white/10 opacity-50"}`}>
+                    <div className="flex items-center gap-2 mb-2 text-sm">
+                      <span className="text-white font-medium">{r.reported_alias}</span>
+                      <span className="text-brand-gray/60 text-xs">#{r.reported_number}</span>
+                      <span className="text-brand-gray/60 text-xs ml-auto">
+                        da {r.reporter_alias} · {new Date(r.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
+                      </span>
+                    </div>
+                    <p className="text-white/85 text-sm mb-3">"{r.reason}"</p>
+                    {r.status === "open" && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleRemovePhoto(r)}
+                          disabled={isBusy}
+                          className="text-[10px] uppercase tracking-widest border border-brand-red/50 text-brand-red px-3 py-1.5 hover:bg-brand-red hover:text-white transition-all"
+                        >
+                          Rimuovi foto
+                        </button>
+                        <button
+                          onClick={() => handleCloseReport(r.id)}
+                          disabled={isBusy}
+                          className="text-[10px] uppercase tracking-widest border border-white/10 text-brand-gray px-3 py-1.5 hover:border-white/30 transition-all"
+                        >
+                          Chiudi
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
 
       {/* Bacheca - post in attesa */}
       {tab === "posts" && (

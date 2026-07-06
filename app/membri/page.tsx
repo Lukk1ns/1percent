@@ -43,6 +43,7 @@ function MembriWall() {
   const [legami, setLegami] = useState<Legame[]>([]);
   const [clearUrls, setClearUrls] = useState<Map<number, string>>(new Map());
   const [reveal, setReveal] = useState<{ alias: string; clearUrl: string | null; avatarId: string | null } | null>(null);
+  const [inboxCount, setInboxCount] = useState(0);
   const userIdRef = useRef<string | null>(null);
   const legamiCountRef = useRef(0);
 
@@ -59,6 +60,12 @@ function MembriWall() {
     setLegami(res.legami);
     setClearUrls(res.clearUrls);
     return res;
+  }, []);
+
+  const loadInboxBadge = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase.rpc("inbox_badge");
+    if (data) setInboxCount(Number(data.unread ?? 0) + Number(data.requests ?? 0));
   }, []);
 
   const loadReceived = useCallback(async () => {
@@ -83,7 +90,7 @@ function MembriWall() {
       if (!profile) { router.replace("/unisciti"); return; }
       userIdRef.current = user.id;
 
-      const [, , resLegami] = await Promise.all([loadWall(), loadReceived(), loadLegami()]);
+      const [, , resLegami] = await Promise.all([loadWall(), loadReceived(), loadLegami(), loadInboxBadge()]);
       legamiCountRef.current = resLegami.legami.length;
       setLoading(false);
 
@@ -215,15 +222,22 @@ function MembriWall() {
         Gli altri vedono solo i numeri. Chi lo riceve scopre chi sei.
       </p>
 
-      {/* I miei legami */}
-      {legami.length > 0 && (
-        <button
-          onClick={() => router.push("/legami")}
-          className="btn btn-outline w-full mb-3"
-        >
-          🔗 I tuoi legami: {legami.length}
+      {/* Legami + messaggi */}
+      <div className="w-full flex gap-2 mb-3">
+        {legami.length > 0 && (
+          <button onClick={() => router.push("/legami")} className="btn btn-outline flex-1 text-xs">
+            🔗 Legami: {legami.length}
+          </button>
+        )}
+        <button onClick={() => router.push("/messaggi")} className="btn btn-outline flex-1 text-xs relative">
+          ✉️ Chat
+          {inboxCount > 0 && (
+            <span className="ml-2 px-1.5 py-0.5 text-[9px] bg-brand-red text-white rounded-full animate-pulse-glow">
+              {inboxCount}
+            </span>
+          )}
         </button>
-      )}
+      </div>
 
       {/* I miei poke ricevuti */}
       {received.length > 0 && (
