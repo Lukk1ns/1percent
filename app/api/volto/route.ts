@@ -115,14 +115,20 @@ export async function POST(req: Request) {
 
   // Upload con la sessione dell'utente: le policy storage permettono
   // di scrivere SOLO nella propria cartella <uuid>/.
+  // IMPORTANTE: si carica come Blob, non come Buffer Node. Sul runtime
+  // di Vercel un Buffer viene interpretato come testo UTF-8 e i byte
+  // binari dell'immagine si corrompono (→ webp illeggibile). Il Blob
+  // è sempre trattato come binario.
   const path = voltoPath(user.id);
+  const clearBlob = new Blob([clear], { type: "image/webp" });
+  const blurredBlob = new Blob([blurred], { type: "image/webp" });
   const [up1, up2] = await Promise.all([
     supabase.storage
       .from("volti")
-      .upload(path, clear, { contentType: "image/webp", upsert: true }),
+      .upload(path, clearBlob, { contentType: "image/webp", upsert: true }),
     supabase.storage
       .from("volti-blur")
-      .upload(path, blurred, { contentType: "image/webp", upsert: true }),
+      .upload(path, blurredBlob, { contentType: "image/webp", upsert: true }),
   ]);
   if (up1.error || up2.error) {
     return NextResponse.json(
