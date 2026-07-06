@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { voltoPath } from "@/lib/volto";
+import { downscaleImage } from "@/lib/downscale";
 import Volto from "@/components/Volto";
 
 type Profile = {
@@ -24,7 +25,7 @@ export default function ProfiloPage() {
 
   // Flusso upload
   const fileRef = useRef<HTMLInputElement>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFile, setPendingFile] = useState<Blob | null>(null);
   const [localUrl, setLocalUrl] = useState<string | null>(null);
   const [blurPreview, setBlurPreview] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -87,21 +88,27 @@ export default function ProfiloPage() {
 
   async function handleFileChosen(f: File) {
     setErrorMsg(null);
-    if (f.size > 6 * 1024 * 1024) {
-      setErrorMsg("Foto troppo pesante (max 6 MB).");
-      return;
-    }
-    setPendingFile(f);
-    setLocalUrl(URL.createObjectURL(f));
     setPreviewLoading(true);
     setBlurPreview(null);
 
+    // Compressione nel browser: le foto da telefono pesano troppo
+    // per arrivare intere al server.
+    const small = await downscaleImage(f);
+    if (small.size > 4 * 1024 * 1024) {
+      setErrorMsg("Foto troppo pesante. Prova con un'altra.");
+      setPreviewLoading(false);
+      return;
+    }
+    setPendingFile(small);
+    setLocalUrl(URL.createObjectURL(small));
+
     const fd = new FormData();
-    fd.append("file", f);
+    fd.append("file", small, "volto.jpg");
     const res = await fetch("/api/volto/preview", { method: "POST", body: fd });
     setPreviewLoading(false);
     if (!res.ok) {
-      setErrorMsg("Questa foto non va. Prova con un'altra.");
+      const j = await res.json().catch(() => null);
+      setErrorMsg(`Questa foto non va (${j?.error ?? res.status}). Prova con un'altra.`);
       setPendingFile(null);
       return;
     }
@@ -114,11 +121,14 @@ export default function ProfiloPage() {
     setUploading(true);
     setErrorMsg(null);
     const fd = new FormData();
-    fd.append("file", pendingFile);
+    fd.append("file", pendingFile, "volto.jpg");
     const res = await fetch("/api/volto", { method: "POST", body: fd });
     setUploading(false);
     if (!res.ok) {
-      setErrorMsg("Upload fallito. Riprova.");
+      const j = await res.json().catch(() => null);
+      setErrorMsg(
+        `Upload fallito${j?.error ? ` (${j.error}${j.detail ? `: ${j.detail}` : ""})` : ""}. Riprova.`,
+      );
       return;
     }
     resetUploadFlow();

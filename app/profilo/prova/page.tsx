@@ -5,6 +5,7 @@
 // 3 livelli affiancati, scegli → il valore va in lib/volto.ts.
 
 import { useRef, useState } from "react";
+import { downscaleImage } from "@/lib/downscale";
 import Volto from "@/components/Volto";
 
 type Preview = { id: string; sigma: number; active: boolean; dataUrl: string };
@@ -21,10 +22,11 @@ export default function ProvaBlurPage() {
     setLoading(true);
     setPreviews([]);
     if (localUrl) URL.revokeObjectURL(localUrl);
-    setLocalUrl(URL.createObjectURL(f));
+    const small = await downscaleImage(f);
+    setLocalUrl(URL.createObjectURL(small));
 
     const fd = new FormData();
-    fd.append("file", f);
+    fd.append("file", small, "volto.jpg");
     const res = await fetch("/api/volto/preview?all=1", { method: "POST", body: fd });
     setLoading(false);
     if (!res.ok) {

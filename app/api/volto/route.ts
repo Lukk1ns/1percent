@@ -71,12 +71,18 @@ export async function POST(req: Request) {
       .upload(path, blurred, { contentType: "image/webp", upsert: true }),
   ]);
   if (up1.error || up2.error) {
-    return NextResponse.json({ error: "upload-failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "upload-failed", detail: up1.error?.message ?? up2.error?.message },
+      { status: 500 },
+    );
   }
 
   const { data: updatedAt, error } = await supabase.rpc("set_my_photo");
   if (error) {
-    return NextResponse.json({ error: "profile-update-failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "profile-update-failed", detail: error.message },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ ok: true, updatedAt });
