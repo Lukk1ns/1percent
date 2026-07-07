@@ -29,6 +29,8 @@ type Dashboard = {
   winners: Winner[];
 };
 
+type Operator = { email: string; added_at: string };
+
 export default function AdminRegaliPage() {
   const router = useRouter();
   const [data, setData] = useState<Dashboard | null>(null);
@@ -38,18 +40,25 @@ export default function AdminRegaliPage() {
   const [resetNum, setResetNum] = useState("");
   const [resetting, setResetting] = useState(false);
   const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [newOp, setNewOp] = useState("");
+  const [opWorking, setOpWorking] = useState(false);
   // bozza modificabile per riga (id -> {stock, weight, enabled})
   const [draft, setDraft] = useState<Record<string, { stock: string; weight: string; enabled: boolean }>>({});
 
   async function load() {
     const supabase = createClient();
-    const { data: res, error: err } = await supabase.rpc("admin_prize_dashboard");
-    if (err) {
-      setError("Non disponibile. Hai incollato supabase/regali.sql nel SQL Editor? (" + err.message + ")");
+    const [dashRes, opsRes] = await Promise.all([
+      supabase.rpc("admin_prize_dashboard"),
+      supabase.rpc("admin_list_operators"),
+    ]);
+    if (dashRes.error) {
+      setError("Non disponibile. Hai incollato supabase/regali.sql nel SQL Editor? (" + dashRes.error.message + ")");
       setLoading(false);
       return;
     }
-    const d = res as Dashboard;
+    if (opsRes.data) setOperators(opsRes.data as Operator[]);
+    const d = dashRes.data as Dashboard;
     setData(d);
     setDraft((prev) => {
       const next = { ...prev };
@@ -120,6 +129,26 @@ export default function AdminRegaliPage() {
     if (fromInput) setResetNum("");
     await load();
     setResetting(false);
+  }
+
+  async function addOperator() {
+    const email = newOp.trim().toLowerCase();
+    if (!email || !email.includes("@")) return;
+    setOpWorking(true);
+    const supabase = createClient();
+    await supabase.rpc("admin_add_operator", { p_email: email });
+    setNewOp("");
+    await load();
+    setOpWorking(false);
+  }
+
+  async function removeOperator(email: string) {
+    if (!confirm(`Togliere ${email} dagli operatori? Non potrà più scansionare.`)) return;
+    setOpWorking(true);
+    const supabase = createClient();
+    await supabase.rpc("admin_remove_operator", { p_email: email });
+    await load();
+    setOpWorking(false);
   }
 
   // Probabilità reale corrente (sui premi abilitati e con scorta), da bozza.
@@ -277,6 +306,49 @@ export default function AdminRegaliPage() {
               </button>
             </div>
             {resetMsg && <p className="text-brand-gray text-xs mt-2">{resetMsg}</p>}
+          </div>
+
+          {/* Operatori */}
+          <div className="border border-white/10 p-4 mb-8">
+            <p className="text-white text-sm font-semibold mb-1">Operatori (chi può scansionare)</p>
+            <p className="text-brand-gray text-[11px] mb-3">
+              Aggiungi l&apos;email personale di un collaboratore. Deve essersi già registrato/loggato al sito con quella email.
+              Potrà SOLO estrarre regali: niente dashboard, niente dati iscritti.
+            </p>
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="email"
+                value={newOp}
+                onChange={(e) => setNewOp(e.target.value)}
+                placeholder="email@collaboratore.it"
+                className="flex-1 bg-black/40 border border-white/15 px-3 py-2 text-white text-sm"
+              />
+              <button
+                onClick={addOperator}
+                disabled={opWorking || !newOp.includes("@")}
+                className="text-xs uppercase tracking-widest text-brand-red border border-brand-red px-4 py-2 hover:bg-brand-red hover:text-white transition-all disabled:opacity-40"
+              >
+                + Aggiungi
+              </button>
+            </div>
+            {operators.length === 0 ? (
+              <p className="text-brand-gray text-xs">Nessun operatore. Scansioni solo tu (admin).</p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {operators.map((o) => (
+                  <div key={o.email} className="flex items-center justify-between border border-white/10 px-3 py-2">
+                    <span className="text-white text-sm truncate">{o.email}</span>
+                    <button
+                      onClick={() => removeOperator(o.email)}
+                      disabled={opWorking}
+                      className="text-brand-gray hover:text-brand-red transition-colors text-xs disabled:opacity-40"
+                    >
+                      ✕ togli
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Vincitori */}

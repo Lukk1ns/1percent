@@ -29,6 +29,7 @@ export default function LandingPage() {
   // null = ancora da verificare, true/false = esito controllo login
   const [isMember, setIsMember] = useState<boolean | null>(null);
   const [me, setMe] = useState<{ alias: string; avatar_id: string | null } | null>(null);
+  const [isStaff, setIsStaff] = useState(false);
   const handleDone = useCallback(() => setEntered(true), []);
   const mainRef = useRef<HTMLElement>(null);
 
@@ -37,13 +38,13 @@ export default function LandingPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setIsMember(false); return; }
-      const { data } = await supabase
-        .from("profiles")
-        .select("alias,avatar_id")
-        .eq("id", user.id)
-        .single();
+      const [{ data }, staffRes] = await Promise.all([
+        supabase.from("profiles").select("alias,avatar_id").eq("id", user.id).single(),
+        supabase.rpc("am_i_staff"),
+      ]);
       setIsMember(Boolean(data));
       if (data) setMe(data as { alias: string; avatar_id: string | null });
+      setIsStaff(Boolean(staffRes.data));
     })();
   }, []);
 
@@ -101,15 +102,25 @@ export default function LandingPage() {
         />
 
         {/* Barra utente loggato (in alto a destra) */}
-        {entered && me && (
+        {entered && (me || isStaff) && (
           <div className="absolute top-3 right-3 z-30 flex items-center gap-2 animate-fade-up">
-            <Link
-              href="/card"
-              className="flex items-center gap-2 border border-white/10 bg-black/70 backdrop-blur px-3 py-1.5"
-            >
-              <span className="text-lg leading-none">{getAvatar(me.avatar_id ?? "").emoji}</span>
-              <span className="text-xs text-white font-semibold max-w-[100px] truncate">{me.alias}</span>
-            </Link>
+            {isStaff && (
+              <Link
+                href="/admin/scan"
+                className="text-[10px] uppercase tracking-widest text-brand-red border border-brand-red bg-black/70 px-2.5 py-2 hover:bg-brand-red hover:text-white transition-all"
+              >
+                🎁 Scanner
+              </Link>
+            )}
+            {me && (
+              <Link
+                href="/card"
+                className="flex items-center gap-2 border border-white/10 bg-black/70 backdrop-blur px-3 py-1.5"
+              >
+                <span className="text-lg leading-none">{getAvatar(me.avatar_id ?? "").emoji}</span>
+                <span className="text-xs text-white font-semibold max-w-[100px] truncate">{me.alias}</span>
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="text-[10px] uppercase tracking-widest text-brand-gray border border-white/10 bg-black/70 px-2.5 py-2 hover:text-white transition-colors"

@@ -57,9 +57,49 @@ insert into public.prize_types (id, label, emoji, weight, stock, enabled, sort) 
   ('niente',   'NIENTE',               '😔',  15,  null, true, 99)
 on conflict (id) do nothing;
 
+-- Operatori: email autorizzate a SOLO scansionare i regali (niente dashboard/dati).
+-- Diverso da public.admins (che ha pieni poteri). Gestita dal pannello admin.
+create table if not exists public.operators (
+  email      text primary key,
+  added_at   timestamptz not null default now()
+);
+
 -- RLS: nessuna lettura/scrittura diretta. Tutto passa dalle funzioni sotto.
 alter table public.prize_types enable row level security;
 alter table public.prize_draws enable row level security;
+alter table public.operators enable row level security;
+
+-- ------------------------------------------------------------
+-- is_staff() — è admin OPPURE operatore autorizzato?
+-- Usata solo per abilitare l'estrazione (draw_prize).
+-- ------------------------------------------------------------
+create or replace function public.is_staff()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select public.is_admin() or exists (
+    select 1 from public.operators o
+     where o.email = lower(auth.jwt() ->> 'email')
+  );
+$$;
+
+grant execute on function public.is_staff() to authenticated;
+
+-- Il chiamante può scansionare? (per mostrare il bottone Scanner lato sito)
+create or replace function public.am_i_staff()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select public.is_staff();
+$$;
+
+grant execute on function public.am_i_staff() to anon, authenticated;
 
 -- ------------------------------------------------------------
 -- draw_prize(token) — SOLO STAFF
@@ -83,7 +123,7 @@ declare
   v_r       numeric;          -- soglia casuale, calcolata UNA volta
   v_pick    text;
 begin
-  if not public.is_admin() then
+  if not public.is_staff() then
     raise exception 'Non autorizzato';
   end if;
 
@@ -367,3 +407,72 @@ $$;
 
 revoke execute on function public.admin_reset_prize(int) from anon;
 grant execute on function public.admin_reset_prize(int) to authenticated;
+
+-- ------------------------------------------------------------
+-- Gestione OPERATORI — SOLO ADMIN
+-- ------------------------------------------------------------
+create or replace function public.admin_list_operators()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Non autorizzato';
+  end if;
+  return (
+    select coalesce(jsonb_agg(
+             jsonb_build_object('email', o.email, 'added_at', o.added_at)
+             order by o.added_at
+           ), '[]'::jsonb)
+      from public.operators o
+  );
+end;
+$$;
+
+revoke execute on function public.admin_list_operators() from anon;
+grant execute on function public.admin_list_operators() to authenticated;
+
+create or replace function public.admin_add_operator(p_email text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_email text := lower(trim(p_email));
+begin
+  if not public.is_admin() then
+    raise exception 'Non autorizzato';
+  end if;
+  if v_email = '' or position('@' in v_email) = 0 then
+    return jsonb_build_object('ok', false, 'reason', 'invalid');
+  end if;
+  insert into public.operators (email) values (v_email)
+  on conflict (email) do nothing;
+  return jsonb_build_object('ok', true, 'email', v_email);
+end;
+$$;
+
+revoke execute on function public.admin_add_operator(text) from anon;
+grant execute on function public.admin_add_operator(text) to authenticated;
+
+create or replace function public.admin_remove_operator(p_email text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Non autorizzato';
+  end if;
+  delete from public.operators where email = lower(trim(p_email));
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+revoke execute on function public.admin_remove_operator(text) from anon;
+grant execute on function public.admin_remove_operator(text) to authenticated;
