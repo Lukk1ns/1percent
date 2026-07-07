@@ -9,6 +9,7 @@ import { LiveFeed } from "@/components/LiveFeed";
 import { PostitBoard } from "@/components/PostitBoard";
 import { PostForm } from "@/components/PostForm";
 import { Marquee } from "@/components/Marquee";
+import { getAvatar } from "@/lib/avatars";
 import { createClient } from "@/lib/supabase/client";
 import {
   EVENT_DATE,
@@ -27,6 +28,7 @@ export default function LandingPage() {
   const [showForm, setShowForm] = useState(false);
   // null = ancora da verificare, true/false = esito controllo login
   const [isMember, setIsMember] = useState<boolean | null>(null);
+  const [me, setMe] = useState<{ alias: string; avatar_id: string | null } | null>(null);
   const handleDone = useCallback(() => setEntered(true), []);
   const mainRef = useRef<HTMLElement>(null);
 
@@ -37,11 +39,20 @@ export default function LandingPage() {
       if (!user) { setIsMember(false); return; }
       const { data } = await supabase
         .from("profiles")
-        .select("id")
+        .select("alias,avatar_id")
         .eq("id", user.id)
         .single();
       setIsMember(Boolean(data));
+      if (data) setMe(data as { alias: string; avatar_id: string | null });
     })();
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setMe(null);
+    setIsMember(false);
+    window.location.reload();
   }, []);
 
   // Spotlight che segue il puntatore (desktop) — solo variabili CSS, zero re-render
@@ -88,6 +99,25 @@ export default function LandingPage() {
           }}
           aria-hidden
         />
+
+        {/* Barra utente loggato (in alto a destra) */}
+        {entered && me && (
+          <div className="absolute top-3 right-3 z-30 flex items-center gap-2 animate-fade-up">
+            <Link
+              href="/card"
+              className="flex items-center gap-2 border border-white/10 bg-black/70 backdrop-blur px-3 py-1.5"
+            >
+              <span className="text-lg leading-none">{getAvatar(me.avatar_id ?? "").emoji}</span>
+              <span className="text-xs text-white font-semibold max-w-[100px] truncate">{me.alias}</span>
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="text-[10px] uppercase tracking-widest text-brand-gray border border-white/10 bg-black/70 px-2.5 py-2 hover:text-white transition-colors"
+            >
+              Esci
+            </button>
+          </div>
+        )}
 
         {/* Ticker in alto */}
         <div className="animate-fade-up">

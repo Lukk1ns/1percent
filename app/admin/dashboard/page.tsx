@@ -225,6 +225,12 @@ export default function AdminDashboardPage() {
             Scanner QR
           </button>
           <button
+            onClick={() => router.push("/admin/regali")}
+            className="text-xs uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-2 hover:border-white/30 transition-all"
+          >
+            🎁 Regali
+          </button>
+          <button
             onClick={handleLogout}
             className="text-xs uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-2 hover:border-white/30 transition-all"
           >

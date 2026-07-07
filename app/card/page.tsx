@@ -272,8 +272,8 @@ export default function CardPage() {
         <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
         <button onClick={() => router.push("/card")} className="text-brand-red">Card</button>
         <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">Pass</button>
+        <button onClick={() => router.push("/regalo")} className="hover:text-brand-gray transition-colors">Regalo</button>
         <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
-        <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>
       </nav>
     </main>
   );
