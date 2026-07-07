@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Inter, Caveat } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Backdrop } from "@/components/Backdrop";
 import { Notifiche } from "@/components/Notifiche";
 import "./globals.css";
@@ -45,6 +46,7 @@ export default function RootLayout({
         <Backdrop />
         <Notifiche />
         {children}
+        <Analytics />
       </body>
     </html>
   );

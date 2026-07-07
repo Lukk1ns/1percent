@@ -68,9 +68,25 @@ type Report = {
   created_at: string;
 };
 
+type Stats = {
+  total: number;
+  today: number;
+  yesterday: number;
+  last7: number;
+  with_email: number;
+  with_photo: number;
+  male: number;
+  female: number;
+  checked_in: number;
+  from_referral: number;
+  daily: { d: string; n: number }[];
+  top_referrers: { alias: string; n: number }[];
+};
+
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<"members" | "posts" | "answers" | "reports">("members");
+  const [tab, setTab] = useState<"members" | "stats" | "posts" | "answers" | "reports">("members");
+  const [stats, setStats] = useState<Stats | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [answerMembers, setAnswerMembers] = useState<AnswerMember[]>([]);
@@ -85,15 +101,17 @@ export default function AdminDashboardPage() {
 
   async function load() {
     const supabase = createClient();
-    const [membersRes, postsRes, approvedRes, answersRes, reportsRes] = await Promise.all([
+    const [membersRes, postsRes, approvedRes, answersRes, reportsRes, statsRes] = await Promise.all([
       supabase.rpc("admin_members"),
       supabase.rpc("admin_pending_posts"),
       supabase.rpc("approved_posts"),
       supabase.rpc("admin_quiz_answers"),
       supabase.rpc("admin_reports"),
+      supabase.rpc("admin_stats"),
     ]);
-    // reportsRes può fallire finché messaggi.sql non è stato eseguito: non blocca il resto
+    // reportsRes/statsRes possono fallire finché lo script SQL non è stato eseguito: non bloccano il resto
     if (reportsRes.data) setReports(reportsRes.data as Report[]);
+    if (statsRes.data) setStats(statsRes.data as Stats);
     if (membersRes.error) setError("Errore membri: " + membersRes.error.message);
     if (membersRes.data) setMembers(membersRes.data as Member[]);
     if (answersRes.data) setAnswerMembers(answersRes.data as AnswerMember[]);
@@ -191,8 +209,6 @@ export default function AdminDashboardPage() {
     router.push("/admin/login");
   }
 
-  const checkedIn = members.filter((_, i) => i < 0).length; // placeholder, aggiungiamo dopo
-
   return (
     <main className="flex-1 flex flex-col px-4 py-8 max-w-2xl mx-auto w-full">
       {/* Header */}
@@ -230,6 +246,12 @@ export default function AdminDashboardPage() {
           className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all ${tab === "members" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
         >
           Membri
+        </button>
+        <button
+          onClick={() => setTab("stats")}
+          className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all ${tab === "stats" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
+        >
+          Statistiche
         </button>
         <button
           onClick={() => setTab("posts")}
@@ -274,6 +296,109 @@ export default function AdminDashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Statistiche */}
+      {tab === "stats" && (() => {
+        if (!stats) {
+          return (
+            <p className="text-brand-gray/40 text-sm">
+              {loading ? "Caricamento…" : (
+                <>Statistiche non disponibili. Se è la prima volta, esegui lo script{" "}
+                <span className="text-brand-gray">supabase/admin_stats.sql</span>{" "}
+                nel SQL Editor di Supabase.</>
+              )}
+            </p>
+          );
+        }
+        const maxDaily = Math.max(1, ...stats.daily.map((d) => d.n));
+        const withPhotoPct = stats.total ? Math.round((stats.with_photo / stats.total) * 100) : 0;
+        const withEmailPct = stats.total ? Math.round((stats.with_email / stats.total) * 100) : 0;
+        const tile = (label: string, value: string | number, sub?: string) => (
+          <div className="border border-white/10 p-4">
+            <p className="text-[10px] uppercase tracking-widest text-brand-gray mb-1">{label}</p>
+            <p className="font-display text-brand-red text-3xl leading-none">{value}</p>
+            {sub && <p className="text-brand-gray/50 text-[10px] mt-1">{sub}</p>}
+          </div>
+        );
+        return (
+          <>
+            {/* KPI iscrizioni */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              {tile("Totale iscritti", stats.total)}
+              {tile("Oggi", stats.today)}
+              {tile("Ieri", stats.yesterday)}
+              {tile("Ultimi 7 giorni", stats.last7)}
+            </div>
+
+            {/* Grafico iscritti/giorno */}
+            <p className="text-xs uppercase tracking-widest text-brand-gray mb-3">
+              Iscritti per giorno — ultimi 14 giorni
+            </p>
+            <div className="border border-white/10 p-4 mb-8">
+              <div className="flex items-end justify-between gap-1 h-32">
+                {stats.daily.map((d) => {
+                  const dt = new Date(d.d + "T00:00:00");
+                  const isToday = d.d === stats.daily[stats.daily.length - 1].d;
+                  return (
+                    <div key={d.d} className="flex-1 flex flex-col items-center justify-end h-full gap-1" title={`${d.d}: ${d.n}`}>
+                      <span className={`text-[9px] ${d.n > 0 ? "text-white" : "text-brand-gray/30"}`}>{d.n}</span>
+                      <div
+                        className={`w-full ${isToday ? "bg-brand-red" : "bg-brand-red/50"}`}
+                        style={{ height: `${(d.n / maxDaily) * 100}%`, minHeight: d.n > 0 ? "3px" : "0" }}
+                      />
+                      <span className="text-[8px] text-brand-gray/50">
+                        {dt.toLocaleDateString("it-IT", { day: "numeric" })}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Ingressi + qualità profilo */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              {tile("Ingressi validati", stats.checked_in, "QR scansionati all'evento")}
+              {tile("Con foto", stats.with_photo, `${withPhotoPct}% degli iscritti`)}
+              {tile("Con email", stats.with_email, `${withEmailPct}% (rientrano da soli)`)}
+              {tile("Da un invito", stats.from_referral, "arrivati via referral")}
+            </div>
+
+            {/* Genere */}
+            {(stats.male > 0 || stats.female > 0) && (
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {tile("Ragazzi", stats.male)}
+                {tile("Ragazze", stats.female)}
+              </div>
+            )}
+
+            {/* Top referrer */}
+            {stats.top_referrers.length > 0 && (
+              <>
+                <p className="text-xs uppercase tracking-widest text-brand-gray mb-3">
+                  Chi porta più gente
+                </p>
+                <div className="border border-white/10 p-4 mb-8 flex flex-col gap-2">
+                  {stats.top_referrers.map((r, i) => (
+                    <div key={r.alias} className="flex items-center gap-3 text-sm">
+                      <span className="text-brand-red font-display w-5">{i + 1}</span>
+                      <span className="text-white flex-1 truncate">{r.alias}</span>
+                      <span className="text-brand-gray">{r.n} {r.n === 1 ? "invito" : "inviti"}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Nota visite */}
+            <div className="border border-white/10 p-4 text-brand-gray/70 text-xs leading-relaxed">
+              👀 <span className="text-white">Visite al sito</span> (quante persone aprono unpercento.it,
+              da dove arrivano, telefono vs pc): le trovi su{" "}
+              <span className="text-brand-gray">vercel.com → progetto 1percent → tab Analytics</span>.
+              Non sono qui perché arrivano da un servizio esterno.
+            </div>
+          </>
+        );
+      })()}
 
       {/* Segnalazioni */}
       {tab === "reports" && (
