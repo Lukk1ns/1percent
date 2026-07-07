@@ -47,6 +47,7 @@ export default function RegaloPage() {
   const [pool, setPool] = useState<PoolItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [justWon, setJustWon] = useState(false);
+  const [whoami, setWhoami] = useState<string | null>(null);
   const drawnRef = useRef(false);
 
   useEffect(() => {
@@ -70,8 +71,12 @@ export default function RegaloPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/unisciti"); return; }
-      const poolRes = await supabase.rpc("prize_pool");
+      const [poolRes, profRes] = await Promise.all([
+        supabase.rpc("prize_pool"),
+        supabase.from("profiles").select("alias").eq("id", user.id).single(),
+      ]);
       if (poolRes.data) setPool(poolRes.data as PoolItem[]);
+      setWhoami((profRes.data as { alias?: string } | null)?.alias ?? null);
       await tick();
       if (stopped) return;
       setLoading(false);
@@ -98,7 +103,10 @@ export default function RegaloPage() {
       {justWon && won && <Confetti />}
 
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">Il tuo regalo</p>
-      <h1 className="font-display text-brand-red text-5xl mb-6">1%</h1>
+      <h1 className="font-display text-brand-red text-5xl mb-2">1%</h1>
+      <p className="text-xs text-brand-gray/60 mb-6">
+        {whoami ? <>pagina di <span className="text-white font-semibold">{whoami}</span></> : "account senza profilo"}
+      </p>
 
       {!drawn && (
         <>
