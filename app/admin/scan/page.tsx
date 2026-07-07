@@ -20,7 +20,19 @@ type ScanResult = {
 
 type Phase = "idle" | "rolling" | "done";
 
-// Emoji che scorrono durante la suspense (slot-machine)
+type TorchCap = { isSupported: () => boolean; apply: (v: boolean) => Promise<void> };
+type Html5QrcodeInstance = {
+  start: (
+    camera: { facingMode: string } | string,
+    config: object,
+    onSuccess: (t: string) => void,
+    onError: (e: string) => void,
+  ) => Promise<void>;
+  stop: () => Promise<void>;
+  clear: () => void;
+  getRunningTrackCameraCapabilities: () => { torchFeature: () => TorchCap };
+};
+
 const ROLL_EMOJI = ["🛒", "🍾", "📿", "👕", "🥃", "🍹", "🔦", "📦", "🫧", "🍭", "🍬", "🎁", "⭐"];
 const CONFETTI_COLORS = ["#e0181f", "#ffffff", "#ffb3b6", "#ffd166"];
 
@@ -64,6 +76,10 @@ function ScanContent() {
   const [rollIdx, setRollIdx] = useState(0);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [scannerReady, setScannerReady] = useState(false);
+  const [camError, setCamError] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const scannerRef = useRef<Html5QrcodeInstance | null>(null);
   const busy = useRef(false);
 
   // Slot-machine: mentre "rolling" cicla le emoji
@@ -83,56 +99,100 @@ function ScanContent() {
     const supabase = createClient();
     const { data, error } = await supabase.rpc("draw_prize", { p_token: token });
 
-    // Garantisce almeno ~1.8s di suspense anche se il server risponde subito
+    // Almeno ~1.8s di suspense anche se il server risponde subito
     const wait = Math.max(0, 1800 - (Date.now() - started));
     setTimeout(() => {
       setResult(error ? { ok: false, reason: "error" } : (data as ScanResult));
       setPhase("done");
       setTimeout(() => {
         setResult(null);
-        setPhase("idle");
         busy.current = false;
-        router.replace("/admin/scan");
+        setPhase("idle"); // riavvia la fotocamera
       }, 7000);
     }, wait);
   }
 
+  // Estrae il token da un QR (URL o testo raw)
+  function tokenFrom(decoded: string): string {
+    try {
+      const url = new URL(decoded);
+      return url.searchParams.get("token") ?? decoded;
+    } catch {
+      return decoded;
+    }
+  }
+
+  // Avvia / ferma la fotocamera in base alla fase (solo camera posteriore, nessun menù)
   useEffect(() => {
-    if (tokenFromUrl) processToken(tokenFromUrl);
+    if (tokenFromUrl) { processToken(tokenFromUrl); return; }
+    if (phase !== "idle") return;
+
+    let cancelled = false;
+    setScannerReady(false);
+    setCamError(false);
+    setTorchOn(false);
+
+    (async () => {
+      const { Html5Qrcode } = await import("html5-qrcode");
+      if (cancelled) return;
+      const instance = new Html5Qrcode("qr-reader", {
+        verbose: false,
+        // Usa il decoder nativo del telefono quando c'è: molto più veloce a fuoco
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      }) as unknown as Html5QrcodeInstance;
+      scannerRef.current = instance;
+
+      try {
+        await instance.start(
+          { facingMode: "environment" }, // camera posteriore, sempre
+          {
+            fps: 12,
+            qrbox: (vw: number, vh: number) => {
+              const size = Math.floor(Math.min(vw, vh) * 0.75);
+              return { width: size, height: size };
+            },
+          },
+          (decoded: string) => {
+            if (busy.current) return;
+            const inst = scannerRef.current;
+            scannerRef.current = null;
+            if (inst) inst.stop().then(() => inst.clear()).catch(() => {});
+            processToken(tokenFrom(decoded));
+          },
+          () => {}, // errori di frame: ignora
+        );
+        if (cancelled) return;
+        setScannerReady(true);
+
+        // Torcia disponibile? Mostra solo il pulsante, MA spenta:
+        // il QR è su uno schermo, la torcia farebbe riflesso e peggiorerebbe.
+        try {
+          const torch = instance.getRunningTrackCameraCapabilities().torchFeature();
+          if (torch.isSupported()) setTorchSupported(true);
+        } catch { /* torcia non disponibile: pazienza */ }
+      } catch {
+        if (!cancelled) setCamError(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      const inst = scannerRef.current;
+      scannerRef.current = null;
+      if (inst) inst.stop().then(() => inst.clear()).catch(() => {});
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenFromUrl]);
+  }, [phase, tokenFromUrl]);
 
-  useEffect(() => {
-    if (tokenFromUrl) return;
-    let html5Scanner: { clear: () => void } | null = null;
-
-    import("html5-qrcode").then(({ Html5QrcodeScanner }) => {
-      const scanner = new Html5QrcodeScanner(
-        "qr-reader",
-        { fps: 10, qrbox: 220, aspectRatio: 1, supportedScanTypes: [0] },
-        false,
-      );
-      scanner.render(
-        (decodedText: string) => {
-          scanner.clear().catch(() => null);
-          let token = decodedText;
-          try {
-            const url = new URL(decodedText);
-            token = url.searchParams.get("token") ?? decodedText;
-          } catch {
-            // testo raw, usalo direttamente
-          }
-          processToken(token);
-        },
-        () => null,
-      );
-      html5Scanner = scanner;
-      setScannerReady(true);
-    });
-
-    return () => { html5Scanner?.clear(); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  async function toggleTorch() {
+    const inst = scannerRef.current;
+    if (!inst) return;
+    try {
+      const torch = inst.getRunningTrackCameraCapabilities().torchFeature();
+      await torch.apply(!torchOn);
+      setTorchOn((v) => !v);
+    } catch { /* niente */ }
+  }
 
   async function handleLogout() {
     const supabase = createClient();
@@ -248,22 +308,43 @@ function ScanContent() {
         </div>
       )}
 
-      {/* SCANNER a riposo */}
+      {/* SCANNER a riposo — solo camera posteriore, niente menù */}
       {phase === "idle" && !tokenFromUrl && (
         <>
           <div
             id="qr-reader"
-            className="w-full max-w-xs"
+            className="w-full max-w-xs overflow-hidden"
             style={{ minHeight: scannerReady ? undefined : 260 }}
           />
-          {!scannerReady && (
-            <p className="text-brand-gray text-sm animate-pulse-glow mt-4">
-              Caricamento fotocamera…
+
+          {camError ? (
+            <p className="text-brand-red text-sm mt-4 text-center max-w-xs">
+              Non riesco ad accedere alla fotocamera. Consenti l&apos;accesso alla camera nel browser e ricarica la pagina.
             </p>
+          ) : !scannerReady ? (
+            <p className="text-brand-gray text-sm animate-pulse-glow mt-4">
+              Accendo la fotocamera…
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-brand-gray/60 mt-4 text-center max-w-xs">
+                Inquadra il QR del membro. Tieni il telefono a ~15 cm.
+              </p>
+              {torchSupported && (
+                <button
+                  onClick={toggleTorch}
+                  className={`text-xs uppercase tracking-widest border px-4 py-2 mt-4 transition-all ${
+                    torchOn
+                      ? "border-brand-red text-brand-red"
+                      : "border-white/15 text-brand-gray"
+                  }`}
+                >
+                  {torchOn ? "💡 Torcia accesa" : "🔦 Accendi torcia"}
+                </button>
+              )}
+            </>
           )}
-          <p className="text-xs text-brand-gray/60 mt-4 text-center max-w-xs">
-            Scansiona il QR del membro per estrarre il suo regalo.
-          </p>
+
           <button
             onClick={() => router.push("/admin/regali")}
             className="text-xs text-brand-gray uppercase tracking-widest border border-white/10 px-4 py-2 mt-6"

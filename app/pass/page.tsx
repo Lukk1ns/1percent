@@ -49,8 +49,10 @@ export default function PassPage() {
     const qrUrl = `${window.location.origin}/admin/scan?token=${passData.qr_token}`;
     QRCode.toCanvas(canvasRef.current, qrUrl, {
       width: 240,
-      margin: 2,
-      color: { dark: "#e0181f", light: "#0a0a0a" },
+      margin: 3,
+      // Nero su bianco: massimo contrasto = si scansiona sempre.
+      // (Il rosso su nero era bello ma i lettori QR spesso non lo leggevano.)
+      color: { dark: "#000000", light: "#ffffff" },
     });
   }, [passData]);
 
@@ -75,6 +77,8 @@ export default function PassPage() {
       <h1 className="font-display text-brand-red text-5xl mb-2">1%</h1>
       <p className="text-xs text-brand-gray/60 mb-6 max-w-xs text-center">
         Appena entri, portati all&apos;angolo accoglienza e fai scansionare il QR — potresti vincere qualcosa.
+        <br />
+        <span className="text-brand-gray/50">Metti la luminosità al massimo.</span>
       </p>
 
       {/* QR con cornice scanner */}
