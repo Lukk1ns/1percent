@@ -72,7 +72,7 @@ export default function ChatPage() {
       setClearUrl(legami.clearUrls.get((c as Other).member_number) ?? null);
       setLoading(false);
       scrollDown();
-      supabase.rpc("mark_conversation_read", { p_conversation: convoId });
+      await supabase.rpc("mark_conversation_read", { p_conversation: convoId });
 
       // Messaggi in arrivo in tempo reale
       channel = supabase
@@ -80,15 +80,15 @@ export default function ChatPage() {
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${convoId}` },
-          (payload) => {
+          async (payload) => {
             const m = payload.new as { id: string; sender: string; body: string; created_at: string };
             if (m.sender === user.id) return; // i miei li ho già messi
             setMsgs((prev) => [
               ...prev,
               { id: m.id, mine: false, body: m.body, created_at: m.created_at, read_at: null },
             ]);
-            supabase.rpc("mark_conversation_read", { p_conversation: convoId });
             scrollDown();
+            await supabase.rpc("mark_conversation_read", { p_conversation: convoId });
           },
         )
         .subscribe();
