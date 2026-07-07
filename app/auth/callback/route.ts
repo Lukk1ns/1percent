@@ -34,6 +34,14 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL(next, url.origin));
     }
 
+    // Staff PRIMA di tutto: chi è nella tabella admins va sempre in
+    // dashboard, mai in registrazione. Così il login admin funziona anche
+    // se il template email perde il parametro next=/admin/dashboard.
+    const { data: isAdmin } = await supabase.rpc("is_admin");
+    if (isAdmin) {
+      return NextResponse.redirect(new URL("/admin/dashboard", url.origin));
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("id")
