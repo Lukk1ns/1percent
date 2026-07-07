@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -8,25 +8,78 @@ type Prize = { id: string; label: string; emoji: string };
 type MyPrize = { drawn: boolean; drawn_at?: string; prize?: Prize | null };
 type PoolItem = { label: string; emoji: string };
 
+const CONFETTI_COLORS = ["#e0181f", "#ffffff", "#ffb3b6", "#ffd166"];
+
+function Confetti() {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 46 }).map(() => ({
+        left: Math.random() * 100,
+        delay: Math.random() * 0.5,
+        duration: 2.2 + Math.random() * 1.8,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        rotate: Math.random() * 360,
+      })),
+    [],
+  );
+  return (
+    <>
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          className="confetti-piece"
+          style={{
+            left: `${p.left}%`,
+            background: p.color,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            transform: `rotate(${p.rotate}deg)`,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
 export default function RegaloPage() {
   const router = useRouter();
   const [mine, setMine] = useState<MyPrize | null>(null);
   const [pool, setPool] = useState<PoolItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [justWon, setJustWon] = useState(false);
+  const drawnRef = useRef(false);
 
   useEffect(() => {
+    const supabase = createClient();
+    let stopped = false;
+    let interval: ReturnType<typeof setInterval> | undefined;
+
+    async function tick() {
+      const { data } = await supabase.rpc("my_prize");
+      if (stopped || !data) return;
+      const mp = data as MyPrize;
+      // Transizione: appena estratto → mostra reveal + coriandoli
+      if (mp.drawn && !drawnRef.current) {
+        drawnRef.current = true;
+        if (mp.prize) setJustWon(true);
+        if (interval) { clearInterval(interval); interval = undefined; }
+      }
+      setMine(mp);
+    }
+
     (async () => {
-      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/unisciti"); return; }
-      const [mineRes, poolRes] = await Promise.all([
-        supabase.rpc("my_prize"),
-        supabase.rpc("prize_pool"),
-      ]);
-      if (mineRes.data) setMine(mineRes.data as MyPrize);
+      const poolRes = await supabase.rpc("prize_pool");
       if (poolRes.data) setPool(poolRes.data as PoolItem[]);
+      await tick();
+      if (stopped) return;
       setLoading(false);
+      // Continua a controllare finché non è stato estratto
+      if (!drawnRef.current) interval = setInterval(tick, 3000);
     })();
+
+    return () => { stopped = true; if (interval) clearInterval(interval); };
   }, [router]);
 
   if (loading) {
@@ -42,6 +95,8 @@ export default function RegaloPage() {
 
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
+      {justWon && won && <Confetti />}
+
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">Il tuo regalo</p>
       <h1 className="font-display text-brand-red text-5xl mb-6">1%</h1>
 
@@ -54,6 +109,9 @@ export default function RegaloPage() {
             <p className="text-brand-gray text-sm">
               Vieni all&apos;area benvenuto e fai scansionare il tuo QR:
               l&apos;estrazione parte lì, una volta sola.
+            </p>
+            <p className="text-brand-gray/50 text-[11px] mt-4 animate-pulse-glow">
+              Tieni aperta questa pagina: il premio comparirà qui da solo.
             </p>
             <button
               onClick={() => router.push("/pass")}
