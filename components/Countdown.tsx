@@ -23,16 +23,70 @@ function Digit({ value }: { value: string }) {
 
 const ZERO = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 
-export function Countdown({ target }: { target: Date }) {
+type Phase = "before" | "open" | "after";
+
+function getPhase(target: Date, end?: Date): Phase {
+  const now = Date.now();
+  if (now < target.getTime()) return "before";
+  if (end && now >= end.getTime()) return "after";
+  return "open";
+}
+
+/** Scritta "APERTI" che sostituisce il countdown durante la serata. */
+function Aperti() {
+  return (
+    <div className="flex flex-col items-center gap-3 animate-fade-up">
+      <span className="flex items-center gap-3 text-xs uppercase tracking-[0.4em] text-brand-gray">
+        <span className="relative flex h-2.5 w-2.5" aria-hidden>
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-red opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-red" />
+        </span>
+        in questo momento
+      </span>
+      <span
+        className="glitch font-display uppercase leading-none select-none"
+        data-text="APERTI"
+        style={{
+          fontSize: "clamp(3rem, 14vw, 6.5rem)",
+          color: "#E0181F",
+          letterSpacing: "0.04em",
+          textShadow:
+            "0 0 8px rgba(224,24,31,0.9), 0 0 28px rgba(224,24,31,0.6), 0 0 64px rgba(224,24,31,0.35)",
+        }}
+      >
+        APERTI
+      </span>
+      <span className="text-sm sm:text-base text-brand-gray">
+        Il 99% è rimasto a casa. Tu sai dove andare.
+      </span>
+    </div>
+  );
+}
+
+export function Countdown({ target, end }: { target: Date; end?: Date }) {
   // Parte da zero (uguale su server e client → niente mismatch di hydration),
   // poi al mount calcola il valore reale e avvia il tick al secondo.
   const [timeLeft, setTimeLeft] = useState(ZERO);
+  const [phase, setPhase] = useState<Phase>("before");
 
   useEffect(() => {
-    setTimeLeft(getTimeLeft(target));
-    const interval = setInterval(() => setTimeLeft(getTimeLeft(target)), 1000);
+    const tick = () => {
+      setTimeLeft(getTimeLeft(target));
+      setPhase(getPhase(target, end));
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [target]);
+  }, [target, end]);
+
+  if (phase === "open") return <Aperti />;
+  if (phase === "after") {
+    return (
+      <p className="text-sm uppercase tracking-[0.3em] text-brand-gray animate-fade-up">
+        Chiuso. Al prossimo mercoledì.
+      </p>
+    );
+  }
 
   const units = [
     { value: timeLeft.days, label: "giorni" },

@@ -13,6 +13,7 @@ import { getAvatar } from "@/lib/avatars";
 import { createClient } from "@/lib/supabase/client";
 import {
   EVENT_DATE,
+  EVENT_END,
   EVENT_PAYOFF,
   VENUE_CITY,
   VENUE_NAME,
@@ -185,7 +186,7 @@ export default function LandingPage() {
             className="relative z-10 mt-10 animate-fade-up"
             style={{ animationDelay: "0.5s" }}
           >
-            <Countdown target={EVENT_DATE} />
+            <Countdown target={EVENT_DATE} end={EVENT_END} />
           </div>
 
           {isMember ? (
