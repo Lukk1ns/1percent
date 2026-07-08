@@ -31,8 +31,18 @@ export default function LandingPage() {
   const [isMember, setIsMember] = useState<boolean | null>(null);
   const [me, setMe] = useState<{ alias: string; avatar_id: string | null } | null>(null);
   const [isStaff, setIsStaff] = useState(false);
+  // true finché il server non dice il contrario (se la RPC manca, resta aperto)
+  const [signupsOpen, setSignupsOpen] = useState(true);
   const handleDone = useCallback(() => setEntered(true), []);
   const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    createClient()
+      .rpc("signups_open")
+      .then(({ data, error }) => {
+        if (!error && data === false) setSignupsOpen(false);
+      });
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -210,7 +220,7 @@ export default function LandingPage() {
                 Invita
               </Link>
             </div>
-          ) : (
+          ) : signupsOpen ? (
             <Link
               href="/unisciti"
               className="btn btn-primary cta-pulse relative z-10 mt-10 animate-fade-up px-10 py-5 text-base"
@@ -218,6 +228,18 @@ export default function LandingPage() {
             >
               Ci sei o no?
             </Link>
+          ) : (
+            <div
+              className="relative z-10 mt-10 animate-fade-up border border-brand-red/40 bg-black/60 px-8 py-5 text-center"
+              style={{ animationDelay: "0.65s" }}
+            >
+              <p className="text-sm uppercase tracking-[0.25em] text-brand-red font-semibold">
+                🔒 Iscrizioni chiuse
+              </p>
+              <p className="text-xs text-brand-gray mt-2">
+                Stanotte si è dentro o si è fuori. Riaprono per il prossimo evento.
+              </p>
+            </div>
           )}
 
           <div className="relative z-10 animate-fade-up" style={{ animationDelay: "0.8s" }}>

@@ -98,17 +98,21 @@ export default function AdminDashboardPage() {
   const [editAlias, setEditAlias] = useState("");
   const [working, setWorking] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // null = non ancora caricato (o script SQL non incollato)
+  const [signupsOpen, setSignupsOpen] = useState<boolean | null>(null);
 
   async function load() {
     const supabase = createClient();
-    const [membersRes, postsRes, approvedRes, answersRes, reportsRes, statsRes] = await Promise.all([
+    const [membersRes, postsRes, approvedRes, answersRes, reportsRes, statsRes, signupsRes] = await Promise.all([
       supabase.rpc("admin_members"),
       supabase.rpc("admin_pending_posts"),
       supabase.rpc("approved_posts"),
       supabase.rpc("admin_quiz_answers"),
       supabase.rpc("admin_reports"),
       supabase.rpc("admin_stats"),
+      supabase.rpc("signups_open"),
     ]);
+    if (!signupsRes.error) setSignupsOpen(signupsRes.data !== false);
     // reportsRes/statsRes possono fallire finché lo script SQL non è stato eseguito: non bloccano il resto
     if (reportsRes.data) setReports(reportsRes.data as Report[]);
     if (statsRes.data) setStats(statsRes.data as Stats);
@@ -209,6 +213,25 @@ export default function AdminDashboardPage() {
     router.push("/admin/login");
   }
 
+  async function handleToggleSignups() {
+    if (signupsOpen === null) return;
+    const closing = signupsOpen;
+    if (
+      !confirm(
+        closing
+          ? "Chiudere le iscrizioni? Nessuno potrà più registrarsi finché non le riapri (i membri esistenti entrano normalmente)."
+          : "Riaprire le iscrizioni per il prossimo evento?",
+      )
+    )
+      return;
+    setWorking("signups");
+    const supabase = createClient();
+    const { error: err } = await supabase.rpc("admin_set_signups", { p_open: !closing });
+    if (err) setError("Errore iscrizioni: " + err.message);
+    else setSignupsOpen(!closing);
+    setWorking(null);
+  }
+
   return (
     <main className="flex-1 flex flex-col px-4 py-8 max-w-2xl mx-auto w-full">
       {/* Header */}
@@ -218,6 +241,20 @@ export default function AdminDashboardPage() {
           <p className="text-brand-gray text-xs uppercase tracking-widest">Dashboard 1%</p>
         </div>
         <div className="flex gap-3">
+          {signupsOpen !== null && (
+            <button
+              onClick={handleToggleSignups}
+              disabled={working === "signups"}
+              title={signupsOpen ? "Le iscrizioni sono APERTE: tocca per chiuderle" : "Le iscrizioni sono CHIUSE: tocca per riaprirle"}
+              className={`text-xs uppercase tracking-widest px-3 py-2 border transition-all disabled:opacity-50 ${
+                signupsOpen
+                  ? "text-green-400 border-green-400/50 hover:bg-green-400/10"
+                  : "text-brand-red border-brand-red hover:bg-brand-red hover:text-white"
+              }`}
+            >
+              {signupsOpen ? "🔓 Iscrizioni aperte" : "🔒 Iscrizioni chiuse"}
+            </button>
+          )}
           <button
             onClick={() => router.push("/admin/scan")}
             className="text-xs uppercase tracking-widest text-brand-red border border-brand-red px-3 py-2 hover:bg-brand-red hover:text-white transition-all"

@@ -24,11 +24,11 @@ insert into public.prize_types (id, label, emoji, weight, stock, enabled, sort) 
   ('torcia',   'TORCIA PORTACHIAVI', '🔦',  6,   10,  true, 40),
   ('tictoc',   'TICTOC BOX',         '📦',  15,  40,  true, 45),
   ('bubble',   'BUBBLE WORLD',       '🫧',  12,  24,  true, 50),
-  ('lollipop', 'LOLLIPOP',           '🍭',  20,  40,  true, 55),
-  ('mentos',   'MENTOS',             '🍬',  20,  40,  true, 60),
-  ('abbraccio','ABBRACCIO',          '🤗',  8,   8,   true, 70),
+  ('lollipop', 'LOLLIPOP',           '🍭',  20,  80,  true, 55),
+  ('mentos',   'MENTOS',             '🍬',  20,  50,  true, 60),
+  ('abbraccio','ABBRACCIO',          '🤗',  8,   30,  true, 70),
   -- "niente" a peso 0: non esce mai finché resta anche un solo premio.
-  -- Serve solo come rete se entra più gente dei 200 premi disponibili.
+  -- Serve solo come rete se entra più gente dei 272 premi disponibili.
   ('niente',   'NIENTE',             '😔',  0,   null, true, 99)
 on conflict (id) do update set
   label   = excluded.label,
@@ -38,5 +38,5 @@ on conflict (id) do update set
   enabled = excluded.enabled,
   sort    = excluded.sort;
 
--- Verifica: totale pezzi in palio (deve dare 200)
+-- Verifica: totale pezzi in palio (deve dare 272)
 -- select coalesce(sum(stock),0) as pezzi_totali from public.prize_types where stock is not null;

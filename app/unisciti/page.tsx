@@ -1,13 +1,53 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AVATARS } from "@/lib/avatars";
+import { createClient } from "@/lib/supabase/client";
+
+// Schermata mostrata quando le iscrizioni sono chiuse (interruttore admin)
+function SignupsClosed() {
+  return (
+    <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 max-w-md mx-auto w-full text-center">
+      <p className="text-5xl mb-6">🔒</p>
+      <h1 className="font-display text-4xl text-brand-red mb-4">
+        Iscrizioni chiuse
+      </h1>
+      <p className="text-brand-gray text-sm leading-relaxed mb-2">
+        Stanotte si è dentro o si è fuori.
+      </p>
+      <p className="text-brand-gray text-sm leading-relaxed mb-10">
+        Riaprono per il prossimo evento. Tieni d&apos;occhio la home.
+      </p>
+      <Link href="/" className="btn btn-outline">
+        ← Torna alla home
+      </Link>
+      <Link
+        href="/login"
+        className="mt-6 text-xs uppercase tracking-widest text-brand-gray hover:text-white transition-colors"
+      >
+        Già dell&apos;1%? Rientra →
+      </Link>
+    </main>
+  );
+}
 
 function JoinForm() {
   const router = useRouter();
   const params = useSearchParams();
   const refCode = params.get("ref") ?? "";
+
+  // null = sto controllando, true/false = risposta del server
+  const [signupsOpen, setSignupsOpen] = useState<boolean | null>(null);
+  useEffect(() => {
+    createClient()
+      .rpc("signups_open")
+      .then(({ data, error }) => {
+        // Se la RPC non esiste ancora o dà errore, non blocco nessuno
+        setSignupsOpen(error ? true : data !== false);
+      });
+  }, []);
 
   const [alias, setAlias] = useState("");
   const [avatarId, setAvatarId] = useState<string | null>(null);
@@ -58,6 +98,9 @@ function JoinForm() {
     );
     router.push("/test");
   }
+
+  if (signupsOpen === null) return null; // controllo in corso, evita flash del form
+  if (signupsOpen === false) return <SignupsClosed />;
 
   return (
     <main className="flex-1 flex flex-col items-center px-6 py-12 max-w-md mx-auto w-full">
