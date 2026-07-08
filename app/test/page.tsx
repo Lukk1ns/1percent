@@ -68,6 +68,8 @@ export default function TestPage() {
       if (rpcError) {
         if (rpcError.message?.includes("alias")) {
           setError("Questo alias è già preso. Torna indietro e scegline un altro.");
+        } else if (rpcError.message?.includes("mail")) {
+          setError("Questa email è già dell'1%. Torna alla home e usa \"Rientra\" per accedere al tuo account.");
         } else {
           throw rpcError;
         }
