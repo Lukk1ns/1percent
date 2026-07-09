@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AVATARS } from "@/lib/avatars";
+import { SIGNUPS_OPEN } from "@/lib/event";
 import { createClient } from "@/lib/supabase/client";
 
 // Schermata mostrata quando le iscrizioni sono chiuse (interruttore admin)
@@ -12,13 +13,13 @@ function SignupsClosed() {
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 max-w-md mx-auto w-full text-center">
       <p className="text-5xl mb-6">🔒</p>
       <h1 className="font-display text-4xl text-brand-red mb-4">
-        Iscrizioni chiuse
+        Iscrizioni chiuse al momento
       </h1>
       <p className="text-brand-gray text-sm leading-relaxed mb-2">
-        Stanotte si è dentro o si è fuori.
+        Il 1% tornerà.
       </p>
       <p className="text-brand-gray text-sm leading-relaxed mb-10">
-        Riaprono per il prossimo evento. Tieni d&apos;occhio la home.
+        Tieni d&apos;occhio la home e i nostri canali.
       </p>
       <Link href="/" className="btn btn-outline">
         ← Torna alla home
@@ -39,8 +40,11 @@ function JoinForm() {
   const refCode = params.get("ref") ?? "";
 
   // null = sto controllando, true/false = risposta del server
-  const [signupsOpen, setSignupsOpen] = useState<boolean | null>(null);
+  const [signupsOpen, setSignupsOpen] = useState<boolean | null>(
+    SIGNUPS_OPEN ? null : false,
+  );
   useEffect(() => {
+    if (!SIGNUPS_OPEN) return; // chiuso a codice: mostra sempre la schermata chiusa
     createClient()
       .rpc("signups_open")
       .then(({ data, error }) => {

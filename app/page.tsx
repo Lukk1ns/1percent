@@ -15,14 +15,20 @@ import {
   EVENT_DATE,
   EVENT_END,
   EVENT_PAYOFF,
+  SIGNUPS_OPEN,
   VENUE_CITY,
   VENUE_NAME,
 } from "@/lib/event";
 
-const TICKER = [
-  "08.07 il nuovo mercoledì 1%",
-  "partecipa all'estrazione nell'area benvenuto e ritira il tuo regalo",
-];
+const TICKER = SIGNUPS_OPEN
+  ? [
+      "08.07 il nuovo mercoledì 1%",
+      "partecipa all'estrazione nell'area benvenuto e ritira il tuo regalo",
+    ]
+  : [
+      "1% · not for everyone",
+      "iscrizioni chiuse al momento — tieni d'occhio i nostri canali",
+    ];
 
 export default function LandingPage() {
   const [entered, setEntered] = useState(false);
@@ -31,12 +37,14 @@ export default function LandingPage() {
   const [isMember, setIsMember] = useState<boolean | null>(null);
   const [me, setMe] = useState<{ alias: string; avatar_id: string | null } | null>(null);
   const [isStaff, setIsStaff] = useState(false);
-  // true finché il server non dice il contrario (se la RPC manca, resta aperto)
-  const [signupsOpen, setSignupsOpen] = useState(true);
+  // Parte dall'interruttore master: se è chiuso a codice, resta chiuso sempre.
+  // Se è aperto, il server (RPC) può comunque chiuderlo al volo.
+  const [signupsOpen, setSignupsOpen] = useState(SIGNUPS_OPEN);
   const handleDone = useCallback(() => setEntered(true), []);
   const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    if (!SIGNUPS_OPEN) return; // chiuso a codice: non interrogo nemmeno il server
     createClient()
       .rpc("signups_open")
       .then(({ data, error }) => {
@@ -169,18 +177,20 @@ export default function LandingPage() {
             1%
           </h1>
 
-          {/* Data evento */}
-          <div
-            className="relative z-10 mt-4 animate-fade-up"
-            style={{ animationDelay: "0.2s" }}
-          >
-            <p
-              className="font-display shine-text uppercase tracking-[0.12em]"
-              style={{ fontSize: "clamp(1.4rem, 6vw, 2.8rem)" }}
+          {/* Data evento — solo a iscrizioni aperte (con serata programmata) */}
+          {signupsOpen && (
+            <div
+              className="relative z-10 mt-4 animate-fade-up"
+              style={{ animationDelay: "0.2s" }}
             >
-              Mercoledì 8 Luglio
-            </p>
-          </div>
+              <p
+                className="font-display shine-text uppercase tracking-[0.12em]"
+                style={{ fontSize: "clamp(1.4rem, 6vw, 2.8rem)" }}
+              >
+                Mercoledì 8 Luglio
+              </p>
+            </div>
+          )}
 
           {/* Claim con typewriter */}
           <div
@@ -192,12 +202,15 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div
-            className="relative z-10 mt-10 animate-fade-up"
-            style={{ animationDelay: "0.5s" }}
-          >
-            <Countdown target={EVENT_DATE} end={EVENT_END} />
-          </div>
+          {/* Countdown — solo a iscrizioni aperte */}
+          {signupsOpen && (
+            <div
+              className="relative z-10 mt-10 animate-fade-up"
+              style={{ animationDelay: "0.5s" }}
+            >
+              <Countdown target={EVENT_DATE} end={EVENT_END} />
+            </div>
+          )}
 
           {isMember ? (
             <div
@@ -234,10 +247,10 @@ export default function LandingPage() {
               style={{ animationDelay: "0.65s" }}
             >
               <p className="text-sm uppercase tracking-[0.25em] text-brand-red font-semibold">
-                🔒 Iscrizioni chiuse
+                🔒 Iscrizioni chiuse al momento
               </p>
               <p className="text-xs text-brand-gray mt-2">
-                Stanotte si è dentro o si è fuori. Riaprono per il prossimo evento.
+                Il 1% tornerà. Tieni d&apos;occhio i nostri canali.
               </p>
             </div>
           )}
