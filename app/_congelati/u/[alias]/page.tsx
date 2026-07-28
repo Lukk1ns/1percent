@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchLegami } from "@/lib/legami";
-import Volto from "@/components/Volto";
-import RevealLegame from "@/components/RevealLegame";
+import Volto from "@/components/_congelati/Volto";
+import RevealLegame from "@/components/_congelati/RevealLegame";
 
 type PublicProfile = {
   member_number: number;

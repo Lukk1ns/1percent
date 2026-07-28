@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { voltoPath } from "@/lib/volto";
 import { downscaleImage } from "@/lib/downscale";
-import Volto from "@/components/Volto";
+import Volto from "@/components/_congelati/Volto";
 
 type Profile = {
   id: string;

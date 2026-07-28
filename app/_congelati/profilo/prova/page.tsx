@@ -6,7 +6,7 @@
 
 import { useRef, useState } from "react";
 import { downscaleImage } from "@/lib/downscale";
-import Volto from "@/components/Volto";
+import Volto from "@/components/_congelati/Volto";
 
 type Preview = { id: string; sigma: number; active: boolean; dataUrl: string };
 

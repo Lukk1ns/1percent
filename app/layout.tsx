@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Anton, Inter, Caveat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Backdrop } from "@/components/Backdrop";
-import { Notifiche } from "@/components/Notifiche";
 import "./globals.css";
 
 const anton = Anton({
@@ -44,7 +43,6 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
         <Backdrop />
-        <Notifiche />
         {children}
         <Analytics />
       </body>

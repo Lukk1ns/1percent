@@ -268,6 +268,12 @@ export default function AdminDashboardPage() {
             🎁 Regali
           </button>
           <button
+            onClick={() => router.push("/admin/crew")}
+            className="text-xs uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-2 hover:border-white/30 transition-all"
+          >
+            👤 Crew
+          </button>
+          <button
             onClick={handleLogout}
             className="text-xs uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-2 hover:border-white/30 transition-all"
           >

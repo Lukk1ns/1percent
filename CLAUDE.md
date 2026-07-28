@@ -1,13 +1,31 @@
-# Progetto "1%" — Portale interattivo evento
+# Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 24 giugno 2026
+> Ultimo aggiornamento: 28 luglio 2026
+
+## ⚠️ Leggi prima di tutto
+
+Il progetto è in **migrazione da serata a organizzazione**. Il piano completo, con
+schema database, schermate e ordine di lavorazione, è in
+[PIANO_ORGANIZZAZIONE.md](PIANO_ORGANIZZAZIONE.md). Leggilo prima di toccare qualsiasi cosa.
+
+Lavoro sul ramo `organizzazione`. `main` è la vecchia versione, ancora online.
+
+**Step 1 completato (28 lug):** ruoli crew/pubblico, inviti crew monouso, questionario
+dedicato alla crew, QR statico, tracciamento click referral, registro azioni admin,
+congelamento del blocco social.
 
 ## Cos'è questo progetto
 
-Sito web interattivo per la serata **"1%"** di Luka Rebec al **Papi on the Beach**, Roveredo in Piano (PN).
-Opening: **mercoledì 1 luglio 2026**.
+**1% non è più una serata: è il marchio dell'organizzazione** che fa eventi in più locali.
+Ogni festa tiene il proprio nome e la propria identità, 1% è la firma sopra tutte
+("MALDITA by 1%"). Il portale è l'hub di tutti gli eventi.
 
-Il sito non è una pagina Instagram — è un "mondo digitale" esplorabile: registrazione anonima, card membro, QR pass per l'ingresso gratuito, feed live degli iscritti.
+Il mercoledì al Papi on the Beach è un capitolo chiuso: non va più nominato da nessuna parte.
+
+Due livelli di utenza:
+- **Crew** (PR, DJ, staff, fotografi) — si entra **solo su invito**, con un codice monouso
+- **Pubblico** — si registra tramite il link personale di un membro crew, e resta attribuito
+  a quel membro per sempre
 
 ---
 
@@ -81,16 +99,23 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 | `/card` | Card membro digitale (screenshottabile, salvabile) |
 | `/pass` | QR pass ingresso |
 | `/invita` | Link referral personale + contatore inviti |
-| `/membri` | Il Muro: volti sfocati di tutti i membri, classifica poke 👊, poke 1/giorno |
-| `/profilo` | Il proprio profilo: upload foto (sfocata per gli altri), bio |
-| `/profilo/prova` | Interna, non linkata: confronto 3 livelli di blur |
-| `/u/[alias]` | Profilo pubblico di un membro (solo per membri) |
+| `/crew/entra?invito=CODICE` | **Ingresso crew su invito**: codice monouso → dati (nome vero + alias) → questionario crew |
 | `/login` | Accesso per membri esistenti (magic link email) |
 | `/privacy` | Privacy policy GDPR + cancellazione dati |
 | `/admin/login` | Login staff |
 | `/admin/dashboard` | Lista membri, modifica alias, elimina (solo admin) |
+| `/admin/crew` | **Inviti crew**: genera/annulla codici, Missione 150, risposte al questionario |
+| `/admin/regali` | Scorte premi, pesi, vincitori, operatori |
 | `/admin/scan` | Scanner QR per validare ingressi |
 | `/auth/callback` | Handler redirect magic link email |
+
+### Rotte congelate
+
+Il blocco social (Volti, Poke, Legami, Messaggi, Mosaico) è in `app/_congelati/`.
+Next.js ignora le cartelle che iniziano con `_`: il codice resta, le pagine non
+esistono più online. I componenti sono in `components/_congelati/`, l'SQL in
+`supabase/_congelati/`. Per riaccenderle basta rimettere le cartelle al loro posto
+e ripristinare gli import.
 
 ---
 
@@ -98,10 +123,28 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 
 | Tabella | Cosa contiene |
 |---|---|
-| `profiles` | Ogni membro: alias, avatar, numero progressivo, email, referral_code, referred_by |
-| `passes` | QR token univoco per ingresso, status (valid/checked_in) |
-| `admins` | Email degli staff autorizzati a validare QR |
-| `pokes` | Poke 👊 tra membri: from/to, 1 al giorno per coppia (unique su data IT), flag seen. RLS: solo il ricevente legge i propri. SQL in `supabase/pokes.sql` |
+| `profiles` | Ogni membro: alias, avatar, numero progressivo, email, referral_code, referred_by + **role** (`public`/`crew`), **nome** (vero, solo crew), **qr_token** (QR statico), crew_invited_by, crew_since, crew_answers |
+| `passes` | Pass d'ingresso. Il suo `qr_token` è **identico** a `profiles.qr_token`: allo step 4 lo scanner passa a leggere il profilo senza invalidare nessun QR già in giro |
+| `crew_invites` | Codici invito monouso: code, note, created_by, used_by, expires_at (30gg), revoked_at |
+| `referral_clicks` | Un record per click su un link invito. Serve a distinguere "visto" da "iscritto" da "entrato" |
+| `admin_log` | Registro di chi ha fatto cosa nel pannello |
+| `admins` | Email degli amministratori |
+| `operators` | Email di chi può solo scansionare (nessun accesso ai dati) |
+
+### Ordine di esecuzione degli script
+
+1. `supabase/00_backup.sql` — export CSV prima di cancellare
+2. `supabase/01_reset.sql` — azzeramento dati (irreversibile)
+3. `supabase/02_fondamenta.sql` — ruoli, QR statico, inviti crew, click, log
+
+### Funzioni RPC nuove (step 1)
+
+`my_profile()` · `crew_count()` · `my_referral_stats()` · `track_referral_click(code)` ·
+`check_crew_invite(code)` · `join_crew(...)` · `join_public(...)` ·
+`admin_create_crew_invite(note)` · `admin_list_crew_invites()` ·
+`admin_revoke_crew_invite(code)` · `admin_set_role(profile, role)` · `admin_crew_answers()`
+
+`join_one_percent()` è sostituita da `join_public()` (stessa cosa più `p_nome` e il ruolo).
 
 **Storage** (SQL in `supabase/volti.sql`): bucket `volti` (foto nitide, PRIVATO) + `volti-blur` (foto sfocate generate dal server, PUBBLICO). Path sempre `<uuid>/volto.webp`. Il blur è fatto con sharp nell'API route `/api/volto` (mai CSS), EXIF strippati. Livello blur: `BLUR_SIGMA` in `lib/volto.ts`.
 

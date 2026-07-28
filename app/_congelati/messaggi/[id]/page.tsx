@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchLegami } from "@/lib/legami";
-import Volto from "@/components/Volto";
+import Volto from "@/components/_congelati/Volto";
 
 type Msg = {
   id: string;

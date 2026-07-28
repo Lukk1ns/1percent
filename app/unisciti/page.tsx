@@ -43,6 +43,13 @@ function JoinForm() {
   const [signupsOpen, setSignupsOpen] = useState<boolean | null>(
     SIGNUPS_OPEN ? null : false,
   );
+  // Registra il click sul link invito. Serve a distinguere chi l'ha
+  // visto da chi si è iscritto davvero: solo il secondo numero conta.
+  useEffect(() => {
+    if (!refCode) return;
+    createClient().rpc("track_referral_click", { p_code: refCode });
+  }, [refCode]);
+
   useEffect(() => {
     if (!SIGNUPS_OPEN) return; // chiuso a codice: mostra sempre la schermata chiusa
     createClient()

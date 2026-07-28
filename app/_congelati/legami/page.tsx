@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchLegami, type Legame } from "@/lib/legami";
-import Volto from "@/components/Volto";
+import Volto from "@/components/_congelati/Volto";
 
 export default function LegamiPage() {
   const router = useRouter();
