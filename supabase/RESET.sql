@@ -1,22 +1,99 @@
 -- ============================================================
--- 1% — FONDAMENTA DELL'ORGANIZZAZIONE (step 1)
+-- 1% — RESET TOTALE E RIPARTENZA
 --
--- Cosa introduce:
---   · due livelli di utenza: crew (staff) e pubblico (il giro)
---   · candidatura staff spuntata al momento dell'iscrizione,
---     che TU approvi o rifiuti dal pannello
---   · questionario dedicato a chi si candida
---   · QR CODE PERSONALE STATICO sul profilo, uguale per sempre
---   · tracciamento dei click sui link invito
---   · registro delle azioni admin
+-- UN SOLO FILE. Incollalo tutto nel SQL Editor di Supabase e
+-- premi Run. Fa due cose di seguito:
 --
--- Da eseguire DOPO 00_backup.sql e 01_reset.sql.
--- È idempotente: rilanciarlo non rompe niente.
+--   PARTE 1 — cancella TUTTI i membri, pass, poke, messaggi,
+--             post e regali estratti. Admin e operatori restano.
+--   PARTE 2 — costruisce le fondamenta dell'organizzazione:
+--             ruoli crew/pubblico, candidatura staff, QR statico,
+--             click sui link invito, registro azioni admin.
 --
--- Regola non negoziabile di questo progetto: ogni funzione che
--- fa qualcosa di amministrativo comincia con il controllo
--- is_admin(). Il gate lato pagina non conta niente.
+-- ⚠️  PRIMA DI PREMERE RUN, una cosa sola a mano:
+--     Storage → bucket "volti" → menù ⋯ → Empty bucket
+--     Storage → bucket "volti-blur" → menù ⋯ → Empty bucket
+--     I file non si possono cancellare da SQL, Supabase lo vieta.
+--
+-- Se durante l'esecuzione compare un avviso su operazione
+-- distruttiva o RLS, rispondi "Run without RLS".
+--
+-- Alla fine ti stampa tre numeri di verifica: devono essere
+-- tutti a zero.
+--
+-- (Se prima vuoi salvarti i vecchi iscritti, esegui
+--  backup_prima_del_reset.sql e scarica i CSV.)
 -- ============================================================
+
+
+-- ############################################################
+-- PARTE 1 — CANCELLAZIONE
+-- ############################################################
+
+begin;
+
+-- ------------------------------------------------------------
+-- Tabelle che potrebbero non esistere (social congelato, regali,
+-- bacheca): le svuoto solo se ci sono, così lo script gira sempre.
+-- ------------------------------------------------------------
+do $$
+declare
+  t text;
+begin
+  foreach t in array array[
+    'prize_draws',      -- regali estratti
+    'reports',          -- segnalazioni
+    'blocks',           -- blocchi tra utenti
+    'messages',         -- messaggi
+    'conversations',
+    'chat_requests',
+    'pokes',
+    'posts'             -- bacheca post-it
+  ]
+  loop
+    if to_regclass('public.' || t) is not null then
+      execute format('delete from public.%I', t);
+      raise notice 'svuotata: %', t;
+    end if;
+  end loop;
+end $$;
+
+-- ------------------------------------------------------------
+-- Pass e profili
+-- ------------------------------------------------------------
+delete from public.passes;
+delete from public.profiles;
+
+-- ------------------------------------------------------------
+-- Utenti auth: via tutti tranne admin e operatori, altrimenti
+-- ti chiudi fuori dal tuo stesso pannello.
+-- ------------------------------------------------------------
+do $$
+declare
+  v_tenuti text := 'select lower(email) from public.admins';
+begin
+  -- la tabella operators esiste solo se hai già lanciato il ruolo operatore
+  if to_regclass('public.operators') is not null then
+    v_tenuti := v_tenuti || ' union select lower(email) from public.operators';
+  end if;
+
+  execute format(
+    'delete from auth.users u where coalesce(lower(u.email), '''') not in (%s)',
+    v_tenuti
+  );
+end $$;
+
+-- ------------------------------------------------------------
+-- Il prossimo iscritto sarà il #1
+-- ------------------------------------------------------------
+alter sequence public.profiles_member_number_seq restart with 1;
+
+commit;
+
+
+-- ############################################################
+-- PARTE 2 — FONDAMENTA
+-- ############################################################
 
 create extension if not exists "pgcrypto";
 
@@ -490,9 +567,14 @@ grant execute on function public.admin_crew_answers() to authenticated;
 
 
 -- ============================================================
--- VERIFICA — dopo il reset dovresti vedere tutti zeri.
+-- VERIFICA FINALE
+--
+-- membri, crew e candidature devono essere 0.
+-- admin deve essere almeno 1: è il tuo accesso al pannello.
+-- Se admin fosse 0, fermati e scrivimi.
 -- ============================================================
 select
   (select count(*) from public.profiles) as membri,
   (select count(*) from public.profiles where role = 'crew') as crew,
-  (select count(*) from public.profiles where crew_request_status = 'in_attesa') as candidature;
+  (select count(*) from public.profiles where crew_request_status = 'in_attesa') as candidature,
+  (select count(*) from public.admins) as admin;

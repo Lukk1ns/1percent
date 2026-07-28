@@ -106,7 +106,7 @@ export default function AdminCrewPage() {
 
     if (reqRes.error) {
       setErrore(
-        "Non disponibile. Hai incollato supabase/02_fondamenta.sql nel SQL Editor? (" +
+        "Non disponibile. Hai incollato supabase/RESET.sql nel SQL Editor? (" +
           reqRes.error.message +
           ")",
       );

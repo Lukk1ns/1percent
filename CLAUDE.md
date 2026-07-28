@@ -148,11 +148,15 @@ al suo posto.
 | `admins` | Email degli amministratori |
 | `operators` | Email di chi può solo scansionare (nessun accesso ai dati) |
 
-### Ordine di esecuzione degli script
+### Ripartenza da zero
 
-1. `supabase/00_backup.sql` — export CSV prima di cancellare
-2. `supabase/01_reset.sql` — azzeramento dati (irreversibile)
-3. `supabase/02_fondamenta.sql` — ruoli, QR statico, candidature staff, click, log
+Un file solo: **`supabase/RESET.sql`**. Cancella tutti i dati (admin e operatori esclusi) e
+subito dopo costruisce le fondamenta: ruoli, QR statico, candidature staff, click, log.
+Prima di eseguirlo vanno svuotati a mano i bucket `volti` e `volti-blur` (Storage → ⋯ →
+Empty bucket): i file non si cancellano da SQL, Supabase lo vieta.
+
+`supabase/backup_prima_del_reset.sql` è opzionale: 4 query da eseguire una alla volta,
+scaricando il CSV di ognuna, se si vogliono conservare i vecchi iscritti.
 
 Gli script del social (`pokes.sql`, `volti.sql`, `legami.sql`, `messaggi.sql`, `volti_fix.sql`)
 erano già stati eseguiti a luglio: il reset cancella le righe, non le tabelle. Se una pagina
