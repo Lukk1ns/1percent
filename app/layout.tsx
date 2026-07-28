@@ -23,7 +23,7 @@ const caveat = Caveat({
 
 export const metadata: Metadata = {
   title: "1% — not for everyone",
-  description: "Il 99% resterà a casa.",
+  description: "Pordenone eventi. Ogni festa ha un nome, sopra c'è sempre il nostro.",
 };
 
 export const viewport: Viewport = {

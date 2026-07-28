@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Countdown } from "@/components/Countdown";
+import { ProssimoEvento } from "@/components/ProssimoEvento";
 import { MemberCounter } from "@/components/MemberCounter";
 import { EntrySequence } from "@/components/EntrySequence";
 import { LiveFeed } from "@/components/LiveFeed";
@@ -11,19 +11,12 @@ import { PostForm } from "@/components/PostForm";
 import { Marquee } from "@/components/Marquee";
 import { getAvatar } from "@/lib/avatars";
 import { createClient } from "@/lib/supabase/client";
-import {
-  EVENT_DATE,
-  EVENT_END,
-  EVENT_PAYOFF,
-  SIGNUPS_OPEN,
-  VENUE_CITY,
-  VENUE_NAME,
-} from "@/lib/event";
+import { BRAND_AREA, BRAND_CLAIM, BRAND_PAYOFF, SIGNUPS_OPEN } from "@/lib/event";
 
 const TICKER = SIGNUPS_OPEN
   ? [
-      "08.07 il nuovo mercoledì 1%",
-      "partecipa all'estrazione nell'area benvenuto e ritira il tuo regalo",
+      "1% · not for everyone",
+      "ogni festa ha un nome · sopra c'è sempre il nostro",
     ]
   : [
       "1% · not for everyone",
@@ -82,12 +75,6 @@ export default function LandingPage() {
     el.style.setProperty("--spot-x", `${e.clientX}px`);
     el.style.setProperty("--spot-y", `${e.clientY}px`);
   }, []);
-
-  const dateLabel = EVENT_DATE.toLocaleDateString("it-IT", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
 
   return (
     <>
@@ -157,7 +144,7 @@ export default function LandingPage() {
         {/* Contenuto centrale */}
         <div className="relative flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
           <p className="relative z-10 text-xs sm:text-sm uppercase tracking-[0.4em] text-brand-gray animate-fade-up">
-            {EVENT_PAYOFF}
+            {BRAND_PAYOFF}
           </p>
 
           {/* Logo "1%" — glow + glitch cromatico */}
@@ -177,48 +164,29 @@ export default function LandingPage() {
             1%
           </h1>
 
-          {/* Data evento — solo a iscrizioni aperte (con serata programmata) */}
-          {signupsOpen && (
-            <div
-              className="relative z-10 mt-4 animate-fade-up"
-              style={{ animationDelay: "0.2s" }}
-            >
-              <p
-                className="font-display shine-text uppercase tracking-[0.12em]"
-                style={{ fontSize: "clamp(1.4rem, 6vw, 2.8rem)" }}
-              >
-                Mercoledì 8 Luglio
-              </p>
-            </div>
-          )}
-
-          {/* Claim con typewriter */}
+          {/* Chi siamo, in una riga. Il testo sta in lib/event.ts */}
           <div
             className="relative z-10 mt-3 animate-fade-up"
             style={{ animationDelay: "0.25s" }}
           >
-            <p className="typewriter text-lg sm:text-xl mx-auto" style={{ maxWidth: "22ch" }}>
-              Il 99% resterà a casa.
+            <p
+              className="typewriter text-lg sm:text-xl mx-auto uppercase tracking-[0.15em]"
+              style={{ maxWidth: "24ch" }}
+            >
+              {BRAND_CLAIM}
             </p>
           </div>
 
-          {/* Countdown — solo a iscrizioni aperte */}
-          {signupsOpen && (
-            <div
-              className="relative z-10 mt-10 animate-fade-up"
-              style={{ animationDelay: "0.5s" }}
-            >
-              <Countdown target={EVENT_DATE} end={EVENT_END} />
-            </div>
-          )}
+          {/* Il prossimo evento: nome e countdown, o punti di domanda se non svelato */}
+          <ProssimoEvento />
 
           {isMember ? (
             <div
               className="relative z-10 mt-10 flex flex-col items-center gap-3 animate-fade-up sm:flex-row"
               style={{ animationDelay: "0.65s" }}
             >
-              <Link href="/card" className="btn btn-primary">
-                La tua card
+              <Link href="/eventi" className="btn btn-primary">
+                Gli eventi
               </Link>
               <Link href="/pass" className="btn btn-outline">
                 Il tuo pass
@@ -234,13 +202,20 @@ export default function LandingPage() {
               </Link>
             </div>
           ) : signupsOpen ? (
-            <Link
-              href="/unisciti"
-              className="btn btn-primary cta-pulse relative z-10 mt-10 animate-fade-up px-10 py-5 text-base"
+            <div
+              className="relative z-10 mt-10 flex flex-col items-center gap-4 animate-fade-up sm:flex-row"
               style={{ animationDelay: "0.65s" }}
             >
-              Ci sei o no?
-            </Link>
+              <Link
+                href="/unisciti"
+                className="btn btn-primary cta-pulse px-10 py-5 text-base"
+              >
+                Ci sei o no?
+              </Link>
+              <Link href="/eventi" className="btn btn-ghost">
+                Tutti gli eventi
+              </Link>
+            </div>
           ) : (
             <div
               className="relative z-10 mt-10 animate-fade-up border border-brand-red/40 bg-black/60 px-8 py-5 text-center"
@@ -297,7 +272,7 @@ export default function LandingPage() {
         {/* Ticker in basso (direzione opposta) + info */}
         <div className="animate-fade-up" style={{ animationDelay: "0.9s" }}>
           <p className="text-center text-[10px] uppercase tracking-widest text-brand-gray/50 mb-3">
-            {dateLabel} · {VENUE_NAME} · {VENUE_CITY}
+            1% · {BRAND_AREA}
           </p>
           <Marquee items={TICKER} reverse />
         </div>

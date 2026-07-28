@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 import { PokeCounter } from "@/components/PokeCounter";
-import { VENUE_NAME, VENUE_CITY } from "@/lib/event";
+import { BRAND_AREA } from "@/lib/event";
 
 type Profile = {
   member_number: number;
@@ -212,7 +212,7 @@ export default function CardPage() {
             <p className="text-[9px] uppercase tracking-[0.25em] text-brand-gray/60 mb-0.5">Dal</p>
             <p className="text-xs text-white/80 font-light">{memberSince}</p>
             <p className="text-[9px] uppercase tracking-[0.15em] text-brand-gray/50 mt-1">
-              {VENUE_NAME}
+              {BRAND_AREA}
             </p>
           </div>
           <p className="text-[9px] uppercase tracking-[0.3em] text-brand-red/70">

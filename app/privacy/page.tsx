@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { VENUE_NAME } from "@/lib/event";
+import { LEGAL_NAME } from "@/lib/event";
 
 export default function PrivacyPage() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
       <div className="prose prose-sm prose-invert text-brand-gray space-y-4 text-sm leading-relaxed">
         <h2 className="text-white text-base font-semibold">Titolare del trattamento</h2>
         <p>
-          {VENUE_NAME} — <strong className="text-white">QFB SRL</strong>,{" "}
+          {LEGAL_NAME} — <strong className="text-white">QFB SRL</strong>,{" "}
           <strong className="text-white">Via XX Settembre 289, Roveredo in Piano (PN)</strong>.{" "}
           Email: <strong className="text-white">papionthebeach22@gmail.com</strong>.
         </p>

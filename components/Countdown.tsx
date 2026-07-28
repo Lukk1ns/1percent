@@ -33,7 +33,7 @@ function getPhase(target: Date, end?: Date): Phase {
 }
 
 /** Scritta "APERTI" che sostituisce il countdown durante la serata. */
-function Aperti() {
+function Aperti({ sottotitolo }: { sottotitolo: string }) {
   return (
     <div className="flex flex-col items-center gap-3 animate-fade-up">
       <span className="flex items-center gap-3 text-xs uppercase tracking-[0.4em] text-brand-gray">
@@ -56,14 +56,29 @@ function Aperti() {
       >
         APERTI
       </span>
-      <span className="text-sm sm:text-base text-brand-gray">
-        Il 99% è rimasto a casa. Tu sai dove andare.
-      </span>
+      <span className="text-sm sm:text-base text-brand-gray">{sottotitolo}</span>
     </div>
   );
 }
 
-export function Countdown({ target, end }: { target: Date; end?: Date }) {
+type Props = {
+  target: Date;
+  end?: Date;
+  /** Riga sotto la scritta APERTI, mentre la festa è in corso. */
+  sottotitoloAperti?: string;
+  /** Cosa si legge quando è finita. */
+  testoDopo?: string;
+  /** Etichetta sopra le cifre, es. "si svela tra". */
+  etichetta?: string;
+};
+
+export function Countdown({
+  target,
+  end,
+  sottotitoloAperti = "Tu sai dove sei.",
+  testoDopo = "Finita. Ci si vede alla prossima.",
+  etichetta,
+}: Props) {
   // Parte da zero (uguale su server e client → niente mismatch di hydration),
   // poi al mount calcola il valore reale e avvia il tick al secondo.
   const [timeLeft, setTimeLeft] = useState(ZERO);
@@ -79,11 +94,11 @@ export function Countdown({ target, end }: { target: Date; end?: Date }) {
     return () => clearInterval(interval);
   }, [target, end]);
 
-  if (phase === "open") return <Aperti />;
+  if (phase === "open") return <Aperti sottotitolo={sottotitoloAperti} />;
   if (phase === "after") {
     return (
       <p className="text-sm uppercase tracking-[0.3em] text-brand-gray animate-fade-up">
-        Chiuso. Al prossimo mercoledì.
+        {testoDopo}
       </p>
     );
   }
@@ -96,8 +111,14 @@ export function Countdown({ target, end }: { target: Date; end?: Date }) {
   ];
 
   return (
-    <div className="flex gap-1.5 sm:gap-4" role="timer" aria-live="off">
-      {units.map((unit, i) => {
+    <div className="flex flex-col items-center gap-3">
+      {etichetta && (
+        <span className="text-[10px] uppercase tracking-[0.4em] text-brand-gray/70">
+          {etichetta}
+        </span>
+      )}
+      <div className="flex gap-1.5 sm:gap-4" role="timer" aria-live="off">
+        {units.map((unit, i) => {
         const chars = String(unit.value).padStart(2, "0").split("");
         return (
           <div key={unit.label} className="flex items-center gap-1.5 sm:gap-4">
@@ -111,14 +132,15 @@ export function Countdown({ target, end }: { target: Date; end?: Date }) {
                 {unit.label}
               </span>
             </div>
-            {i < units.length - 1 && (
-              <span className="font-display text-brand-red/40 text-lg sm:text-4xl animate-pulse-glow" aria-hidden>
-                :
-              </span>
-            )}
-          </div>
-        );
-      })}
+              {i < units.length - 1 && (
+                <span className="font-display text-brand-red/40 text-lg sm:text-4xl animate-pulse-glow" aria-hidden>
+                  :
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

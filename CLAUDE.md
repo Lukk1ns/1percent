@@ -15,6 +15,11 @@ questionario dedicato e approvazione a mano, QR statico, tracciamento click refe
 registro azioni admin. Il blocco social (Muro, profilo, poke, Legami, messaggi) **resta
 acceso**; congelato solo il Mosaico.
 
+**Step 2 completato (28 lug):** locali ed eventi nel database, calendario pubblico, nuova
+home. L'iscrizione pubblica non ha più domande: chi si iscrive entra dritto, le 4 domande
+sono solo per chi si candida allo staff (`/candidatura`, che ha sostituito `/test`).
+Tolto ogni riferimento al mercoledì e alla serata singola.
+
 ## Cos'è questo progetto
 
 **1% non è più una serata: è il marchio dell'organizzazione** che fa eventi in più locali.
@@ -96,8 +101,10 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 | Route | Descrizione |
 |---|---|
 | `/` | Landing: glitch 1%, countdown, feed live iscritti |
-| `/unisciti?ref=CODE` | Registrazione: alias + avatar + email + privacy + **casella "voglio entrare nello staff"** (con nome vero) |
-| `/test` | Quiz 4 domande. Chi si è candidato allo staff prosegue con altre 4 domande dedicate |
+| `/unisciti?ref=CODE` | Registrazione in un passo solo: alias + avatar + email + privacy + **casella "voglio entrare nello staff"** (con nome vero). Chi non si candida entra subito, senza domande |
+| `/candidatura` | Le 4 domande di chi si candida allo staff. Ha sostituito `/test` |
+| `/eventi` | Calendario: in programma e già successe. I non svelati compaiono come `?????` |
+| `/eventi/[slug]` | Scheda di un evento svelato: nome, locale, data, countdown, descrizione |
 | `/benvenuto` | Reveal animato "Benvenuto nell'1%" |
 | `/card` | Card membro digitale (screenshottabile, salvabile) |
 | `/pass` | QR pass ingresso |
@@ -112,6 +119,7 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 | `/admin/login` | Login staff |
 | `/admin/dashboard` | Lista membri, modifica alias, elimina (solo admin) |
 | `/admin/crew` | **Staff**: candidature in attesa con le risposte, approva/rifiuta, Missione 150, crew attuale |
+| `/admin/eventi` | **Eventi e locali**: crea locali, crea eventi, decidi quando svelarli, pubblica |
 | `/admin/regali` | Scorte premi, pesi, vincitori, operatori |
 | `/admin/scan` | Scanner QR per validare ingressi |
 | `/auth/callback` | Handler redirect magic link email |
@@ -143,6 +151,8 @@ al suo posto.
 | `profiles` | Ogni membro: alias, avatar, numero progressivo, email, referral_code, referred_by + **role** (`public`/`crew`), **nome** (vero, chiesto solo a chi si candida), **qr_token** (QR statico), **crew_request_status** (`nessuna`/`in_attesa`/`approvata`/`rifiutata`), crew_request_at, crew_answers, crew_since, crew_decided_at/by |
 | `passes` | Pass d'ingresso. Il suo `qr_token` è **identico** a `profiles.qr_token`: allo step 4 lo scanner passa a leggere il profilo senza invalidare nessun QR già in giro |
 | `pokes` | Poke 👊 tra membri, 1 al giorno per coppia. RLS: solo il ricevente legge i propri |
+| `venues` | I locali in cui organizziamo: nome, città, indirizzo |
+| `events` | Le feste: nome proprio, data, locale, `reveal_at` (fino a quando resta nascosta), `teaser`, `published` |
 | `referral_clicks` | Un record per click su un link invito. Serve a distinguere "visto" da "iscritto" da "entrato" |
 | `admin_log` | Registro di chi ha fatto cosa nel pannello |
 | `admins` | Email degli amministratori |
@@ -157,6 +167,22 @@ Empty bucket): i file non si cancellano da SQL, Supabase lo vieta.
 
 `supabase/backup_prima_del_reset.sql` è opzionale: 4 query da eseguire una alla volta,
 scaricando il CSV di ognuna, se si vogliono conservare i vecchi iscritti.
+
+Poi **`supabase/03_eventi.sql`** per locali ed eventi.
+
+### Il reveal degli eventi
+
+`events.reveal_at` decide se una festa è già svelata. Finché quella data non è passata,
+le funzioni pubbliche (`next_event`, `events_list`, `event_by_slug`) **non restituiscono
+nome, locale, descrizione né slug**: esce solo la data e il teaser, e il sito mostra
+`?????`. Il nome non arriva mai al browser, quindi non si può sbirciare dal codice della
+pagina. `reveal_at` a null = già svelato. Il bottone "Svela adesso" nel pannello lo azzera.
+
+### Identità del marchio
+
+Sta tutta in `lib/event.ts`: `BRAND_CLAIM` è la riga sotto il wordmark in home
+(oggi "Pordenone eventi"), `BRAND_AREA` la zona nel footer, `LEGAL_NAME` il titolare
+privacy. Le singole feste non stanno qui: stanno nel database.
 
 Gli script del social (`pokes.sql`, `volti.sql`, `legami.sql`, `messaggi.sql`, `volti_fix.sql`)
 erano già stati eseguiti a luglio: il reset cancella le righe, non le tabelle. Se una pagina

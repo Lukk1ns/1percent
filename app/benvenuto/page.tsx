@@ -8,6 +8,8 @@ type MemberData = {
   member_number: number;
   alias: string;
   avatar_id: string;
+  /** 'in_attesa' se si è candidato allo staff */
+  crew_request_status?: string;
 };
 
 export default function BenvenutoPage() {
@@ -45,7 +47,7 @@ export default function BenvenutoPage() {
       ) : (
         <div className="flex flex-col items-center gap-6 animate-fade-up">
           <p className="text-xs uppercase tracking-[0.3em] text-brand-gray">
-            il 99% è ancora a casa
+            adesso sei dentro
           </p>
           <div className="text-6xl">{avatar.emoji}</div>
           <p className="text-brand-gray text-sm">
@@ -55,6 +57,19 @@ export default function BenvenutoPage() {
             </span>
           </p>
           <h2 className="font-display text-3xl text-white">{member.alias}</h2>
+
+          {/* Chi si è candidato allo staff deve sapere cosa succede adesso */}
+          {member.crew_request_status === "in_attesa" && (
+            <div className="border border-brand-red/40 bg-brand-red/5 px-5 py-4 max-w-xs">
+              <p className="text-xs uppercase tracking-[0.2em] text-brand-red mb-2">
+                candidatura ricevuta
+              </p>
+              <p className="text-xs text-brand-gray leading-relaxed">
+                Le tue risposte sono arrivate. Se ci interessi, ti scriviamo noi.
+              </p>
+            </div>
+          )}
+
           <button
             onClick={() => router.push("/card")}
             className="btn btn-primary cta-pulse mt-4 px-10"
