@@ -8,6 +8,9 @@ export const VENUE_CITY = "Roveredo in Piano (PN)";
 
 // Interruttore master delle iscrizioni. false = "ISCRIZIONI CHIUSE AL MOMENTO"
 // su tutto il sito, senza dipendere dall'RPC signups_open del DB.
-// Il mercoledì 1% è sospeso; il sito resta online per il resto.
-// Per riaprire una serata futura: rimettere true (+ aggiornare EVENT_DATE/EVENT_END).
-export const SIGNUPS_OPEN = false;
+//
+// Riaperto il 28 lug: le iscrizioni servono per provare il flusso nuovo
+// (candidatura staff compresa) sul ramo `organizzazione`.
+// Allo step 2 questo interruttore sparisce: apertura e chiusura seguiranno
+// i singoli eventi, non una serata sola scritta nel codice.
+export const SIGNUPS_OPEN = true;
