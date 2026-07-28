@@ -2,9 +2,11 @@
 -- 1% — FONDAMENTA DELL'ORGANIZZAZIONE (step 1)
 --
 -- Cosa introduce:
---   · due livelli di utenza: crew (su invito) e pubblico (su link)
+--   · due livelli di utenza: crew (staff) e pubblico (il giro)
+--   · candidatura staff spuntata al momento dell'iscrizione,
+--     che TU approvi o rifiuti dal pannello
+--   · questionario dedicato a chi si candida
 --   · QR CODE PERSONALE STATICO sul profilo, uguale per sempre
---   · inviti crew monouso generati dall'admin
 --   · tracciamento dei click sui link invito
 --   · registro delle azioni admin
 --
@@ -19,34 +21,41 @@
 create extension if not exists "pgcrypto";
 
 -- ============================================================
--- 1. PROFILI — ruolo, nome, QR statico
+-- 1. PROFILI — ruolo, nome, QR statico, candidatura staff
 -- ============================================================
 
 alter table public.profiles
   add column if not exists role text not null default 'public',
   add column if not exists nome text,
   add column if not exists qr_token text,
-  add column if not exists crew_invited_by uuid references public.profiles (id) on delete set null,
   add column if not exists crew_since timestamptz,
-  add column if not exists crew_answers jsonb;
+  add column if not exists crew_answers jsonb,
+  add column if not exists crew_request_status text not null default 'nessuna',
+  add column if not exists crew_request_at timestamptz,
+  add column if not exists crew_decided_at timestamptz,
+  add column if not exists crew_decided_by text;
 
--- 'public' = il giro · 'crew' = l'1%. Gli admin restano nella tabella admins.
+-- 'public' = il giro · 'crew' = staff. Gli admin restano nella tabella admins.
 do $$
 begin
-  if not exists (
-    select 1 from pg_constraint where conname = 'profiles_role_check'
-  ) then
+  if not exists (select 1 from pg_constraint where conname = 'profiles_role_check') then
     alter table public.profiles
       add constraint profiles_role_check check (role in ('public', 'crew'));
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'profiles_crew_request_check') then
+    alter table public.profiles
+      add constraint profiles_crew_request_check
+      check (crew_request_status in ('nessuna', 'in_attesa', 'approvata', 'rifiutata'));
   end if;
 end $$;
 
 -- Il QR personale: generato una volta, non cambia mai più.
 -- È l'unica cosa che il membro mostra allo stand, a qualsiasi evento.
 --
--- Chi ha già un pass si tiene il SUO token: così il QR già stampato o
--- salvato sul telefono continua a funzionare, e allo step 4 lo scanner
--- passa a leggere il profilo senza che nessuno rifaccia niente.
+-- Chi ha già un pass si tiene il SUO token: così il QR già salvato sul
+-- telefono continua a funzionare, e allo step 4 lo scanner passa a
+-- leggere il profilo senza che nessuno rifaccia niente.
 update public.profiles p
 set qr_token = pa.qr_token
 from public.passes pa
@@ -62,34 +71,20 @@ alter table public.profiles alter column qr_token set not null;
 create unique index if not exists profiles_qr_token_idx on public.profiles (qr_token);
 create index if not exists profiles_role_idx on public.profiles (role) where deleted_at is null;
 
+-- Le candidature in attesa: è la coda che guardi dal pannello
+create index if not exists profiles_crew_request_idx
+  on public.profiles (crew_request_at)
+  where crew_request_status = 'in_attesa';
+
 -- Una email = una iscrizione (regola già in vigore, la riaffermo qui)
 create unique index if not exists profiles_email_lower_idx
   on public.profiles (lower(email)) where email is not null and deleted_at is null;
 
 
 -- ============================================================
--- 2. INVITI CREW — nell'1% non ti candidi, ci vieni chiamato
--- ============================================================
-
-create table if not exists public.crew_invites (
-  code       text primary key default upper(substr(md5(gen_random_uuid()::text), 1, 8)),
-  note       text,                      -- "per Marco, il DJ" — promemoria per l'admin
-  created_by text not null,             -- email dell'admin che l'ha generato
-  used_by    uuid references public.profiles (id) on delete set null,
-  used_at    timestamptz,
-  revoked_at timestamptz,
-  expires_at timestamptz not null default now() + interval '30 days',
-  created_at timestamptz not null default now()
-);
-
--- Nessuna policy: si legge e si scrive solo dalle funzioni qui sotto.
-alter table public.crew_invites enable row level security;
-
-
--- ============================================================
--- 3. CLICK SUI LINK INVITO
--- Serve a distinguere "quanti l'hanno visto" da "quanti sono
--- entrati davvero". Solo i secondi generano punti.
+-- 2. CLICK SUI LINK INVITO
+-- Serve a distinguere "quanti l'hanno visto" da "quanti si sono
+-- iscritti" da "quanti sono entrati davvero". Solo l'ultimo conta.
 -- ============================================================
 
 create table if not exists public.referral_clicks (
@@ -105,7 +100,7 @@ alter table public.referral_clicks enable row level security;
 
 
 -- ============================================================
--- 4. REGISTRO AZIONI ADMIN — chi ha fatto cosa, e quando
+-- 3. REGISTRO AZIONI ADMIN — chi ha fatto cosa, e quando
 -- ============================================================
 
 create table if not exists public.admin_log (
@@ -132,7 +127,7 @@ $$;
 
 
 -- ============================================================
--- 5. LETTURE PER IL SITO
+-- 4. LETTURE PER IL SITO
 -- ============================================================
 
 -- Il proprio profilo, QR compreso. Ognuno vede solo il suo.
@@ -144,15 +139,16 @@ set search_path = public
 stable
 as $$
   select jsonb_build_object(
-    'member_number',  p.member_number,
-    'alias',          p.alias,
-    'nome',           p.nome,
-    'avatar_id',      p.avatar_id,
-    'role',           p.role,
-    'qr_token',       p.qr_token,
-    'referral_code',  p.referral_code,
-    'crew_since',     p.crew_since,
-    'created_at',     p.created_at
+    'member_number',       p.member_number,
+    'alias',               p.alias,
+    'nome',                p.nome,
+    'avatar_id',           p.avatar_id,
+    'role',                p.role,
+    'qr_token',            p.qr_token,
+    'referral_code',       p.referral_code,
+    'crew_since',          p.crew_since,
+    'crew_request_status', p.crew_request_status,
+    'created_at',          p.created_at
   )
   from public.profiles p
   where p.id = auth.uid() and p.deleted_at is null;
@@ -233,138 +229,14 @@ grant execute on function public.track_referral_click(text) to anon, authenticat
 
 
 -- ============================================================
--- 6. INGRESSO NELL'1%
+-- 5. ISCRIZIONE
+--
+-- Una sola porta d'ingresso. Chi vuole entrare nello staff
+-- spunta la casella e risponde a 4 domande in più: entra
+-- comunque come pubblico, con la candidatura IN ATTESA.
+-- Nessuno diventa crew da solo — decidi tu dal pannello.
 -- ============================================================
 
--- Controlla un codice invito PRIMA di mostrare il form.
--- Non rivela niente di sensibile: solo se il codice vale o no.
-create or replace function public.check_crew_invite(p_code text)
-returns jsonb
-language plpgsql
-security definer
-set search_path = public
-stable
-as $$
-declare
-  v public.crew_invites;
-begin
-  select * into v from public.crew_invites
-  where code = upper(trim(coalesce(p_code, '')));
-
-  if v.code is null then
-    return jsonb_build_object('ok', false, 'reason', 'inesistente');
-  end if;
-  if v.revoked_at is not null then
-    return jsonb_build_object('ok', false, 'reason', 'revocato');
-  end if;
-  if v.used_at is not null then
-    return jsonb_build_object('ok', false, 'reason', 'gia_usato');
-  end if;
-  if v.expires_at < now() then
-    return jsonb_build_object('ok', false, 'reason', 'scaduto');
-  end if;
-
-  return jsonb_build_object('ok', true, 'note', v.note);
-end;
-$$;
-
-grant execute on function public.check_crew_invite(text) to anon, authenticated;
-
-
--- Iscrizione CREW: solo con un invito valido, che si brucia all'uso.
--- Non passa dall'interruttore iscrizioni: l'invito È il filtro.
-create or replace function public.join_crew(
-  p_alias        text,
-  p_avatar_id    text,
-  p_nome         text,
-  p_email        text,
-  p_gender       text,
-  p_crew_answers jsonb,
-  p_invite_code  text
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_invite  public.crew_invites;
-  v_profile public.profiles;
-  v_pass    public.passes;
-  v_email   text := lower(trim(coalesce(p_email, '')));
-  v_code    text := upper(trim(coalesce(p_invite_code, '')));
-begin
-  if auth.uid() is null then
-    raise exception 'Sessione non valida';
-  end if;
-
-  if exists (select 1 from public.profiles where id = auth.uid()) then
-    raise exception 'Esiste già un profilo per questa sessione';
-  end if;
-
-  -- L'invito si blocca qui: se due persone usano lo stesso codice
-  -- nello stesso istante, passa solo la prima.
-  select * into v_invite from public.crew_invites where code = v_code for update;
-
-  if v_invite.code is null then
-    raise exception 'Invito inesistente';
-  end if;
-  if v_invite.revoked_at is not null then
-    raise exception 'Invito revocato';
-  end if;
-  if v_invite.used_at is not null then
-    raise exception 'Invito già usato';
-  end if;
-  if v_invite.expires_at < now() then
-    raise exception 'Invito scaduto';
-  end if;
-
-  if v_email = '' then
-    raise exception 'Serve una email';
-  end if;
-  if exists (select 1 from public.profiles where lower(email) = v_email and deleted_at is null) then
-    raise exception 'Email già registrata';
-  end if;
-  if coalesce(trim(p_nome), '') = '' then
-    raise exception 'Serve il tuo nome';
-  end if;
-
-  insert into public.profiles (
-    id, alias, avatar_id, nome, email, gender,
-    role, crew_since, crew_answers
-  )
-  values (
-    auth.uid(), p_alias, p_avatar_id, trim(p_nome), v_email, p_gender,
-    'crew', now(), p_crew_answers
-  )
-  returning * into v_profile;
-
-  -- Un solo token per persona: pass e profilo condividono lo stesso QR.
-  insert into public.passes (profile_id, qr_token)
-  values (v_profile.id, v_profile.qr_token)
-  returning * into v_pass;
-
-  update public.crew_invites
-  set used_by = v_profile.id, used_at = now()
-  where code = v_code;
-
-  return jsonb_build_object(
-    'member_number', v_profile.member_number,
-    'alias',         v_profile.alias,
-    'avatar_id',     v_profile.avatar_id,
-    'role',          v_profile.role,
-    'qr_token',      v_profile.qr_token,
-    'referral_code', v_profile.referral_code,
-    'created_at',    v_profile.created_at
-  );
-end;
-$$;
-
-grant execute on function public.join_crew(text, text, text, text, text, jsonb, text) to authenticated;
-
-
--- Iscrizione PUBBLICO: tramite il link personale di un membro crew.
--- L'attribuzione a quel membro è permanente.
 create or replace function public.join_public(
   p_alias         text,
   p_avatar_id     text,
@@ -372,7 +244,9 @@ create or replace function public.join_public(
   p_email         text,
   p_gender        text,
   p_quiz_answers  jsonb,
-  p_referral_code text default null
+  p_referral_code text    default null,
+  p_crew_request  boolean default false,
+  p_crew_answers  jsonb   default null
 )
 returns jsonb
 language plpgsql
@@ -384,7 +258,9 @@ declare
   v_profile     public.profiles;
   v_pass        public.passes;
   v_email       text := lower(trim(coalesce(p_email, '')));
+  v_nome        text := nullif(trim(coalesce(p_nome, '')), '');
   v_aperte      boolean := true;
+  v_stato       text := 'nessuna';
 begin
   if auth.uid() is null then
     raise exception 'Sessione non valida';
@@ -410,6 +286,14 @@ begin
     raise exception 'Email già registrata';
   end if;
 
+  -- Chi si candida allo staff deve metterci la faccia: nome vero.
+  if p_crew_request then
+    if v_nome is null then
+      raise exception 'Per candidarti serve il tuo nome';
+    end if;
+    v_stato := 'in_attesa';
+  end if;
+
   if p_referral_code is not null then
     select id into v_referrer_id
     from public.profiles
@@ -418,11 +302,15 @@ begin
 
   insert into public.profiles (
     id, alias, avatar_id, nome, email, gender,
-    quiz_answers, role, referred_by
+    quiz_answers, role, referred_by,
+    crew_request_status, crew_request_at, crew_answers
   )
   values (
-    auth.uid(), p_alias, p_avatar_id, nullif(trim(coalesce(p_nome, '')), ''), v_email, p_gender,
-    p_quiz_answers, 'public', v_referrer_id
+    auth.uid(), p_alias, p_avatar_id, v_nome, v_email, p_gender,
+    p_quiz_answers, 'public', v_referrer_id,
+    v_stato,
+    case when p_crew_request then now() else null end,
+    case when p_crew_request then p_crew_answers else null end
   )
   returning * into v_profile;
 
@@ -432,56 +320,37 @@ begin
   returning * into v_pass;
 
   return jsonb_build_object(
-    'member_number', v_profile.member_number,
-    'alias',         v_profile.alias,
-    'avatar_id',     v_profile.avatar_id,
-    'role',          v_profile.role,
-    'qr_token',      v_profile.qr_token,
-    'referral_code', v_profile.referral_code,
-    'created_at',    v_profile.created_at
+    'member_number',       v_profile.member_number,
+    'alias',               v_profile.alias,
+    'avatar_id',           v_profile.avatar_id,
+    'role',                v_profile.role,
+    'qr_token',            v_profile.qr_token,
+    'referral_code',       v_profile.referral_code,
+    'crew_request_status', v_profile.crew_request_status,
+    'created_at',          v_profile.created_at
   );
 end;
 $$;
 
-grant execute on function public.join_public(text, text, text, text, text, jsonb, text) to authenticated;
+grant execute on function
+  public.join_public(text, text, text, text, text, jsonb, text, boolean, jsonb)
+  to authenticated;
+
+-- La vecchia firma non serve più: la tolgo per non lasciare
+-- due strade aperte verso la stessa tabella.
+drop function if exists public.join_one_percent(text, text, jsonb, text, text, text);
 
 
 -- ============================================================
--- 7. PANNELLO ADMIN — inviti e ruoli
+-- 6. PANNELLO ADMIN — candidature e ruoli
 -- ============================================================
 
-create or replace function public.admin_create_crew_invite(p_note text default null)
-returns jsonb
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v public.crew_invites;
-begin
-  if not public.is_admin() then
-    raise exception 'Non autorizzato';
-  end if;
-
-  insert into public.crew_invites (note, created_by)
-  values (nullif(trim(coalesce(p_note, '')), ''), coalesce(auth.jwt() ->> 'email', 'admin'))
-  returning * into v;
-
-  perform public.log_admin('crea_invito_crew', v.code, jsonb_build_object('note', v.note));
-
-  return jsonb_build_object('code', v.code, 'expires_at', v.expires_at, 'note', v.note);
-end;
-$$;
-
-revoke execute on function public.admin_create_crew_invite(text) from anon;
-grant execute on function public.admin_create_crew_invite(text) to authenticated;
-
-
-create or replace function public.admin_list_crew_invites()
+-- Le candidature in attesa, con le risposte e il nome vero.
+create or replace function public.admin_crew_requests()
 returns table (
-  code text, note text, created_by text, created_at timestamptz,
-  expires_at timestamptz, used_at timestamptz, revoked_at timestamptz,
-  used_by_alias text, used_by_number integer, stato text
+  id uuid, member_number integer, alias text, nome text, email text,
+  gender text, crew_request_at timestamptz, crew_answers jsonb,
+  invitato_da text
 )
 language plpgsql
 security definer
@@ -494,27 +363,22 @@ begin
   end if;
 
   return query
-  select
-    i.code, i.note, i.created_by, i.created_at,
-    i.expires_at, i.used_at, i.revoked_at,
-    p.alias, p.member_number,
-    case
-      when i.revoked_at is not null then 'revocato'
-      when i.used_at is not null    then 'usato'
-      when i.expires_at < now()     then 'scaduto'
-      else 'valido'
-    end
-  from public.crew_invites i
-  left join public.profiles p on p.id = i.used_by
-  order by i.created_at desc;
+  select p.id, p.member_number, p.alias, p.nome, p.email,
+         p.gender, p.crew_request_at, p.crew_answers, r.alias
+  from public.profiles p
+  left join public.profiles r on r.id = p.referred_by
+  where p.crew_request_status = 'in_attesa' and p.deleted_at is null
+  order by p.crew_request_at;
 end;
 $$;
 
-revoke execute on function public.admin_list_crew_invites() from anon;
-grant execute on function public.admin_list_crew_invites() to authenticated;
+revoke execute on function public.admin_crew_requests() from anon;
+grant execute on function public.admin_crew_requests() to authenticated;
 
 
-create or replace function public.admin_revoke_crew_invite(p_code text)
+-- Approva: la persona diventa crew. Da qui in poi ha area riservata,
+-- classifica e link invito che conta.
+create or replace function public.admin_approve_crew(p_profile uuid)
 returns void
 language plpgsql
 security definer
@@ -525,19 +389,51 @@ begin
     raise exception 'Non autorizzato';
   end if;
 
-  update public.crew_invites
-  set revoked_at = now()
-  where code = upper(trim(p_code)) and used_at is null;
+  update public.profiles
+  set role                = 'crew',
+      crew_since          = coalesce(crew_since, now()),
+      crew_request_status = 'approvata',
+      crew_decided_at     = now(),
+      crew_decided_by     = auth.jwt() ->> 'email'
+  where id = p_profile and deleted_at is null;
 
-  perform public.log_admin('revoca_invito_crew', upper(trim(p_code)), null);
+  perform public.log_admin('approva_crew', p_profile::text, null);
 end;
 $$;
 
-revoke execute on function public.admin_revoke_crew_invite(text) from anon;
-grant execute on function public.admin_revoke_crew_invite(text) to authenticated;
+revoke execute on function public.admin_approve_crew(uuid) from anon;
+grant execute on function public.admin_approve_crew(uuid) to authenticated;
 
 
--- Promuovere o retrocedere qualcuno a mano, senza passare da un invito.
+-- Rifiuta: resta pubblico e non viene avvisato di niente.
+-- Le risposte le tengo: servono se ci ripensi.
+create or replace function public.admin_reject_crew(p_profile uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Non autorizzato';
+  end if;
+
+  update public.profiles
+  set crew_request_status = 'rifiutata',
+      crew_decided_at     = now(),
+      crew_decided_by     = auth.jwt() ->> 'email'
+  where id = p_profile and deleted_at is null;
+
+  perform public.log_admin('rifiuta_crew', p_profile::text, null);
+end;
+$$;
+
+revoke execute on function public.admin_reject_crew(uuid) from anon;
+grant execute on function public.admin_reject_crew(uuid) to authenticated;
+
+
+-- Promuovere o retrocedere qualcuno a mano, senza passare da una
+-- candidatura: serve quando qualcuno finisce nel posto sbagliato.
 create or replace function public.admin_set_role(p_profile uuid, p_role text)
 returns void
 language plpgsql
@@ -554,10 +450,7 @@ begin
 
   update public.profiles
   set role = p_role,
-      crew_since = case
-        when p_role = 'crew' then coalesce(crew_since, now())
-        else null
-      end
+      crew_since = case when p_role = 'crew' then coalesce(crew_since, now()) else null end
   where id = p_profile;
 
   perform public.log_admin('cambia_ruolo', p_profile::text, jsonb_build_object('role', p_role));
@@ -568,11 +461,10 @@ revoke execute on function public.admin_set_role(uuid, text) from anon;
 grant execute on function public.admin_set_role(uuid, text) to authenticated;
 
 
--- Le risposte al questionario crew, con il nome vero accanto.
--- Contiene dati personali: rigorosamente is_admin().
+-- La crew attuale, con le risposte di chi si era candidato.
 create or replace function public.admin_crew_answers()
 returns table (
-  member_number integer, alias text, nome text, email text,
+  id uuid, member_number integer, alias text, nome text, email text,
   crew_since timestamptz, crew_answers jsonb
 )
 language plpgsql
@@ -586,7 +478,7 @@ begin
   end if;
 
   return query
-  select p.member_number, p.alias, p.nome, p.email, p.crew_since, p.crew_answers
+  select p.id, p.member_number, p.alias, p.nome, p.email, p.crew_since, p.crew_answers
   from public.profiles p
   where p.role = 'crew' and p.deleted_at is null
   order by p.member_number;
@@ -598,10 +490,9 @@ grant execute on function public.admin_crew_answers() to authenticated;
 
 
 -- ============================================================
--- VERIFICA — dopo l'esecuzione dovresti vedere 0 membri,
--- 0 crew, e la lista delle nuove funzioni.
+-- VERIFICA — dopo il reset dovresti vedere tutti zeri.
 -- ============================================================
 select
-  (select count(*) from public.profiles)      as membri,
+  (select count(*) from public.profiles) as membri,
   (select count(*) from public.profiles where role = 'crew') as crew,
-  (select count(*) from public.crew_invites)  as inviti;
+  (select count(*) from public.profiles where crew_request_status = 'in_attesa') as candidature;

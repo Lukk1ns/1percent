@@ -1,8 +1,12 @@
 export type QuizOption = { id: string; text: string };
 
 export type QuizQuestion =
+  /** Solo scelta tra opzioni. */
   | { id: string; type: "choice"; text: string; options: QuizOption[] }
-  | { id: string; type: "hybrid"; text: string; placeholder: string; tags: string[] };
+  /** Tag obbligatorio + testo libero facoltativo. */
+  | { id: string; type: "hybrid"; text: string; placeholder: string; tags: string[] }
+  /** Solo testo libero, si può anche lasciare vuoto. */
+  | { id: string; type: "text"; text: string; placeholder: string };
 
 /**
  * Le 4 domande del PUBBLICO — servono a profilare il tipo di serata
@@ -62,21 +66,21 @@ export const CREW_QUESTIONS: QuizQuestion[] = [
     type: "choice",
     text: "Cosa porti all'1%?",
     options: [
-      { id: "gente", text: "Gente — è il mio mestiere portarla" },
-      { id: "musica", text: "Musica — sto in consolle" },
-      { id: "immagini", text: "Immagini — foto e video" },
-      { id: "mani", text: "Mani — organizzazione, bar, allestimenti" },
+      { id: "gente", text: "Gente" },
+      { id: "musica", text: "Musica" },
+      { id: "presenza", text: "La mia bellissima presenza" },
+      { id: "tutto", text: "TUTTO" },
     ],
   },
   {
     id: "c2",
     type: "choice",
-    text: "Se stasera scrivi «si va», quanti si muovono davvero?",
+    text: "Se inviti qualcuno alla festa, quanti si muovono davvero solo grazie a te?",
     options: [
-      { id: "sotto10", text: "Meno di 10" },
-      { id: "10_30", text: "Tra 10 e 30" },
-      { id: "30_100", text: "Tra 30 e 100" },
-      { id: "oltre100", text: "Più di 100" },
+      { id: "sotto10", text: "Sotto 10" },
+      { id: "10_30", text: "10-30" },
+      { id: "30_100", text: "30-100" },
+      { id: "oltre100", text: "Oltre 100" },
     ],
   },
   {
@@ -85,23 +89,16 @@ export const CREW_QUESTIONS: QuizQuestion[] = [
     text: "Quando una serata è riuscita davvero?",
     placeholder: "Dillo con parole tue (opzionale)",
     tags: [
-      "Pista piena fino alla fine",
-      "C'era la gente giusta",
-      "Il momento in cui parte IL pezzo",
-      "I numeri a fine serata",
+      "Quando c'è tanta gente",
+      "Quando c'è l'ospite perfetto",
+      "Quando si trova qualcuno di interessante",
+      "Non si può dire",
     ],
   },
   {
     id: "c4",
-    type: "hybrid",
+    type: "text",
     text: "Cosa non funziona nelle serate qui in zona?",
-    placeholder: "Senza peli sulla lingua (opzionale)",
-    tags: [
-      "Sempre la stessa musica",
-      "Sempre la stessa gente",
-      "Si paga troppo",
-      "Finiscono presto",
-      "Nessuno ci crede davvero",
-    ],
+    placeholder: "Senza peli sulla lingua",
   },
 ];

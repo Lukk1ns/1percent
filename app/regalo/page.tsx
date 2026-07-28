@@ -175,6 +175,7 @@ export default function RegaloPage() {
         <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
         <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">Pass</button>
         <button onClick={() => router.push("/regalo")} className="text-brand-red">Regalo</button>
+        <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
       </nav>
     </main>
   );

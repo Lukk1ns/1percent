@@ -67,6 +67,11 @@ function JoinForm() {
   const [consent, setConsent] = useState(false);
   const [aliasError, setAliasError] = useState("");
 
+  // Candidatura staff: chi la spunta risponde a 4 domande in più e
+  // resta in attesa che un admin decida. Nessuno diventa crew da solo.
+  const [vuoleStaff, setVuoleStaff] = useState(false);
+  const [nome, setNome] = useState("");
+
   function validate() {
     if (alias.trim().length < 2) {
       setAliasError("Scegli un alias di almeno 2 caratteri.");
@@ -88,6 +93,10 @@ function JoinForm() {
       setAliasError("Inserisci una email valida — ti serve per rientrare.");
       return false;
     }
+    if (vuoleStaff && nome.trim().length < 2) {
+      setAliasError("Per candidarti serve il tuo nome vero.");
+      return false;
+    }
     if (!consent) {
       setAliasError("Devi accettare la privacy policy per continuare.");
       return false;
@@ -105,6 +114,8 @@ function JoinForm() {
         email: email.trim(),
         gender,
         refCode: refCode || null,
+        crewRequest: vuoleStaff,
+        nome: vuoleStaff ? nome.trim() : null,
       }),
     );
     router.push("/test");
@@ -201,6 +212,58 @@ function JoinForm() {
         <p className="text-[10px] text-brand-gray/40 mt-2 uppercase tracking-widest">
           Serve per rientrare dal sito — niente spam
         </p>
+      </div>
+
+      {/* Candidatura staff — l'unica porta d'ingresso alla crew */}
+      <div
+        className={`w-full mb-8 border transition-all ${
+          vuoleStaff ? "border-brand-red bg-brand-red/5" : "border-white/10"
+        }`}
+      >
+        <button
+          onClick={() => {
+            setVuoleStaff(!vuoleStaff);
+            setAliasError("");
+          }}
+          className="w-full flex items-start gap-3 px-4 py-4 text-left"
+        >
+          <span
+            className={`mt-[2px] w-4 h-4 flex-shrink-0 border flex items-center justify-center text-[10px] transition-all ${
+              vuoleStaff ? "border-brand-red bg-brand-red text-white" : "border-white/30"
+            }`}
+          >
+            {vuoleStaff && "✓"}
+          </span>
+          <span>
+            <span className="block text-sm text-white font-semibold uppercase tracking-wide">
+              Voglio entrare nello staff
+            </span>
+            <span className="block text-xs text-brand-gray leading-relaxed mt-1">
+              PR, DJ, foto e video, organizzazione. Ti facciamo 4 domande in più.
+              Non entri subito: se ci interessi, ti scriviamo noi.
+            </span>
+          </span>
+        </button>
+
+        {vuoleStaff && (
+          <div className="px-4 pb-4">
+            <input
+              type="text"
+              placeholder="il tuo nome vero"
+              value={nome}
+              maxLength={40}
+              onChange={(e) => {
+                setNome(e.target.value);
+                setAliasError("");
+              }}
+              className="input-line text-base"
+              autoComplete="given-name"
+            />
+            <p className="text-[10px] text-brand-gray/40 mt-2 uppercase tracking-widest">
+              Lo vede solo lo staff — sul sito resti il tuo alias
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Consenso privacy */}

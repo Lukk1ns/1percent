@@ -10,9 +10,10 @@ schema database, schermate e ordine di lavorazione, è in
 
 Lavoro sul ramo `organizzazione`. `main` è la vecchia versione, ancora online.
 
-**Step 1 completato (28 lug):** ruoli crew/pubblico, inviti crew monouso, questionario
-dedicato alla crew, QR statico, tracciamento click referral, registro azioni admin,
-congelamento del blocco social.
+**Step 1 completato (28 lug):** ruoli crew/pubblico, candidatura staff all'iscrizione con
+questionario dedicato e approvazione a mano, QR statico, tracciamento click referral,
+registro azioni admin. Il blocco social (Muro, profilo, poke, Legami, messaggi) **resta
+acceso**; congelato solo il Mosaico.
 
 ## Cos'è questo progetto
 
@@ -23,7 +24,9 @@ Ogni festa tiene il proprio nome e la propria identità, 1% è la firma sopra tu
 Il mercoledì al Papi on the Beach è un capitolo chiuso: non va più nominato da nessuna parte.
 
 Due livelli di utenza:
-- **Crew** (PR, DJ, staff, fotografi) — si entra **solo su invito**, con un codice monouso
+
+- **Crew** (PR, DJ, staff, fotografi) — ci si candida all'iscrizione, entra solo chi viene
+  approvato a mano dall'admin
 - **Pubblico** — si registra tramite il link personale di un membro crew, e resta attribuito
   a quel membro per sempre
 
@@ -93,29 +96,43 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 | Route | Descrizione |
 |---|---|
 | `/` | Landing: glitch 1%, countdown, feed live iscritti |
-| `/unisciti?ref=CODE` | Registrazione: alias + avatar + email opzionale + privacy |
-| `/test` | Quiz 4 domande cinematografico |
+| `/unisciti?ref=CODE` | Registrazione: alias + avatar + email + privacy + **casella "voglio entrare nello staff"** (con nome vero) |
+| `/test` | Quiz 4 domande. Chi si è candidato allo staff prosegue con altre 4 domande dedicate |
 | `/benvenuto` | Reveal animato "Benvenuto nell'1%" |
 | `/card` | Card membro digitale (screenshottabile, salvabile) |
 | `/pass` | QR pass ingresso |
 | `/invita` | Link referral personale + contatore inviti |
-| `/crew/entra?invito=CODICE` | **Ingresso crew su invito**: codice monouso → dati (nome vero + alias) → questionario crew |
+| `/membri` | Il Muro: volti sfocati di tutti i membri, classifica poke 👊, poke 1/giorno |
+| `/profilo` | Il proprio profilo: upload foto (sfocata per gli altri), bio |
+| `/u/[alias]` | Profilo pubblico di un membro (solo per membri) |
+| `/legami` | Chi ti ha ricambiato il poke: foto nitide |
+| `/messaggi` · `/messaggi/[id]` | Inbox e chat, con richiesta+accettazione, blocco e segnalazione |
 | `/login` | Accesso per membri esistenti (magic link email) |
 | `/privacy` | Privacy policy GDPR + cancellazione dati |
 | `/admin/login` | Login staff |
 | `/admin/dashboard` | Lista membri, modifica alias, elimina (solo admin) |
-| `/admin/crew` | **Inviti crew**: genera/annulla codici, Missione 150, risposte al questionario |
+| `/admin/crew` | **Staff**: candidature in attesa con le risposte, approva/rifiuta, Missione 150, crew attuale |
 | `/admin/regali` | Scorte premi, pesi, vincitori, operatori |
 | `/admin/scan` | Scanner QR per validare ingressi |
 | `/auth/callback` | Handler redirect magic link email |
 
+### Come si entra nello staff
+
+Una sola porta d'ingresso: `/unisciti`. Chi spunta **"Voglio entrare nello staff"** lascia
+il nome vero e, dopo il quiz del pubblico, risponde a 4 domande in più (`CREW_QUESTIONS` in
+`lib/quiz.ts`). Si iscrive comunque come **pubblico**, con `crew_request_status = 'in_attesa'`.
+Nessuno diventa crew da solo: si approva a mano da `/admin/crew`. Chi viene rifiutato resta
+pubblico e non riceve nessuna notifica — è Luka che scrive a chi gli interessa.
+
+Il questionario è renderizzato dal componente condiviso `components/Questionario.tsx`, che
+gestisce tre tipi di domanda: `choice` (solo opzioni), `hybrid` (tag obbligatorio + testo
+libero) e `text` (solo testo libero, si può saltare).
+
 ### Rotte congelate
 
-Il blocco social (Volti, Poke, Legami, Messaggi, Mosaico) è in `app/_congelati/`.
-Next.js ignora le cartelle che iniziano con `_`: il codice resta, le pagine non
-esistono più online. I componenti sono in `components/_congelati/`, l'SQL in
-`supabase/_congelati/`. Per riaccenderle basta rimettere le cartelle al loro posto
-e ripristinare gli import.
+Solo `/mosaico`, in `app/_congelati/`. Next.js ignora le cartelle che iniziano con `_`:
+il codice resta, la pagina non esiste online. Per riaccenderla basta rimettere la cartella
+al suo posto.
 
 ---
 
@@ -123,9 +140,9 @@ e ripristinare gli import.
 
 | Tabella | Cosa contiene |
 |---|---|
-| `profiles` | Ogni membro: alias, avatar, numero progressivo, email, referral_code, referred_by + **role** (`public`/`crew`), **nome** (vero, solo crew), **qr_token** (QR statico), crew_invited_by, crew_since, crew_answers |
+| `profiles` | Ogni membro: alias, avatar, numero progressivo, email, referral_code, referred_by + **role** (`public`/`crew`), **nome** (vero, chiesto solo a chi si candida), **qr_token** (QR statico), **crew_request_status** (`nessuna`/`in_attesa`/`approvata`/`rifiutata`), crew_request_at, crew_answers, crew_since, crew_decided_at/by |
 | `passes` | Pass d'ingresso. Il suo `qr_token` è **identico** a `profiles.qr_token`: allo step 4 lo scanner passa a leggere il profilo senza invalidare nessun QR già in giro |
-| `crew_invites` | Codici invito monouso: code, note, created_by, used_by, expires_at (30gg), revoked_at |
+| `pokes` | Poke 👊 tra membri, 1 al giorno per coppia. RLS: solo il ricevente legge i propri |
 | `referral_clicks` | Un record per click su un link invito. Serve a distinguere "visto" da "iscritto" da "entrato" |
 | `admin_log` | Registro di chi ha fatto cosa nel pannello |
 | `admins` | Email degli amministratori |
@@ -135,16 +152,20 @@ e ripristinare gli import.
 
 1. `supabase/00_backup.sql` — export CSV prima di cancellare
 2. `supabase/01_reset.sql` — azzeramento dati (irreversibile)
-3. `supabase/02_fondamenta.sql` — ruoli, QR statico, inviti crew, click, log
+3. `supabase/02_fondamenta.sql` — ruoli, QR statico, candidature staff, click, log
+
+Gli script del social (`pokes.sql`, `volti.sql`, `legami.sql`, `messaggi.sql`, `volti_fix.sql`)
+erano già stati eseguiti a luglio: il reset cancella le righe, non le tabelle. Se una pagina
+social dà errore, ricontrolla che quel file sia stato incollato.
 
 ### Funzioni RPC nuove (step 1)
 
 `my_profile()` · `crew_count()` · `my_referral_stats()` · `track_referral_click(code)` ·
-`check_crew_invite(code)` · `join_crew(...)` · `join_public(...)` ·
-`admin_create_crew_invite(note)` · `admin_list_crew_invites()` ·
-`admin_revoke_crew_invite(code)` · `admin_set_role(profile, role)` · `admin_crew_answers()`
+`join_public(...)` · `admin_crew_requests()` · `admin_approve_crew(profile)` ·
+`admin_reject_crew(profile)` · `admin_set_role(profile, role)` · `admin_crew_answers()`
 
-`join_one_percent()` è sostituita da `join_public()` (stessa cosa più `p_nome` e il ruolo).
+`join_one_percent()` è sostituita da `join_public()`, che aggiunge `p_nome`,
+`p_crew_request` e `p_crew_answers`. La vecchia viene eliminata dallo script.
 
 **Storage** (SQL in `supabase/volti.sql`): bucket `volti` (foto nitide, PRIVATO) + `volti-blur` (foto sfocate generate dal server, PUBBLICO). Path sempre `<uuid>/volto.webp`. Il blur è fatto con sharp nell'API route `/api/volto` (mai CSS), EXIF strippati. Livello blur: `BLUR_SIGMA` in `lib/volto.ts`.
 

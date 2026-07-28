@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
+import { PokeCounter } from "@/components/PokeCounter";
 import { VENUE_NAME, VENUE_CITY } from "@/lib/event";
 
 type Profile = {
@@ -241,6 +242,7 @@ export default function CardPage() {
 
       {/* Azioni */}
       <div className="w-full max-w-sm mt-6 flex flex-col gap-3">
+        <PokeCounter />
         <button
           onClick={handleSaveCard}
           disabled={saving}
@@ -271,6 +273,7 @@ export default function CardPage() {
         <button onClick={() => router.push("/card")} className="text-brand-red">Card</button>
         <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">Pass</button>
         <button onClick={() => router.push("/regalo")} className="hover:text-brand-gray transition-colors">Regalo</button>
+        <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
       </nav>
     </main>
   );

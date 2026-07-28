@@ -271,7 +271,7 @@ export default function AdminDashboardPage() {
             onClick={() => router.push("/admin/crew")}
             className="text-xs uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-2 hover:border-white/30 transition-all"
           >
-            👤 Crew
+            👤 Staff
           </button>
           <button
             onClick={handleLogout}

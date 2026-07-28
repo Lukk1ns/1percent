@@ -83,6 +83,11 @@ export default function Questionario({
     });
   }
 
+  /** Domanda a solo testo libero: si può anche lasciare vuota. */
+  async function handleTesto() {
+    await advance({ ...risposte, [questions[step].id]: testoLibero.trim() });
+  }
+
   if (loading) {
     return (
       <main className="flex-1 flex flex-col items-center justify-center px-6 text-center">
@@ -204,6 +209,26 @@ export default function Questionario({
               className={`btn w-full ${tag ? "btn-primary" : "btn-ghost"}`}
             >
               Avanti →
+            </button>
+          </div>
+        )}
+
+        {q.type === "text" && (
+          <div className="flex flex-col gap-5 mt-auto">
+            <textarea
+              placeholder={q.placeholder}
+              value={testoLibero}
+              onChange={(e) => setTestoLibero(e.target.value)}
+              maxLength={400}
+              rows={5}
+              className="w-full bg-transparent border border-white/10 text-sm text-white placeholder-brand-gray/40 px-4 py-3 outline-none focus:border-brand-red/60 transition-colors resize-none"
+              autoFocus
+            />
+            <button
+              onClick={handleTesto}
+              className={`btn w-full ${testoLibero.trim() ? "btn-primary" : "btn-ghost"}`}
+            >
+              {testoLibero.trim() ? "Avanti →" : "Salta →"}
             </button>
           </div>
         )}

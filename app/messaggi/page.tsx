@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchLegami } from "@/lib/legami";
-import Volto from "@/components/_congelati/Volto";
+import Volto from "@/components/Volto";
 
 type ChatRequest = {
   id: string;

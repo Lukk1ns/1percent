@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 import { fetchLegami, type Legame } from "@/lib/legami";
-import Volto from "@/components/_congelati/Volto";
-import RevealLegame from "@/components/_congelati/RevealLegame";
+import Volto from "@/components/Volto";
+import RevealLegame from "@/components/RevealLegame";
 
 type WallRow = {
   member_number: number;

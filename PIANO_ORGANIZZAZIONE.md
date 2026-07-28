@@ -10,7 +10,9 @@
 
 | Tema | Decisione |
 |---|---|
-| Blocco social (Volti, Poke, Legami, Messaggi, Mosaico) | **Congelato** — codice conservato, pagine rimosse dal sito |
+| Blocco social (Volti, Poke, Legami, Messaggi) | **Resta acceso.** Solo il Mosaico è congelato in `app/_congelati/` |
+| Chi può scriversi | Tutti con tutti, come a luglio: richiesta + accettazione, blocco e segnalazione |
+| Ingresso nello staff | **Candidatura all'iscrizione**, approvata a mano dall'admin. Niente codici invito |
 | Storage foto | **Cloudflare R2** (banda in uscita gratis) |
 | Utenti esistenti (117) | **Cancellati** — si riparte da zero, numeri membro da #1 |
 | Codice | Stesso repo, ramo `organizzazione`, merge su `main` solo al tuo ok |
@@ -37,9 +39,17 @@
 | `/admin/dashboard` | Da lista membri a vero pannello di gestione |
 | Ogni testo che dice "mercoledì" o "la serata" | Il capitolo è chiuso |
 
-### Si congela (codice conservato, rotte spente)
-`/membri` · `/legami` · `/messaggi` · `/mosaico` · `/profilo` (versione Volti) · `/u/[alias]`
-I file SQL restano in `supabase/_congelati/`. Riaccenderli è mezza giornata di lavoro.
+### Si tiene acceso
+Il blocco social costruito a luglio resta in funzione e convive col nuovo sistema:
+`/membri` (il Muro) · `/profilo` (foto sfocata + bio) · `/u/[alias]` · `/legami` · `/messaggi`.
+
+Sono un sistema solo, non pezzi separati: la foto è sfocata per tutti e diventa nitida
+solo quando scatta un Legame (poke reciproco); il Muro è la rubrica da cui si trova
+qualcuno per scrivergli; tra Legami la chat si apre subito, altrimenti serve richiesta
+e accettazione. Blocco e segnalazione restano attivi.
+
+Congelato solo `/mosaico`, in `app/_congelati/`: era un pezzo artistico legato alla
+vecchia serata e dopo il reset ripartirebbe vuoto.
 
 ---
 
@@ -47,6 +57,22 @@ I file SQL restano in `supabase/_congelati/`. Riaccenderli è mezza giornata di 
 
 Tutto in `supabase/organizzazione.sql`. RLS attiva ovunque; **nessuna scrittura diretta dal
 client**: tutto passa da funzioni server con controllo di ruolo.
+
+### 2.0 Come si entra nello staff
+
+Una sola porta d'ingresso per tutti: `/unisciti`. Chi vuole entrare nello staff spunta
+**"Voglio entrare nello staff"**, lascia il nome vero e risponde a 4 domande in più.
+
+Si iscrive comunque come pubblico, con la candidatura **in attesa**. Nessuno diventa crew
+da solo: dal pannello leggi le risposte e decidi. Chi approvi diventa crew; a chi ti
+interessa scrivi tu. Chi rifiuti resta pubblico e non riceve nessuna notifica.
+
+Le 4 domande della candidatura:
+
+1. Cosa porti all'1%? → gente · musica · la mia bellissima presenza · TUTTO
+2. Se inviti qualcuno alla festa, quanti si muovono davvero solo grazie a te? → sotto 10 · 10-30 · 30-100 · oltre 100
+3. Quando una serata è riuscita davvero? → 4 risposte + testo libero facoltativo
+4. Cosa non funziona nelle serate qui in zona? → solo testo libero
 
 ### 2.1 Identità e ruoli
 
@@ -59,15 +85,17 @@ profiles
   email           text unique (lower)
   phone           text
   gender          text
-  role            text  'public' | 'crew'   -- admin resta nella tabella admins
-  qr_token        text unique             -- QR PERSONALE STATICO, mai cambia
-  referral_code   text unique             -- link invito personale
-  referred_by     uuid → profiles         -- attribuzione permanente
-  crew_invited_by uuid → profiles
-  crew_since      timestamptz
+  role                text  'public' | 'crew'   -- admin resta nella tabella admins
+  qr_token            text unique         -- QR PERSONALE STATICO, mai cambia
+  referral_code       text unique         -- link invito personale
+  referred_by         uuid → profiles     -- attribuzione permanente
+  crew_request_status text                -- nessuna | in_attesa | approvata | rifiutata
+  crew_request_at     timestamptz
+  crew_answers        jsonb               -- le 4 risposte della candidatura
+  crew_since          timestamptz
+  crew_decided_at, crew_decided_by        -- chi ha deciso e quando
   consent_privacy_at, created_at, deleted_at
 
-crew_invites        codice monouso creato da admin: code, created_by, used_by, expires_at
 admins              (esistente) email degli amministratori
 operators           (esistente) email di chi può solo scansionare
 ```
@@ -234,7 +262,7 @@ Indicatore di coda offline sempre visibile: "3 scan in attesa di sincronizzazion
 
 ### Admin
 `/admin` · `/admin/locali` · `/admin/eventi` · `/admin/album` (upload massivo drag&drop) ·
-`/admin/utenti` · `/admin/crew` (inviti) · `/admin/punti` (regole + assegnazione manuale + log) ·
+`/admin/utenti` · `/admin/crew` (candidature staff) · `/admin/punti` (regole + assegnazione manuale + log) ·
 `/admin/premi` · `/admin/sondaggi` · `/admin/segnalazioni` (rimozione foto) · `/admin/export`
 
 ---
