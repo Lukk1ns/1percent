@@ -259,8 +259,14 @@ function JoinForm() {
               className="input-line text-base"
               autoComplete="given-name"
             />
-            <p className="text-[10px] text-brand-gray/40 mt-2 uppercase tracking-widest">
-              Lo vede solo lo staff — sul sito resti il tuo alias
+            <p className="text-xs text-brand-gray leading-relaxed mt-3">
+              <span className="text-white">Non verrà mai visualizzato sul sito.</span> Lo
+              leggiamo solo noi, per sapere con chi stiamo parlando. Per tutti gli altri
+              resti{" "}
+              <span className="text-brand-red">
+                {alias.trim() ? alias.trim().toLowerCase() : "il tuo alias"}
+              </span>
+              .
             </p>
           </div>
         )}
