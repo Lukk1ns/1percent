@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Anton, Inter, Caveat } from "next/font/google";
+import { Anton, Inter, Caveat, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Backdrop } from "@/components/Backdrop";
 import { Notifiche } from "@/components/Notifiche";
@@ -18,6 +18,13 @@ const inter = Inter({
 
 const caveat = Caveat({
   variable: "--font-caveat",
+  subsets: ["latin"],
+});
+
+/** La faccia tecnica: numeri, orari, etichette. Non è un font da titoli. */
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jet",
+  weight: ["400", "700"],
   subsets: ["latin"],
 });
 
@@ -40,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="it"
-      className={`${anton.variable} ${inter.variable} ${caveat.variable} h-full antialiased`}
+      className={`${anton.variable} ${inter.variable} ${caveat.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
         <Backdrop />
