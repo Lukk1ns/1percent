@@ -24,6 +24,13 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
+  /* Niente scroll laterale sul telefono, mai. */
+  overflow-x: hidden;
+}
+
+img, svg {
+  max-width: 100%;
+  height: auto;
 }
 
 ::selection {
@@ -234,6 +241,17 @@ body::after {
   -webkit-tap-highlight-color: transparent;
 }
 .btn:active { transform: scale(0.96); }
+
+/* Sul telefono i bottoni stanno più stretti: meno fiato ai lati,
+   testo che va a capo invece di sfondare lo schermo. */
+@media (max-width: 640px) {
+  .btn {
+    padding: 0.95rem 1.25rem;
+    letter-spacing: 0.14em;
+    text-align: center;
+    white-space: normal;
+  }
+}
 
 /* sweep di luce al passaggio */
 .btn::after {

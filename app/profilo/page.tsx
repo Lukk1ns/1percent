@@ -149,7 +149,7 @@ export default function ProfiloPage() {
   }
 
   async function handleDeleteProfile() {
-    if (!window.confirm("Eliminare il tuo profilo? Spariranno foto, pass, poke, legami e messaggi. Non si torna indietro.")) return;
+    if (!window.confirm("Eliminare il tuo profilo? Spariranno foto, QR code, poke, legami e messaggi. Non si torna indietro.")) return;
     if (!window.confirm("Sicuro sicuro? Questa è definitiva.")) return;
     setDeleting(true);
     const supabase = createClient();
@@ -233,7 +233,8 @@ export default function ProfiloPage() {
                   Carica il tuo volto. <span className="text-white">Sfocato il giusto</span>: si intravede, non si capisce.
                 </p>
                 <p className="text-brand-gray/60 text-[11px] text-center mt-1 max-w-xs">
-                  Nessuno vedrà mai la foto nitida. Nessuno.
+                  Nessuno vedrà mai la foto nitida. Nessuno —{" "}
+                  <span className="text-white uppercase">tranne chi decidi tu</span>.
                 </p>
                 <button onClick={() => fileRef.current?.click()} className="btn btn-primary mt-4">
                   Carica il tuo volto
@@ -381,7 +382,7 @@ export default function ProfiloPage() {
           {deleting ? "elimino..." : "elimina il mio profilo"}
         </button>
         <p className="text-[9px] text-brand-gray/30 mt-2 text-center max-w-xs">
-          Cancella tutto: foto, pass, poke, legami e messaggi. Definitivo.
+          Cancella tutto: foto, QR code, poke, legami e messaggi. Definitivo.
         </p>
       </div>
     </main>

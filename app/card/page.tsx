@@ -257,7 +257,7 @@ export default function CardPage() {
           onClick={() => router.push("/pass")}
           className="btn btn-outline w-full"
         >
-          Pass estrazione →
+          QR code estrazione →
         </button>
         <button
           onClick={handleShareLink}
@@ -271,7 +271,7 @@ export default function CardPage() {
       <nav className="w-full max-w-sm mt-8 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
         <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
         <button onClick={() => router.push("/card")} className="text-brand-red">Card</button>
-        <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">Pass</button>
+        <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">QR code</button>
         <button onClick={() => router.push("/regalo")} className="hover:text-brand-gray transition-colors">Regalo</button>
         <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
       </nav>

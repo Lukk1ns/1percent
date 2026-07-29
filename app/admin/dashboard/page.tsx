@@ -187,7 +187,7 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   async function handleDelete(id: string, alias: string) {
-    if (!confirm(`Elimina "${alias}"? Il pass verrà revocato.`)) return;
+    if (!confirm(`Elimina "${alias}"? Il QR code verrà revocato.`)) return;
     setWorking(id);
     setError(null);
     const supabase = createClient();

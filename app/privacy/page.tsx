@@ -11,7 +11,7 @@ export default function PrivacyPage() {
   const [deleted, setDeleted] = useState(false);
 
   async function handleDelete() {
-    if (!confirm("Sei sicuro? Il tuo profilo e il tuo pass verranno cancellati. Azione irreversibile.")) return;
+    if (!confirm("Sei sicuro? Il tuo profilo e il tuo QR code verranno cancellati. Azione irreversibile.")) return;
     setDeleting(true);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
         <h2 className="text-white text-base font-semibold mt-6">Finalità</h2>
         <p>
           I dati sono usati esclusivamente per: gestire l&apos;accesso all&apos;evento
-          tramite pass digitale; inviare comunicazioni sull&apos;evento se hai fornito
+          tramite QR code digitale; inviare comunicazioni sull&apos;evento se hai fornito
           email o telefono; mostrare il contatore pubblico anonimo dei membri.
         </p>
 
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
           Cancella il mio profilo
         </h2>
         <p className="text-brand-gray text-sm mb-6">
-          Rimuove alias, avatar, contatti e pass. Il tuo numero membro viene
+          Rimuove alias, avatar, contatti e QR code. Il tuo numero membro viene
           anonimizzato. Azione irreversibile.
         </p>
         <button

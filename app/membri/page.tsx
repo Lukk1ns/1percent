@@ -384,7 +384,7 @@ function MembriWall() {
       <nav className="w-full mt-10 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
         <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
         <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
-        <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">Pass</button>
+        <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">QR code</button>
         <button onClick={() => router.push("/membri")} className="text-brand-red">Muro</button>
         <button onClick={() => router.push("/profilo")} className="hover:text-brand-gray transition-colors">Profilo</button>
         <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>

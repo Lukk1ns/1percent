@@ -106,7 +106,7 @@ export default function EventoPage({ params }: { params: Promise<{ slug: string 
 
       <div className="mt-12 flex flex-col items-center gap-3">
         <Link href="/unisciti" className="btn btn-primary w-full sm:w-auto px-10">
-          Ci sei o no?
+          Iscriviti o unisciti a noi
         </Link>
         <Link
           href="/login"

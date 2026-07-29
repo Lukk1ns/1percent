@@ -177,7 +177,8 @@ function JoinForm() {
         <p className="text-xs uppercase tracking-widest text-brand-gray mb-4">
           Scegli il tuo simbolo
         </p>
-        <div className="grid grid-cols-6 gap-2">
+        {/* Sul telefono 4 per riga: bersagli più grossi da toccare */}
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
           {AVATARS.map((av) => (
             <button
               key={av.id}

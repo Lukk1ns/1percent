@@ -107,7 +107,7 @@ export default function Questionario({
   const q = questions[step];
 
   return (
-    <main className="flex-1 flex flex-col overflow-hidden">
+    <main className="flex-1 flex flex-col">
       {/* Avanzamento */}
       <div className="flex h-[3px] gap-1 px-1">
         {questions.map((_, i) => (
@@ -122,26 +122,28 @@ export default function Questionario({
         ))}
       </div>
 
-      <div className="px-6 pt-8 pb-2">
+      <div className="w-full max-w-xl mx-auto px-6 pt-6 pb-2 sm:pt-8">
         <p className="text-[10px] uppercase tracking-[0.4em] text-brand-gray/60 font-mono">
           {String(step + 1).padStart(2, "0")} / {String(questions.length).padStart(2, "0")}
         </p>
       </div>
 
+      {/* Tutto al centro: sul telefono e sul computer la domanda
+          e le risposte stanno insieme, non ai due estremi dello schermo. */}
       <div
-        className={`flex-1 flex flex-col justify-between px-6 pb-10 transition-all duration-300 ${
+        className={`flex-1 w-full max-w-xl mx-auto flex flex-col justify-center gap-8 px-6 py-6 pb-10 transition-all duration-300 ${
           visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
         }`}
       >
         <h2
-          className="font-display text-white mt-6"
-          style={{ fontSize: "clamp(1.6rem, 7vw, 2.4rem)", lineHeight: 1.15 }}
+          className="font-display text-white text-center sm:text-left"
+          style={{ fontSize: "clamp(1.6rem, 6.5vw, 2.4rem)", lineHeight: 1.15 }}
         >
           {q.text}
         </h2>
 
         {q.type === "choice" && (
-          <div className="flex flex-col gap-3 mt-auto">
+          <div className="flex flex-col gap-3">
             {q.options.map((opt, i) => {
               const isSelected = selected === opt.id;
               return (
@@ -172,7 +174,7 @@ export default function Questionario({
         )}
 
         {q.type === "hybrid" && (
-          <div className="flex flex-col gap-5 mt-auto">
+          <div className="flex flex-col gap-5">
             <textarea
               placeholder={q.placeholder}
               value={testoLibero}
@@ -214,7 +216,7 @@ export default function Questionario({
         )}
 
         {q.type === "text" && (
-          <div className="flex flex-col gap-5 mt-auto">
+          <div className="flex flex-col gap-5">
             <textarea
               placeholder={q.placeholder}
               value={testoLibero}

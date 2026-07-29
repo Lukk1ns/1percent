@@ -177,49 +177,50 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Il prossimo evento: nome e countdown, o punti di domanda se non svelato */}
-          <ProssimoEvento />
-
+          {/* Prima il bottone grande, poi gli eventi sotto */}
           {isMember ? (
             <div
-              className="relative z-10 mt-10 flex flex-col items-center gap-3 animate-fade-up sm:flex-row"
-              style={{ animationDelay: "0.65s" }}
+              className="relative z-10 mt-8 w-full max-w-md flex flex-wrap justify-center gap-2 animate-fade-up sm:max-w-2xl sm:gap-3"
+              style={{ animationDelay: "0.45s" }}
             >
-              <Link href="/eventi" className="btn btn-primary">
+              <Link href="/eventi" className="btn btn-primary flex-1 min-w-[9rem]">
                 Gli eventi
               </Link>
-              <Link href="/pass" className="btn btn-outline">
-                Il tuo pass
+              <Link href="/pass" className="btn btn-outline flex-1 min-w-[9rem]">
+                Il tuo QR code
               </Link>
-              <Link href="/membri" className="btn btn-outline">
+              <Link href="/membri" className="btn btn-outline flex-1 min-w-[9rem]">
                 Il muro 👊
               </Link>
-              <Link href="/profilo" className="btn btn-outline">
+              <Link href="/profilo" className="btn btn-outline flex-1 min-w-[9rem]">
                 Il tuo profilo
               </Link>
-              <Link href="/invita" className="btn btn-ghost">
+              <Link href="/invita" className="btn btn-ghost flex-1 min-w-[9rem]">
                 Invita
               </Link>
             </div>
           ) : signupsOpen ? (
             <div
-              className="relative z-10 mt-10 flex flex-col items-center gap-4 animate-fade-up sm:flex-row"
-              style={{ animationDelay: "0.65s" }}
+              className="relative z-10 mt-8 w-full flex flex-col items-center gap-3 animate-fade-up"
+              style={{ animationDelay: "0.45s" }}
             >
               <Link
                 href="/unisciti"
-                className="btn btn-primary cta-pulse px-10 py-5 text-base"
+                className="btn btn-primary cta-pulse w-full max-w-sm px-6 py-6 text-center text-sm leading-snug sm:max-w-md sm:px-10 sm:text-base"
               >
-                Ci sei o no?
+                Iscriviti o unisciti a noi
               </Link>
-              <Link href="/eventi" className="btn btn-ghost">
-                Tutti gli eventi
+              <Link
+                href="/login"
+                className="text-[10px] uppercase tracking-widest text-brand-gray/70 hover:text-white transition-colors"
+              >
+                Già dell&apos;1%? Rientra →
               </Link>
             </div>
           ) : (
             <div
-              className="relative z-10 mt-10 animate-fade-up border border-brand-red/40 bg-black/60 px-8 py-5 text-center"
-              style={{ animationDelay: "0.65s" }}
+              className="relative z-10 mt-8 w-full max-w-sm animate-fade-up border border-brand-red/40 bg-black/60 px-6 py-5 text-center sm:max-w-md sm:px-8"
+              style={{ animationDelay: "0.45s" }}
             >
               <p className="text-sm uppercase tracking-[0.25em] text-brand-red font-semibold">
                 🔒 Iscrizioni chiuse al momento
@@ -230,21 +231,24 @@ export default function LandingPage() {
             </div>
           )}
 
+          {/* Gli eventi: subito sotto il bottone */}
+          <ProssimoEvento />
+
+          {!isMember && (
+            <Link
+              href="/eventi"
+              className="btn btn-ghost relative z-10 mt-6 w-full max-w-sm animate-fade-up sm:w-auto"
+              style={{ animationDelay: "0.7s" }}
+            >
+              Tutti gli eventi
+            </Link>
+          )}
+
           <div className="relative z-10 animate-fade-up" style={{ animationDelay: "0.8s" }}>
             <MemberCounter />
           </div>
 
           <LiveFeed />
-
-          {!isMember && (
-            <Link
-              href="/login"
-              className="relative z-10 mt-6 text-xs uppercase tracking-widest text-brand-gray hover:text-white transition-colors animate-fade-up"
-              style={{ animationDelay: "1.1s" }}
-            >
-              Già dell&apos;1%? Rientra →
-            </Link>
-          )}
 
           <button
             onClick={() => setShowForm(true)}
