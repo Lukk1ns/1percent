@@ -18,6 +18,16 @@ type ScanResult = {
   prize?: Prize | null;
 };
 
+/** Esito della registrazione presenza: dice a quale serata è stato segnato. */
+type Presenza = {
+  ok: boolean;
+  reason?: string;
+  nuova?: boolean;
+  alias?: string;
+  evento?: string;
+  presenti?: number;
+};
+
 type Phase = "idle" | "rolling" | "done";
 
 type TorchCap = { isSupported: () => boolean; apply: (v: boolean) => Promise<void> };
@@ -77,6 +87,8 @@ function ScanContent() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const [scannerReady, setScannerReady] = useState(false);
   const [camError, setCamError] = useState(false);
+  // Esito della registrazione presenza alla serata in corso
+  const [presenza, setPresenza] = useState<Presenza | null>(null);
   const [torchSupported, setTorchSupported] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const scannerRef = useRef<Html5QrcodeInstance | null>(null);
@@ -93,19 +105,29 @@ function ScanContent() {
     if (busy.current) return;
     busy.current = true;
     setResult(null);
+    setPresenza(null);
     setPhase("rolling");
     const started = Date.now();
 
     const supabase = createClient();
-    const { data, error } = await supabase.rpc("draw_prize", { p_token: token });
+    // Due cose in parallelo: il regalo e la presenza alla serata di stasera.
+    // La presenza è quella che conta per le tessere della crew, quindi se
+    // manca lo script SQL il regalo continua a funzionare lo stesso.
+    const [{ data, error }, presRes] = await Promise.all([
+      supabase.rpc("draw_prize", { p_token: token }),
+      supabase.rpc("registra_presenza", { p_token: token }),
+    ]);
+    const pres = presRes.error ? null : (presRes.data as Presenza);
 
     // Almeno ~1.8s di suspense anche se il server risponde subito
     const wait = Math.max(0, 1800 - (Date.now() - started));
     setTimeout(() => {
       setResult(error ? { ok: false, reason: "error" } : (data as ScanResult));
+      setPresenza(pres);
       setPhase("done");
       setTimeout(() => {
         setResult(null);
+        setPresenza(null);
         busy.current = false;
         setPhase("idle"); // riavvia la fotocamera
       }, 7000);
@@ -304,6 +326,23 @@ function ScanContent() {
                 {result.reason === "not_found" ? "QR non valido" : "Errore — riprova"}
               </p>
             </>
+          )}
+
+          {/* La presenza alla serata: è quella che fa punti alle tessere crew */}
+          {presenza && (
+            <p className="mt-5 text-[11px] uppercase tracking-widest">
+              {presenza.ok ? (
+                <span className="text-emerald-400">
+                  {presenza.nuova ? "✓ presenza registrata" : "già dentro stasera"} ·{" "}
+                  {presenza.evento}
+                  {typeof presenza.presenti === "number" && (
+                    <span className="text-brand-gray/60"> · {presenza.presenti} in sala</span>
+                  )}
+                </span>
+              ) : presenza.reason === "nessun_evento" ? (
+                <span className="text-brand-gray/50">nessuna serata in corso: presenza non contata</span>
+              ) : null}
+            </p>
           )}
         </div>
       )}

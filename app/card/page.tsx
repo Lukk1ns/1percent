@@ -13,6 +13,7 @@ type Profile = {
   avatar_id: string;
   referral_code: string;
   created_at: string;
+  role?: string;
   quiz_answers?: { archetype?: string };
 };
 
@@ -55,7 +56,7 @@ export default function CardPage() {
 
       const { data } = await supabase
         .from("profiles")
-        .select("member_number,alias,avatar_id,referral_code,created_at,quiz_answers")
+        .select("member_number,alias,avatar_id,referral_code,created_at,role,quiz_answers")
         .eq("id", user.id)
         .single();
 
@@ -252,6 +253,14 @@ export default function CardPage() {
         </button>
         {saveError && (
           <p className="text-center text-xs text-brand-red">{saveError}</p>
+        )}
+        {profile.role === "crew" && (
+          <button
+            onClick={() => router.push("/tessera")}
+            className="btn btn-primary w-full"
+          >
+            La tua tessera crew →
+          </button>
         )}
         <button
           onClick={() => router.push("/pass")}

@@ -37,6 +37,21 @@ su `/eventi/[slug]` e nella home `/nuovo`. Componente: `components/Locandina.tsx
 risponde errore. Deciso di NON usare Cloudflare R2 per le locandine (una immagine per evento,
 banda irrilevante): R2 resta per la galleria foto delle serate, dove le immagini sono centinaia.
 
+**Step 4 — TESSERA DELLA CREW (30 lug):** la card del PR ora ha una funzione. Nuova pagina
+**`/tessera`** (solo `role='crew'`, gli altri rimbalzano su `/card`, e da `/card` c'è il bottone).
+È una **costellazione generata dall'alias** (`components/Costellazione.tsx`, canvas, seme FNV-1a
++ mulberry32 → sigillo con lati/rotazione/segni suoi e mai uguali): una stella per ogni persona
+portata, **accesa solo se quella persona ha fatto il check-in a una serata**; puntini spenti =
+iscritti che non si sono presentati. Anelli = livello (10/30/100 portati: nebulosa/stella/
+costellazione/galassia), tacche = serate fatte da lui, in alto l'edizione della serata, il retro
+si gira ed è il **QR del suo link invito**. Sotto: posizione del mese fra la crew.
+**Le PRESENZE sono nuove**: tabella `checkins` (profilo+evento, una sola per serata), RPC
+`registra_presenza(token)` chiamata dallo scanner **in parallelo a `draw_prize`** (se manca lo
+script il regalo funziona lo stesso), `evento_in_corso()` trova da sola la serata (da 5h prima
+a 6h dopo la fine), `my_crew_card()` costruisce tutta la tessera in una chiamata, `admin_presenze()`
+per il pannello. **PENDING Luka: incollare `supabase/05_carta_crew.sql`.** Punti del mese =
+presenze della gente che ha portato + le sue presenze.
+
 **Step 2 completato (28 lug):** locali ed eventi nel database, calendario pubblico, nuova
 home. L'iscrizione pubblica non ha più domande: chi si iscrive entra dritto, le 4 domande
 sono solo per chi si candida allo staff (`/candidatura`, che ha sostituito `/test`).
