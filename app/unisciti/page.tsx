@@ -264,11 +264,11 @@ function JoinForm() {
           >
             <span className="text-xl leading-none" aria-hidden>🎤</span>
             <span className="text-sm font-semibold uppercase tracking-wide text-white">
-              Voglio lavorarci
+              Voglio collaborare
             </span>
             <span className="text-[11px] leading-relaxed text-brand-gray">
-              PR, DJ, foto e video, organizzazione. Ti facciamo 6 domande in più.
-              Non entri subito: se ci interessi, ti scriviamo noi.
+              Se vuoi unirti al nostro gruppo ci sono 6 semplici domande per te.
+              PR, DJ, foto e video, organizzazione: se ci interessi ti scriviamo noi.
             </span>
           </button>
         </div>
