@@ -115,8 +115,9 @@ export default function RegaloPage() {
             <p className="text-6xl mb-4">🎁</p>
             <p className="text-white font-semibold mb-2">Non l&apos;hai ancora ritirato</p>
             <p className="text-brand-gray text-sm">
-              Vieni all&apos;area benvenuto e fai scansionare il tuo QR:
-              l&apos;estrazione parte lì, una volta sola.
+              Passa dallo <span className="text-white">stand UNPERCENTO</span>, dentro il
+              locale, e fai scansionare il tuo QR: l&apos;estrazione parte lì e il regalo
+              lo ritiri sul momento. Una giocata a serata.
             </p>
             <p className="text-brand-gray/50 text-[11px] mt-4 animate-pulse-glow">
               Tieni aperta questa pagina: il premio comparirà qui da solo.

@@ -224,39 +224,57 @@ function JoinForm() {
         </p>
       </div>
 
-      {/* Candidatura staff — l'unica porta d'ingresso alla crew */}
-      <div
-        className={`w-full mb-8 border transition-all ${
-          vuoleStaff ? "border-brand-red bg-brand-red/5" : "border-white/10"
-        }`}
-      >
-        <button
-          onClick={() => {
-            setVuoleStaff(!vuoleStaff);
-            setAliasError("");
-          }}
-          className="w-full flex items-start gap-3 px-4 py-4 text-left"
-        >
-          <span
-            className={`mt-[2px] w-4 h-4 flex-shrink-0 border flex items-center justify-center text-[10px] transition-all ${
-              vuoleStaff ? "border-brand-red bg-brand-red text-white" : "border-white/30"
+      {/* Cliente o staff: la scelta si vede, non è una casellina */}
+      <div className="w-full mb-8">
+        <p className="text-xs uppercase tracking-widest text-brand-gray mb-4">
+          Come entri
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            onClick={() => {
+              setVuoleStaff(false);
+              setAliasError("");
+            }}
+            className={`flex flex-col items-start gap-1 border px-4 py-4 text-left transition-all ${
+              !vuoleStaff
+                ? "border-brand-red bg-brand-red/10 shadow-[0_0_24px_rgba(224,24,31,0.18)]"
+                : "border-white/10 hover:border-white/30"
             }`}
           >
-            {vuoleStaff && "✓"}
-          </span>
-          <span>
-            <span className="block text-sm text-white font-semibold uppercase tracking-wide">
-              Voglio entrare nello staff
+            <span className="text-xl leading-none" aria-hidden>🍹</span>
+            <span className="text-sm font-semibold uppercase tracking-wide text-white">
+              Vengo alle serate
             </span>
-            <span className="block text-xs text-brand-gray leading-relaxed mt-1">
+            <span className="text-[11px] leading-relaxed text-brand-gray">
+              Entri, ti diverti e a ogni serata giochi allo stand UNPERCENTO: drink,
+              shot e altro, estratti sul momento.
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              setVuoleStaff(true);
+              setAliasError("");
+            }}
+            className={`flex flex-col items-start gap-1 border px-4 py-4 text-left transition-all ${
+              vuoleStaff
+                ? "border-brand-red bg-brand-red/10 shadow-[0_0_24px_rgba(224,24,31,0.18)]"
+                : "border-white/10 hover:border-white/30"
+            }`}
+          >
+            <span className="text-xl leading-none" aria-hidden>🎤</span>
+            <span className="text-sm font-semibold uppercase tracking-wide text-white">
+              Voglio lavorarci
+            </span>
+            <span className="text-[11px] leading-relaxed text-brand-gray">
               PR, DJ, foto e video, organizzazione. Ti facciamo 6 domande in più.
               Non entri subito: se ci interessi, ti scriviamo noi.
             </span>
-          </span>
-        </button>
+          </button>
+        </div>
 
         {vuoleStaff && (
-          <div className="px-4 pb-4">
+          <div className="mt-4 border border-brand-red/40 bg-brand-red/5 px-4 py-4">
             <input
               type="text"
               placeholder="il tuo nome vero"

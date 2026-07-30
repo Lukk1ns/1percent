@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
+import { STAND_FRASE, STAND_NON_INGRESSO } from "@/lib/event";
 
 type PassData = {
   alias: string;
@@ -130,17 +131,19 @@ export default function PassPage() {
       {justWon && won && <Confetti />}
 
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">
-        {drawn ? "il tuo regalo" : "il tuo QR code per l'estrazione"}
+        {drawn ? "il tuo regalo" : "il tuo QR code per lo stand"}
       </p>
       <h1 className="font-display text-brand-red text-5xl mb-2">1%</h1>
 
       {!drawn ? (
         <>
-          <p className="text-xs text-brand-gray/60 mb-6 max-w-xs text-center">
-            Appena entri, portati all&apos;angolo accoglienza e fai scansionare il QR — potresti vincere qualcosa.
-            <br />
-            <span className="text-brand-gray/50">Metti la luminosità al massimo e tieni aperta questa pagina.</span>
-          </p>
+          <div className="mb-6 max-w-xs text-center">
+            <p className="text-sm text-white leading-relaxed">{STAND_FRASE}</p>
+            <p className="mt-2 text-xs text-brand-gray/70 leading-relaxed">{STAND_NON_INGRESSO}</p>
+            <p className="mt-3 text-[11px] text-brand-gray/50">
+              Metti la luminosità al massimo e tieni aperta questa pagina.
+            </p>
+          </div>
 
           {/* QR con cornice scanner */}
           <div
@@ -169,7 +172,7 @@ export default function PassPage() {
             <p className="prize-pop relative" style={{ fontSize: "5rem", lineHeight: 1 }}>{mine!.prize!.emoji}</p>
           </div>
           <p className="label-in font-display text-white text-4xl mt-3 prize-glow">{mine!.prize!.label}</p>
-          <p className="text-brand-gray/70 text-xs mt-6">Ritiralo all&apos;area benvenuto. 🥂</p>
+          <p className="text-brand-gray/70 text-xs mt-6">Ritiralo allo stand. 🥂</p>
         </div>
       ) : (
         <div className="w-full max-w-xs border border-white/15 p-8 mt-4 mb-6 animate-fade-up">
@@ -192,7 +195,7 @@ export default function PassPage() {
 
       {!drawn && (
         <p className="text-xs text-brand-gray/60 mt-4 max-w-xs text-center">
-          Il QR è valido una sola volta.
+          Una giocata a serata. Alla prossima si rigioca.
         </p>
       )}
 

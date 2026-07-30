@@ -15,6 +15,23 @@ export const BRAND_PAYOFF = "not for everyone";
  */
 export const BRAND_CLAIM = "Pordenone eventi";
 
+/**
+ * Lo STAND: il banchetto che mettiamo dentro il locale a ogni serata.
+ *
+ * Non è la porta. All'ingresso si entra normalmente, con i modi del
+ * locale. Allo stand si va quando si vuole: si fa scansionare il QR,
+ * parte l'estrazione e si ritira subito quello che si vince. Quella
+ * stessa scansione vale come presenza alla serata — un solo scan.
+ *
+ * Ci passano tutti, clienti e PR: anche chi lavora gioca ogni serata.
+ */
+export const STAND_NAME = "stand UNPERCENTO";
+export const STAND_DOVE = "dentro il locale";
+export const STAND_FRASE =
+  "Allo stand UNPERCENTO, dentro il locale, fai scansionare il tuo QR: l'estrazione parte lì e il regalo lo ritiri sul momento.";
+export const STAND_NON_INGRESSO =
+  "Non c'entra con l'ingresso: in discoteca entri come sempre. Lo stand è nostro, e si gioca a ogni serata.";
+
 /** La zona in cui operiamo, per firme e footer. */
 export const BRAND_AREA = "Pordenone e dintorni";
 

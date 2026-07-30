@@ -7,7 +7,7 @@ import Locandina from "@/components/Locandina";
 import { Marquee } from "@/components/Marquee";
 import { createClient } from "@/lib/supabase/client";
 import { dataLunga, ora, type Evento } from "@/lib/eventi";
-import { BRAND_AREA, BRAND_CLAIM, BRAND_PAYOFF } from "@/lib/event";
+import { BRAND_AREA, BRAND_CLAIM, BRAND_PAYOFF, STAND_NON_INGRESSO } from "@/lib/event";
 
 const TICKER = [
   "1% · not for everyone",
@@ -72,6 +72,30 @@ export default function NuovaHome() {
   const [evento, setEvento] = useState<Evento | null>(null);
   const [dentro, setDentro] = useState<number | null>(null);
   const [ultimi, setUltimi] = useState<Membro[]>([]);
+  // null = sto ancora controllando: evita di far lampeggiare "iscriviti"
+  // a chi è già dentro
+  const [io, setIo] = useState<{ alias: string; crew: boolean } | null>(null);
+  const [sonoMembro, setSonoMembro] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setSonoMembro(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("profiles")
+        .select("alias,role")
+        .eq("id", user.id)
+        .single();
+      setSonoMembro(Boolean(data));
+      if (data) setIo({ alias: data.alias as string, crew: data.role === "crew" });
+    })();
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -133,20 +157,59 @@ export default function NuovaHome() {
       {/* ─────────────  ENTRA  ───────────── */}
       <section className="led-band px-5 pb-12 pt-9 sm:px-8">
         <div className="mx-auto w-full max-w-3xl">
-          <p className="led-label">entra</p>
-          <p className="mt-4 font-display text-2xl leading-tight text-white sm:text-3xl">
-            Il 99% guarda le storie.<br />
-            <span className="text-brand-red">L&apos;1% è sulla lista.</span>
+          {sonoMembro ? (
+            <>
+              <p className="led-label">bentornato{io ? `, ${io.alias}` : ""}</p>
+              <p className="mt-4 font-display text-2xl leading-tight text-white sm:text-3xl">
+                Sei dentro.<br />
+                <span className="text-brand-red">Porta chi merita.</span>
+              </p>
+              <div className="mt-6 grid gap-2 sm:grid-cols-2">
+                <Link href="/pass" className="btn btn-primary">Il tuo QR code</Link>
+                <Link href="/invita" className="btn btn-outline">Invita qualcuno</Link>
+                {io?.crew && (
+                  <Link href="/tessera" className="btn btn-outline">La tua tessera crew</Link>
+                )}
+                <Link href="/membri" className="btn btn-ghost">Il muro 👊</Link>
+                <Link href="/profilo" className="btn btn-ghost">Il tuo profilo</Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="led-label">entra</p>
+              <p className="mt-4 font-display text-2xl leading-tight text-white sm:text-3xl">
+                Il 99% guarda le storie.<br />
+                <span className="text-brand-red">L&apos;1% è sulla lista.</span>
+              </p>
+              <Link href="/unisciti" className="led-reveal mt-7 led-cta">
+                Iscriviti o unisciti a noi
+              </Link>
+              <div className="mt-4 flex flex-col gap-2 font-tech text-[10px] uppercase tracking-[0.25em] sm:flex-row sm:items-center sm:justify-between">
+                <Link href="/login" className="text-brand-gray hover:text-white">
+                  già dentro? rientra →
+                </Link>
+                <span className="text-brand-gray/50">30 secondi, nessun nome vero</span>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* ─────────────  LO STAND  ───────────── */}
+      <section className="led-band px-5 py-10 sm:px-8">
+        <div className="mx-auto w-full max-w-3xl">
+          <p className="led-label">lo stand</p>
+          <p className="mt-4 font-display text-2xl uppercase leading-tight text-white sm:text-3xl">
+            Stand <span className="text-brand-red">UNPERCENTO</span>
           </p>
-          <Link href="/unisciti" className="led-reveal mt-7 led-cta">
-            Iscriviti o unisciti a noi
-          </Link>
-          <div className="mt-4 flex flex-col gap-2 font-tech text-[10px] uppercase tracking-[0.25em] sm:flex-row sm:items-center sm:justify-between">
-            <Link href="/login" className="text-brand-gray hover:text-white">
-              già dentro? rientra →
-            </Link>
-            <span className="text-brand-gray/50">30 secondi, nessun nome vero</span>
-          </div>
+          <p className="mt-3 max-w-[46ch] text-sm leading-relaxed text-brand-gray">
+            A ogni serata siamo dentro il locale con il nostro banchetto. Fai scansionare
+            il QR del tuo profilo: parte l&apos;estrazione e ritiri sul momento quello che
+            vinci — drink, shot, magliette e altro.
+          </p>
+          <p className="mt-2 max-w-[46ch] text-sm leading-relaxed text-brand-gray/60">
+            {STAND_NON_INGRESSO}
+          </p>
         </div>
       </section>
 

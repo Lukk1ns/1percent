@@ -26,6 +26,9 @@ type Props = {
 export default function Locandina({ coverKey, coverV, nome, className = "" }: Props) {
   const [nitida, setNitida] = useState<string | null>(null);
   const [controllato, setControllato] = useState(false);
+  // Serve a dire la cosa giusta a chi è già dentro: a lui non si chiede
+  // di iscriversi, gli si dice che la foto non è arrivata.
+  const [loggato, setLoggato] = useState(false);
 
   useEffect(() => {
     if (!coverKey) return;
@@ -40,6 +43,7 @@ export default function Locandina({ coverKey, coverV, nome, className = "" }: Pr
         if (vivo) setControllato(true);
         return;
       }
+      if (vivo) setLoggato(true);
       // Chi decide è il server: la firma arriva solo a chi ha un profilo
       // (o allo staff). Se non è dei nostri, qui torna un errore e resta
       // la versione sfocata — il controllo non è nel browser.
@@ -94,23 +98,39 @@ export default function Locandina({ coverKey, coverV, nome, className = "" }: Pr
               <span className="text-3xl" aria-hidden>
                 🔒
               </span>
-              <p className="font-display text-xl uppercase leading-tight text-white">
-                La locandina
-                <br />
-                la vedono i membri
-              </p>
-              <Link
-                href="/unisciti"
-                className="mt-1 border border-brand-red bg-brand-red/90 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.25em] text-white transition-colors hover:bg-brand-red"
-              >
-                iscriviti per vederla →
-              </Link>
-              <Link
-                href="/login"
-                className="font-tech text-[9px] uppercase tracking-[0.25em] text-white/60 hover:text-white"
-              >
-                già dentro? rientra →
-              </Link>
+              {loggato ? (
+                <>
+                  <p className="font-display text-xl uppercase leading-tight text-white">
+                    Non riesco
+                    <br />
+                    a caricarla
+                  </p>
+                  <p className="max-w-[22ch] text-[11px] leading-relaxed text-white/70">
+                    Ricarica la pagina. Se resta così, esci e rientra: la nitida la vedono
+                    i membri iscritti.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-display text-xl uppercase leading-tight text-white">
+                    La locandina
+                    <br />
+                    la vedono i membri
+                  </p>
+                  <Link
+                    href="/unisciti"
+                    className="mt-1 border border-brand-red bg-brand-red/90 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.25em] text-white transition-colors hover:bg-brand-red"
+                  >
+                    iscriviti per vederla →
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="font-tech text-[9px] uppercase tracking-[0.25em] text-white/60 hover:text-white"
+                  >
+                    già dentro? rientra →
+                  </Link>
+                </>
+              )}
             </div>
           )}
         </>

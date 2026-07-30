@@ -52,6 +52,24 @@ a 6h dopo la fine), `my_crew_card()` costruisce tutta la tessera in una chiamata
 per il pannello. **PENDING Luka: incollare `supabase/05_carta_crew.sql`.** Punti del mese =
 presenze della gente che ha portato + le sue presenze.
 
+**Step 5 — LO STAND UNPERCENTO (30 lug):** chiarito il modello e scritto ovunque. Lo stand è il
+banchetto **dentro il locale**, non la porta: all'ingresso si entra normalmente. Allo stand si fa
+scansionare il QR → **estrazione + presenza in un solo scan**. Si gioca **una volta per serata**
+(prima era una volta per sempre): `supabase/06_estrazione_per_evento.sql` lega `prize_draws` a
+`event_id` (nuova PK `id` + unique (profile,event)), `draw_prize` v2 registra da sé anche il
+checkin e ritorna `evento`/`senza_evento`/`ruolo`, `my_prize` mostra la giocata della serata in
+corso (fuori serata l'ultima, con `passata:true`), `admin_reset_prize` annulla solo quella della
+serata. **Anche i PR giocano**, ogni evento. Le frasi stanno in `lib/event.ts`
+(`STAND_NAME`/`STAND_FRASE`/`STAND_NON_INGRESSO`), usate da `/pass`, `/regalo`, `/tessera`,
+`/invita` e dalla banda "LO STAND" in home. **PENDING Luka: incollare `05_carta_crew.sql` e
+`06_estrazione_per_evento.sql`** (in quest'ordine).
+`/unisciti`: la scelta cliente / "voglio lavorarci" ora è **due riquadri grandi**, non più una
+casellina. `/invita` rifatta per l'uso dal vivo: QR grande da far inquadrare, messaggio già
+scritto che spiega lo stand, link da copiare, e in fondo **"cosa dirgli"** in tre passi.
+Sistemati anche due difetti: la home nuova mostrava "Iscriviti" anche a chi era già dentro (ora
+riconosce il membro e gli dà i suoi bottoni), e il lucchetto sulla locandina proponeva "iscriviti"
+anche a chi era loggato (ora gli dice di ricaricare).
+
 **Step 2 completato (28 lug):** locali ed eventi nel database, calendario pubblico, nuova
 home. L'iscrizione pubblica non ha più domande: chi si iscrive entra dritto, le 4 domande
 sono solo per chi si candida allo staff (`/candidatura`, che ha sostituito `/test`).

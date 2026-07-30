@@ -291,9 +291,11 @@ export default function TesseraPage() {
 
         <p className="mt-6 text-xs leading-relaxed text-brand-gray/70">
           Ogni stella accesa è una persona che hai portato e che si è
-          <span className="text-white"> presentata davvero</span> a una serata: le contiamo
-          quando fa il check-in alla porta. I puntini spenti si sono solo iscritti — quelli
-          non valgono. Le tacche attorno al sigillo sono le serate che hai fatto tu.
+          <span className="text-white"> presentata davvero</span>: la contiamo quando passa
+          dallo <span className="text-white">stand UNPERCENTO</span> e fa l&apos;estrazione.
+          I puntini spenti si sono solo iscritti — quelli non valgono. Le tacche attorno al
+          sigillo sono le serate in cui sei passato tu allo stand: <span className="text-white">
+          giochi anche tu</span>, drink e shot si vincono come tutti gli altri.
         </p>
       </div>
 
