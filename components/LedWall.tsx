@@ -15,7 +15,7 @@ type Props = {
 };
 
 const ROSSO = [224, 24, 31] as const;
-const LIVELLI = 24; // quanti gradini di luminosità: bastano, e risparmiano lavoro
+const LIVELLI = 32; // gradini di luminosità: più fitti = sfumature più morbide
 
 /**
  * La parete LED del locale, in homepage.
@@ -33,7 +33,7 @@ export default function LedWall({
   testo = "1%",
   videoSrc,
   posterSrc,
-  cell = 11,
+  cell = 8,
   className = "",
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -104,7 +104,7 @@ export default function LedWall({
       canvas!.style.height = `${h}px`;
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      passo = w >= 900 ? cell + 4 : cell;
+      passo = w >= 900 ? cell + 3 : cell;
       cols = Math.max(8, Math.ceil(w / passo));
       rows = Math.max(8, Math.ceil(h / passo));
       sample.width = cols;
@@ -195,14 +195,16 @@ export default function LedWall({
             const lum =
               (sampleData[i] * 0.299 + sampleData[i + 1] * 0.587 + sampleData[i + 2] * 0.114) / 255;
             // Solo le luci della sala passano: il resto resta parete spenta
-            b = Math.pow(lum, 1.9) * 0.36 * esposizione;
+            b = Math.pow(lum, 1.9) * 0.34 * esposizione;
           }
 
-          if (maskData && maskData[i + 3] > 110) {
-            // Dentro il marchio: potenza piena e uniforme, così i bordi
-            // restano netti anche quando dietro la sala è illuminata
-            const respiro = ridotto ? 0 : Math.sin(t * 1.5 - x * 0.06) * 0.06;
-            b = 0.8 + respiro;
+          const dentroMarchio = maskData ? maskData[i + 3] > 90 : false;
+          if (dentroMarchio) {
+            // Dentro il marchio i LED sono sempre al massimo, ma la sala
+            // si vede attraverso: le lettere hanno una texture che si muove
+            // senza mai scendere sotto la soglia di leggibilità.
+            const respiro = ridotto ? 0 : Math.sin(t * 1.5 - x * 0.05) * 0.04;
+            b = 0.72 + b * 0.7 + respiro;
           }
 
           if (dito.dentro) {
@@ -219,6 +221,11 @@ export default function LedWall({
           if (!ridotto) {
             const d2 = Math.abs(px / w - sweep);
             if (d2 < 0.07) b += (1 - d2 / 0.07) * 0.1;
+          }
+
+          if (!dentroMarchio && maskData && maskData[i + 3] > 20) {
+            // Bordo delle lettere: mezza potenza, così il contorno non è a scalini
+            b = Math.max(b, 0.3 + (maskData[i + 3] / 255) * 0.35);
           }
 
           if (b <= 0.035) {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import LedWall from "@/components/LedWall";
+import Locandina from "@/components/Locandina";
 import { Marquee } from "@/components/Marquee";
 import { createClient } from "@/lib/supabase/client";
 import { dataLunga, ora, type Evento } from "@/lib/eventi";
@@ -99,7 +100,7 @@ export default function NuovaHome() {
           testo="1%"
           videoSrc="/media/sala.mp4"
           posterSrc="/media/sala.jpg"
-          cell={11}
+          cell={8}
           className="h-[64vh] min-h-[360px] w-full sm:h-[76vh]"
         />
         <h1 className="sr-only">1% — {BRAND_CLAIM}</h1>
@@ -183,30 +184,40 @@ export default function NuovaHome() {
           )}
 
           {svelato && (
-            <div className="led-reveal mt-5 grid gap-9 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-12">
-              <div>
-              <Link href={`/eventi/${svelato.slug}`} className="group block">
-                <span
-                  className="block font-display uppercase leading-none text-white transition-colors group-hover:text-brand-red"
-                  style={{ fontSize: "clamp(2.6rem,13vw,6rem)", letterSpacing: "0.02em" }}
-                >
-                  {svelato.nome}
-                </span>
-                <span className="mt-1 block font-tech text-[10px] uppercase tracking-[0.4em] text-brand-gray/60">
-                  by 1%
-                </span>
-              </Link>
-              <p className="mt-4 font-tech text-xs uppercase tracking-[0.25em] text-brand-gray">
-                {dataLunga(svelato.starts_at)} · {ora(svelato.starts_at)}
-              </p>
-              {svelato.locale && (
-                <p className="mt-1 font-tech text-[11px] uppercase tracking-[0.25em] text-brand-gray/55">
-                  {svelato.locale}
-                  {svelato.citta ? ` · ${svelato.citta}` : ""}
-                </p>
+            <div className="led-reveal mt-5 grid gap-9 sm:grid-cols-[minmax(0,170px)_1fr] sm:items-start sm:gap-8">
+              {svelato.cover_key && (
+                <Locandina
+                  coverKey={svelato.cover_key}
+                  coverV={svelato.cover_v}
+                  nome={svelato.nome}
+                  className="w-40 sm:w-full"
+                />
               )}
+              <div className={svelato.cover_key ? "" : "sm:col-span-2"}>
+                <Link href={`/eventi/${svelato.slug}`} className="group block">
+                  <span
+                    className="block font-display uppercase leading-none text-white transition-colors group-hover:text-brand-red"
+                    style={{ fontSize: "clamp(2.4rem,11vw,4.6rem)", letterSpacing: "0.02em" }}
+                  >
+                    {svelato.nome}
+                  </span>
+                  <span className="mt-1 block font-tech text-[10px] uppercase tracking-[0.4em] text-brand-gray/60">
+                    by 1%
+                  </span>
+                </Link>
+                <p className="mt-4 font-tech text-xs uppercase tracking-[0.25em] text-brand-gray">
+                  {dataLunga(svelato.starts_at)} · {ora(svelato.starts_at)}
+                </p>
+                {svelato.locale && (
+                  <p className="mt-1 font-tech text-[11px] uppercase tracking-[0.25em] text-brand-gray/55">
+                    {svelato.locale}
+                    {svelato.citta ? ` · ${svelato.citta}` : ""}
+                  </p>
+                )}
+                <div className="mt-7">
+                  <CountdownLed target={new Date(svelato.starts_at)} etichetta="si apre tra" />
+                </div>
               </div>
-              <CountdownLed target={new Date(svelato.starts_at)} etichetta="si apre tra" />
             </div>
           )}
 

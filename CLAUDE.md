@@ -15,6 +15,28 @@ questionario dedicato e approvazione a mano, QR statico, tracciamento click refe
 registro azioni admin. Il blocco social (Muro, profilo, poke, Legami, messaggi) **resta
 acceso**; congelato solo il Mosaico.
 
+**Anteprima grafica "LEDWALL" (30 lug):** direzione scelta da Luka per il restyling. Sta su
+**`/nuovo`**, la home vera non è toccata. La firma è `components/LedWall.tsx`: una parete di
+LED su canvas, la luminosità di ogni LED viene da `public/media/sala.mp4` (spezzone del locale,
+muto e in bianco e nero, 600 KB) campionato a un pixel per LED — la serata si intravede ma
+nessuno è riconoscibile. Il marchio è acceso a potenza piena con la sala visibile dentro le
+lettere; il dito accende un alone. Esposizione automatica per frame, così il "1%" resta il
+più luminoso con qualunque fotogramma; si spegne fuori schermo, a scheda nascosta e con
+"riduci movimento". Font tecnico nuovo: **JetBrains Mono** (`font-tech`) per numeri, orari ed
+etichette. Classi `.led-*` in fondo a `globals.css`. Su quella pagina le aurore/glitch/griglia
+dello sfondo globale restano coperte da un fondo pieno.
+
+**Step 3 — LOCANDINE (30 lug):** ogni evento può avere la sua locandina, **formato storia
+1080×1920**. Due depositi come per i volti: `locandine` (nitida, PRIVATO) e `locandine-blur`
+(sfocata a 180px, pubblico). **La nitida la vedono solo i membri** (e lo staff): il controllo è
+nelle policy dello storage, il browser non c'entra. Chi non è iscritto vede la sfocata con il
+lucchetto e l'invito a iscriversi. Upload da `/admin/eventi` (slot "Locandina" su ogni evento)
+→ `app/api/locandina/route.ts` (sharp, EXIF strippati, niente tagli: `fit: inside`). Si mostra
+su `/eventi/[slug]` e nella home `/nuovo`. Componente: `components/Locandina.tsx`.
+**PENDING Luka: incollare `supabase/04_locandine.sql`** — finché non lo fa, il caricamento
+risponde errore. Deciso di NON usare Cloudflare R2 per le locandine (una immagine per evento,
+banda irrilevante): R2 resta per la galleria foto delle serate, dove le immagini sono centinaia.
+
 **Step 2 completato (28 lug):** locali ed eventi nel database, calendario pubblico, nuova
 home. L'iscrizione pubblica non ha più domande: chi si iscrive entra dritto, le 4 domande
 sono solo per chi si candida allo staff (`/candidatura`, che ha sostituito `/test`).

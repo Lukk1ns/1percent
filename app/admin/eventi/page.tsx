@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Locandina from "@/components/Locandina";
 
 type Locale = {
   id: string;
@@ -26,7 +27,126 @@ type EventoAdmin = {
   descrizione: string | null;
   published: boolean;
   svelato: boolean;
+  cover_key: string | null;
+  cover_v: number | null;
 };
+
+/**
+ * La locandina di un evento nel pannello: caricala, sostituiscila, togli.
+ * Formato storia di Instagram (1080x1920): quello che carichi non viene
+ * tagliato, ma se non è 9:16 resta con le fasce ai lati.
+ */
+function SlotLocandina({
+  evento,
+  onFatto,
+}: {
+  evento: EventoAdmin;
+  onFatto: () => void | Promise<void>;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [lavorando, setLavorando] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
+
+  async function carica(f: File) {
+    setLavorando(true);
+    setErrore(null);
+    const fd = new FormData();
+    fd.append("file", f);
+    fd.append("event_id", evento.id);
+    const res = await fetch("/api/locandina", { method: "POST", body: fd });
+    setLavorando(false);
+    if (fileRef.current) fileRef.current.value = "";
+    if (!res.ok) {
+      const j = await res.json().catch(() => null);
+      setErrore(
+        j?.error === "troppo-grande"
+          ? "Immagine troppo pesante (massimo 12 MB)."
+          : j?.error === "non-e-un-immagine"
+            ? "Questo file non è un'immagine."
+            : `Non caricata (${j?.error ?? res.status}).`,
+      );
+      return;
+    }
+    await onFatto();
+  }
+
+  async function rimuovi() {
+    if (!window.confirm("Rimuovere la locandina di questo evento?")) return;
+    setLavorando(true);
+    setErrore(null);
+    const res = await fetch("/api/locandina", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event_id: evento.id }),
+    });
+    setLavorando(false);
+    if (!res.ok) {
+      setErrore("Non rimossa. Riprova.");
+      return;
+    }
+    await onFatto();
+  }
+
+  return (
+    <div className="mt-3 flex items-start gap-3 border border-white/5 px-3 py-3">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) carica(f);
+        }}
+      />
+
+      {evento.cover_key ? (
+        <Locandina
+          coverKey={evento.cover_key}
+          coverV={evento.cover_v}
+          nome={evento.name}
+          className="w-16 flex-shrink-0"
+        />
+      ) : (
+        <div
+          className="flex w-16 flex-shrink-0 items-center justify-center border border-dashed border-white/15 text-lg text-white/25"
+          style={{ aspectRatio: "9 / 16" }}
+          aria-hidden
+        >
+          9:16
+        </div>
+      )}
+
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] uppercase tracking-widest text-brand-gray">Locandina</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-brand-gray/60">
+          {evento.cover_key
+            ? "La vedono nitida solo i membri. Gli altri la vedono sfocata."
+            : "Formato storia, 1080×1920. La vedranno nitida solo i membri."}
+        </p>
+        {errore && <p className="mt-2 text-[11px] text-brand-red">{errore}</p>}
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={lavorando}
+            className="border border-white/20 px-3 py-2 text-[10px] uppercase tracking-widest text-white transition-colors hover:border-brand-red disabled:opacity-50"
+          >
+            {lavorando ? "Carico…" : evento.cover_key ? "Sostituisci" : "Carica locandina"}
+          </button>
+          {evento.cover_key && (
+            <button
+              onClick={rimuovi}
+              disabled={lavorando}
+              className="border border-white/10 px-3 py-2 text-[10px] uppercase tracking-widest text-brand-gray transition-colors hover:border-brand-red/40 hover:text-brand-red disabled:opacity-50"
+            >
+              Rimuovi
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /** Da ISO a "2026-09-12T22:30", il formato che vuole l'input datetime-local. */
 function perInput(iso: string | null): string {
@@ -474,6 +594,8 @@ export default function AdminEventiPage() {
                     Elimina
                   </button>
                 </div>
+
+                <SlotLocandina evento={e} onFatto={carica} />
               </div>
             ))}
           </div>

@@ -18,6 +18,8 @@ export type EventoSvelato = {
   indirizzo: string | null;
   descrizione: string | null;
   cover_key: string | null;
+  /** Quando è stata caricata la locandina: rompe la cache del browser. */
+  cover_v?: number | null;
   starts_at: string;
   ends_at: string | null;
   passato: boolean;

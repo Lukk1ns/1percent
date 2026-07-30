@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { Countdown } from "@/components/Countdown";
+import Locandina from "@/components/Locandina";
 import { createClient } from "@/lib/supabase/client";
 import { dataLunga, ora, type EventoSvelato } from "@/lib/eventi";
 
@@ -67,6 +68,17 @@ export default function EventoPage({ params }: { params: Promise<{ slug: string 
         </p>
         <p className="text-[10px] uppercase tracking-[0.4em] text-brand-gray/60 mt-2">by 1%</p>
       </div>
+
+      {evento.cover_key && (
+        <div className="mt-9 flex justify-center">
+          <Locandina
+            coverKey={evento.cover_key}
+            coverV={evento.cover_v}
+            nome={evento.nome}
+            className="w-full max-w-xs"
+          />
+        </div>
+      )}
 
       <div className="mt-10 flex flex-col items-center gap-2 text-center">
         <p className="text-sm uppercase tracking-[0.2em] text-white">
