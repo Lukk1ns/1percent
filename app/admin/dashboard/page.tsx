@@ -7,13 +7,26 @@ import { getAvatar } from "@/lib/avatars";
 import { QUIZ_QUESTIONS } from "@/lib/quiz";
 
 type HybridAnswer = { text?: string; tag?: string };
+// q1/q2 sono a scelta, ma da luglio si può anche scrivere la propria
+// risposta: in quel caso arriva un oggetto invece di una stringa.
+type ChoiceAnswer = string | HybridAnswer;
 type QuizAnswers = {
-  q1?: string;
-  q2?: string;
+  q1?: ChoiceAnswer;
+  q2?: ChoiceAnswer;
   q3?: HybridAnswer;
   q4?: HybridAnswer;
   archetype?: string;
 };
+
+/** L'opzione scelta, comunque sia arrivata. */
+function optionId(a?: ChoiceAnswer): string | undefined {
+  return typeof a === "string" ? a : a?.tag || undefined;
+}
+
+/** Quello che ha scritto di suo in una domanda a scelta, se l'ha fatto. */
+function freeText(a?: ChoiceAnswer): string | undefined {
+  return typeof a === "object" ? a?.text?.trim() || undefined : undefined;
+}
 
 type AnswerMember = {
   id: string;
@@ -35,9 +48,11 @@ function questionText(qId: string): string {
   return QUIZ_QUESTIONS.find((x) => x.id === qId)?.text ?? qId;
 }
 
-// C'è testo libero scritto nelle domande aperte?
+// C'è testo libero scritto da qualche parte?
 function hasFreeText(a: QuizAnswers | null): boolean {
-  return Boolean(a?.q3?.text?.trim() || a?.q4?.text?.trim());
+  return Boolean(
+    a?.q3?.text?.trim() || a?.q4?.text?.trim() || freeText(a?.q1) || freeText(a?.q2),
+  );
 }
 
 type Post = {
@@ -722,12 +737,26 @@ export default function AdminDashboardPage() {
 
                       {/* Domande a scelta */}
                       <div className="flex flex-col gap-2">
-                        {(["q1", "q2"] as const).map((qId) => (
-                          <div key={qId}>
-                            <p className="text-brand-gray/60 text-[11px]">{questionText(qId)}</p>
-                            <p className="text-white/90 text-sm">{choiceLabel(qId, a[qId])}</p>
-                          </div>
-                        ))}
+                        {(["q1", "q2"] as const).map((qId) => {
+                          const scritto = freeText(a[qId]);
+                          const scelta = optionId(a[qId]);
+                          return (
+                            <div key={qId}>
+                              <p className="text-brand-gray/60 text-[11px]">{questionText(qId)}</p>
+                              <p className="text-white/90 text-sm">
+                                {scelta ? choiceLabel(qId, scelta) : "— ha scritto la sua"}
+                                {scritto && (
+                                  <span
+                                    className="block text-yellow-200 mt-0.5"
+                                    style={{ fontFamily: "var(--font-caveat)", fontSize: "1.05rem" }}
+                                  >
+                                    “{scritto}”
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          );
+                        })}
 
                         {/* Domande aperte */}
                         {(["q3", "q4"] as const).map((qId) => {

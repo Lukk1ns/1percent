@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AVATARS } from "@/lib/avatars";
 import { SIGNUPS_OPEN } from "@/lib/event";
 import { createClient } from "@/lib/supabase/client";
-import { registraMembro, type Bozza } from "@/lib/registrazione";
+import { type Bozza } from "@/lib/registrazione";
 
 // Schermata mostrata quando le iscrizioni sono chiuse (interruttore admin)
 function SignupsClosed() {
@@ -107,11 +107,11 @@ function JoinForm() {
   }
 
   /**
-   * Chi si iscrive e basta entra subito: nessuna domanda, nessun passaggio.
-   * Chi si candida allo staff va a rispondere alle 4 domande, e la
-   * registrazione si chiude là in fondo.
+   * Da qui si va sempre alle 4 domande del pubblico. Chi si è candidato
+   * allo staff, dopo quelle, ne trova altre 6; la registrazione si
+   * chiude in fondo al percorso, non qui.
    */
-  async function handleNext() {
+  function handleNext() {
     if (!validate()) return;
 
     const bozza: Bozza = {
@@ -124,21 +124,10 @@ function JoinForm() {
       nome: vuoleStaff ? nome.trim() : null,
     };
 
-    if (vuoleStaff) {
-      sessionStorage.setItem("reg_draft", JSON.stringify(bozza));
-      router.push("/candidatura");
-      return;
-    }
-
+    sessionStorage.setItem("reg_draft", JSON.stringify(bozza));
+    sessionStorage.removeItem("reg_quiz");
     setEntrando(true);
-    const esito = await registraMembro(bozza, null);
-    if (!esito.ok) {
-      setAliasError(esito.messaggio);
-      setEntrando(false);
-      return;
-    }
-    sessionStorage.setItem("member_data", JSON.stringify(esito.membro));
-    router.push("/benvenuto");
+    router.push("/domande");
   }
 
   if (signupsOpen === null) return null; // controllo in corso, evita flash del form
@@ -147,7 +136,7 @@ function JoinForm() {
   return (
     <main className="flex-1 flex flex-col items-center px-6 py-12 max-w-md mx-auto w-full">
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">
-        {vuoleStaff ? "passo 1 di 2" : "un passo solo"}
+        {vuoleStaff ? "passo 1 di 3" : "passo 1 di 2"}
       </p>
       <h1 className="font-display text-4xl text-brand-red mb-1">Chi sei?</h1>
       <p className="text-brand-gray text-sm mb-10">
@@ -260,7 +249,7 @@ function JoinForm() {
               Voglio entrare nello staff
             </span>
             <span className="block text-xs text-brand-gray leading-relaxed mt-1">
-              PR, DJ, foto e video, organizzazione. Ti facciamo 4 domande in più.
+              PR, DJ, foto e video, organizzazione. Ti facciamo 6 domande in più.
               Non entri subito: se ci interessi, ti scriviamo noi.
             </span>
           </span>
@@ -322,7 +311,7 @@ function JoinForm() {
         disabled={entrando}
         className="btn btn-primary w-full"
       >
-        {entrando ? "Ti stiamo facendo entrare…" : vuoleStaff ? "Avanti →" : "Entra →"}
+        {entrando ? "Un attimo…" : "Avanti →"}
       </button>
     </main>
   );

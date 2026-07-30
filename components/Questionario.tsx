@@ -72,7 +72,19 @@ export default function Questionario({
     if (selected) return;
     setSelected(optionId);
     await new Promise((r) => setTimeout(r, 500));
-    await advance({ ...risposte, [questions[step].id]: optionId });
+    const scritto = testoLibero.trim();
+    // Se ha anche scritto qualcosa, tengo tutte e due le cose
+    await advance({
+      ...risposte,
+      [questions[step].id]: scritto ? { tag: optionId, text: scritto } : optionId,
+    });
+  }
+
+  /** Ha scritto la sua risposta senza scegliere nessuna opzione. */
+  async function handleSoloScritto() {
+    const scritto = testoLibero.trim();
+    if (!scritto || selected) return;
+    await advance({ ...risposte, [questions[step].id]: { tag: "", text: scritto } });
   }
 
   async function handleAperta() {
@@ -170,6 +182,27 @@ export default function Questionario({
                 </button>
               );
             })}
+
+            {/* Riga libera facoltativa: chi non si riconosce in nessuna
+                opzione scrive la sua e va avanti lo stesso. */}
+            {q.placeholder && (
+              <div className="mt-1 flex flex-col gap-3">
+                <textarea
+                  placeholder={q.placeholder}
+                  value={testoLibero}
+                  onChange={(e) => setTestoLibero(e.target.value)}
+                  maxLength={200}
+                  rows={2}
+                  disabled={!!selected}
+                  className="w-full resize-none border border-white/10 bg-transparent px-4 py-3 text-sm text-white placeholder-brand-gray/40 outline-none transition-colors focus:border-brand-red/60 disabled:opacity-40"
+                />
+                {testoLibero.trim() && !selected && (
+                  <button onClick={handleSoloScritto} className="btn btn-primary w-full">
+                    Avanti →
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 

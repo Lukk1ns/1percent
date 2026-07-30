@@ -3,10 +3,10 @@ import { createClient } from "@/lib/supabase/client";
 /**
  * Registrazione di un nuovo membro.
  *
- * Una sola porta d'ingresso per tutti. Chi si iscrive e basta entra
- * subito da /unisciti; chi si candida allo staff passa prima da
- * /candidatura e risponde alle 4 domande. In entrambi i casi si
- * finisce qui, così la logica di errore sta scritta in un posto solo.
+ * Una sola porta d'ingresso per tutti: da /unisciti si passa per le 4
+ * domande del pubblico (/domande), e chi si candida allo staff ne fa
+ * altre 6 (/candidatura). In tutti i casi si finisce qui, così la
+ * logica di errore sta scritta in un posto solo.
  */
 
 export type Bozza = {
@@ -21,8 +21,14 @@ export type Bozza = {
   nome: string | null;
 };
 
-/** Le risposte al questionario staff, così come escono da Questionario. */
-export type RisposteStaff = Record<string, string | { text?: string; tag?: string }>;
+/** Le risposte a un questionario, così come escono da Questionario. */
+export type RisposteQuiz = Record<string, string | { text?: string; tag?: string }>;
+
+/** I due questionari: quello del pubblico e, se si candida, quello dello staff. */
+export type Questionari = {
+  pubblico?: RisposteQuiz | null;
+  staff?: RisposteQuiz | null;
+};
 
 export type Esito =
   | { ok: true; membro: unknown }
@@ -30,7 +36,7 @@ export type Esito =
 
 export async function registraMembro(
   bozza: Bozza,
-  risposteStaff: RisposteStaff | null,
+  risposte: Questionari = {},
 ): Promise<Esito> {
   try {
     const supabase = createClient();
@@ -44,10 +50,10 @@ export async function registraMembro(
       p_nome: bozza.nome,
       p_email: bozza.email,
       p_gender: bozza.gender,
-      p_quiz_answers: null,
+      p_quiz_answers: risposte.pubblico ?? null,
       p_referral_code: bozza.refCode,
       p_crew_request: bozza.crewRequest,
-      p_crew_answers: risposteStaff,
+      p_crew_answers: risposte.staff ?? null,
     });
 
     if (error) {

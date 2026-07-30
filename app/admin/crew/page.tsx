@@ -37,8 +37,17 @@ function leggiRisposta(
   const q = CREW_QUESTIONS.find((x) => x.id === questionId);
   if (!q || valore === undefined) return null;
 
-  if (q.type === "choice" && typeof valore === "string") {
-    return { domanda: q.text, risposta: q.options.find((o) => o.id === valore)?.text ?? valore };
+  if (q.type === "choice") {
+    // Può aver scelto un'opzione, aver scritto la sua, o tutte e due
+    const scelta = typeof valore === "string" ? valore : valore.tag;
+    const scritto = typeof valore === "object" ? valore.text?.trim() : undefined;
+    return {
+      domanda: q.text,
+      risposta: scelta
+        ? (q.options.find((o) => o.id === scelta)?.text ?? scelta)
+        : "— ha scritto la sua",
+      libero: scritto || undefined,
+    };
   }
   if (q.type === "hybrid" && typeof valore === "object") {
     return { domanda: q.text, risposta: valore.tag ?? "—", libero: valore.text || undefined };

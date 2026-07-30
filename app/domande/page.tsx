@@ -2,18 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CREW_QUESTIONS } from "@/lib/quiz";
+import { QUIZ_QUESTIONS } from "@/lib/quiz";
+import { computeArchetype } from "@/lib/archetypes";
 import { registraMembro, type Bozza } from "@/lib/registrazione";
 import Questionario, { type Risposte } from "@/components/Questionario";
 
 /**
- * Le 6 domande di chi si candida allo staff.
+ * Le 4 domande di chi si iscrive.
  *
- * Ci arriva solo chi ha spuntato la casella su /unisciti, e solo dopo
- * aver risposto alle 4 del pubblico. La registrazione si chiude qui,
- * con la candidatura in attesa che un admin decida.
+ * Ci passano tutti, dopo il modulo di /unisciti. Da qui:
+ *   · chi si iscrive e basta viene registrato subito
+ *   · chi si è candidato allo staff prosegue con le 6 domande della crew
+ *
+ * Le risposte servono anche a calcolare l'archetipo che finisce sulla card.
  */
-export default function CandidaturaPage() {
+export default function DomandePage() {
   const router = useRouter();
   const [errore, setErrore] = useState("");
 
@@ -25,9 +28,26 @@ export default function CandidaturaPage() {
     setErrore("");
 
     const bozza = JSON.parse(sessionStorage.getItem("reg_draft") ?? "{}") as Bozza;
-    const pubblico = JSON.parse(sessionStorage.getItem("reg_quiz") ?? "null");
-    const esito = await registraMembro(bozza, { pubblico, staff: risposte });
 
+    // L'archetipo viaggia dentro le risposte: la card lo legge da lì
+    const conArchetipo = {
+      ...risposte,
+      archetype: computeArchetype({
+        q1: typeof risposte.q1 === "string" ? risposte.q1 : risposte.q1?.tag,
+        q2: typeof risposte.q2 === "string" ? risposte.q2 : risposte.q2?.tag,
+        q3: typeof risposte.q3 === "object" ? risposte.q3 : undefined,
+        q4: typeof risposte.q4 === "object" ? risposte.q4 : undefined,
+      }),
+    };
+
+    // Chi si candida allo staff non è ancora arrivato in fondo
+    if (bozza.crewRequest) {
+      sessionStorage.setItem("reg_quiz", JSON.stringify(conArchetipo));
+      router.push("/candidatura");
+      return;
+    }
+
+    const esito = await registraMembro(bozza, { pubblico: conArchetipo });
     if (!esito.ok) {
       setErrore(esito.messaggio);
       return;
@@ -41,10 +61,10 @@ export default function CandidaturaPage() {
 
   return (
     <Questionario
-      questions={CREW_QUESTIONS}
+      questions={QUIZ_QUESTIONS}
       onComplete={invia}
       error={errore}
-      loadingLabel="registriamo la tua candidatura…"
+      loadingLabel="ti stiamo facendo entrare…"
       errorAction={
         errore.includes("alias") || errore.includes("email") ? (
           <button
