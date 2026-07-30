@@ -256,30 +256,6 @@ export default function AdminDashboardPage() {
             </button>
           )}
           <button
-            onClick={() => router.push("/admin/scan")}
-            className="text-xs uppercase tracking-widest text-brand-red border border-brand-red px-3 py-2 hover:bg-brand-red hover:text-white transition-all"
-          >
-            Scanner QR
-          </button>
-          <button
-            onClick={() => router.push("/admin/regali")}
-            className="text-xs uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-2 hover:border-white/30 transition-all"
-          >
-            🎁 Regali
-          </button>
-          <button
-            onClick={() => router.push("/admin/eventi")}
-            className="text-xs uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-2 hover:border-white/30 transition-all"
-          >
-            📅 Eventi
-          </button>
-          <button
-            onClick={() => router.push("/admin/crew")}
-            className="text-xs uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-2 hover:border-white/30 transition-all"
-          >
-            👤 Staff
-          </button>
-          <button
             onClick={handleLogout}
             className="text-xs uppercase tracking-widest text-brand-gray border border-white/10 px-3 py-2 hover:border-white/30 transition-all"
           >
@@ -294,23 +270,82 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+      {/* I pannelli: le quattro porte, scritte grandi e cosa c'è dentro.
+          Prima erano quattro bottoncini grigi in alto a destra e non si
+          trovavano più. */}
+      <div className="mb-8">
+        <p className="text-[10px] uppercase tracking-[0.4em] text-brand-gray/60 mb-3">
+          i pannelli
+        </p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+          {[
+            {
+              href: "/admin/eventi",
+              emoji: "📅",
+              titolo: "Eventi",
+              cosa: "Crea le feste, svelale, carica la locandina",
+              acceso: true,
+            },
+            {
+              href: "/admin/crew",
+              emoji: "👤",
+              titolo: "Staff",
+              cosa: "Candidature in attesa: approva o rifiuta",
+              acceso: false,
+            },
+            {
+              href: "/admin/regali",
+              emoji: "🎁",
+              titolo: "Regali",
+              cosa: "Scorte, probabilità, vincitori",
+              acceso: false,
+            },
+            {
+              href: "/admin/scan",
+              emoji: "📷",
+              titolo: "Scanner QR",
+              cosa: "Valida gli ingressi alla serata",
+              acceso: false,
+            },
+          ].map((p) => (
+            <button
+              key={p.href}
+              onClick={() => router.push(p.href)}
+              className={`flex flex-col items-start gap-1 border px-4 py-4 text-left transition-all hover:-translate-y-0.5 ${
+                p.acceso
+                  ? "border-brand-red bg-brand-red/10 hover:bg-brand-red/20"
+                  : "border-white/10 hover:border-white/30"
+              }`}
+            >
+              <span className="text-xl leading-none" aria-hidden>
+                {p.emoji}
+              </span>
+              <span className="text-sm font-semibold uppercase tracking-widest text-white">
+                {p.titolo}
+              </span>
+              <span className="text-[11px] leading-snug text-brand-gray/70">{p.cosa}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Tab */}
-      <div className="flex gap-0 mb-8 border border-white/10">
+      <div className="flex flex-wrap gap-0 mb-8 border border-white/10">
         <button
           onClick={() => setTab("members")}
-          className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all ${tab === "members" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
+          className={`flex-1 min-w-[7rem] py-3 text-[11px] sm:text-xs uppercase tracking-widest transition-all ${tab === "members" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
         >
           Membri
         </button>
         <button
           onClick={() => setTab("stats")}
-          className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all ${tab === "stats" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
+          className={`flex-1 min-w-[7rem] py-3 text-[11px] sm:text-xs uppercase tracking-widest transition-all ${tab === "stats" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
         >
           Statistiche
         </button>
         <button
           onClick={() => setTab("posts")}
-          className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all relative ${tab === "posts" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
+          className={`flex-1 min-w-[7rem] py-3 text-[11px] sm:text-xs uppercase tracking-widest transition-all relative ${tab === "posts" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
         >
           Bacheca
           {posts.length > 0 && (
@@ -321,13 +356,13 @@ export default function AdminDashboardPage() {
         </button>
         <button
           onClick={() => setTab("answers")}
-          className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all ${tab === "answers" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
+          className={`flex-1 min-w-[7rem] py-3 text-[11px] sm:text-xs uppercase tracking-widest transition-all ${tab === "answers" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
         >
           Risposte
         </button>
         <button
           onClick={() => setTab("reports")}
-          className={`flex-1 py-3 text-xs uppercase tracking-widest transition-all relative ${tab === "reports" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
+          className={`flex-1 min-w-[7rem] py-3 text-[11px] sm:text-xs uppercase tracking-widest transition-all relative ${tab === "reports" ? "bg-brand-red text-white" : "text-brand-gray hover:text-white"}`}
         >
           Segnalaz.
           {reports.filter((r) => r.status === "open").length > 0 && (
