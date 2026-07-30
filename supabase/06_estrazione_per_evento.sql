@@ -20,6 +20,23 @@
 -- ============================================================
 
 -- ============================================================
+-- 0. CONTROLLO: prima serve 05_carta_crew.sql
+--
+-- Senza, non esistono né le presenze né la funzione che trova la
+-- serata in corso, e questo script non ha su cosa appoggiarsi.
+-- ============================================================
+
+do $$
+begin
+  if to_regprocedure('public.evento_in_corso()') is null
+     or to_regclass('public.checkins') is null then
+    raise exception
+      'Prima incolla supabase/05_carta_crew.sql: qui mancano le presenze e evento_in_corso().';
+  end if;
+end $$;
+
+
+-- ============================================================
 -- 1. UNA GIOCATA PER SERATA
 -- ============================================================
 
