@@ -71,6 +71,56 @@ export async function GET(req: Request) {
     pattern = -1;
   }
 
+  // Il caso vero: TESTO DENTRO IL MOTIVO ripetuto. resvg (il disegnatore
+  // di SVG dentro sharp) potrebbe saper fare le due cose separate ma non
+  // insieme — sarebbe esattamente la filigrana invisibile.
+  let testoNelPattern = -1;
+  try {
+    const svg = Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120">
+        <defs><pattern id="p" width="200" height="70" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
+          <text x="0" y="40" font-family="sans-serif" font-size="30" font-weight="bold" fill="#ffffff">prova</text>
+        </pattern></defs>
+        <rect width="400" height="120" fill="url(#p)"/>
+      </svg>`,
+    );
+    const out = await sharp({
+      create: { width: 400, height: 120, channels: 3, background: "#000000" },
+    })
+      .composite([{ input: svg, top: 0, left: 0 }])
+      .raw()
+      .toBuffer();
+    let accesi = 0;
+    for (let i = 0; i < out.length; i += 3) if (out[i] > 40) accesi++;
+    testoNelPattern = accesi;
+  } catch {
+    testoNelPattern = -1;
+  }
+
+  // E la variante di riserva: niente motivo, tanti <text> messi a mano
+  let testiAMano = -1;
+  try {
+    const righe: string[] = [];
+    for (let y = 20; y < 400; y += 40)
+      righe.push(`<text x="0" y="${y}" font-family="sans-serif" font-size="30" font-weight="bold" fill="#ffffff">prova</text>`);
+    const svg = Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120">
+        <g transform="rotate(-30 200 60)">${righe.join("")}</g>
+      </svg>`,
+    );
+    const out = await sharp({
+      create: { width: 400, height: 120, channels: 3, background: "#000000" },
+    })
+      .composite([{ input: svg, top: 0, left: 0 }])
+      .raw()
+      .toBuffer();
+    let accesi = 0;
+    for (let i = 0; i < out.length; i += 3) if (out[i] > 40) accesi++;
+    testiAMano = accesi;
+  } catch {
+    testiAMano = -1;
+  }
+
   const vuoi = new URL(req.url).searchParams.get("png");
   if (vuoi) {
     const png = await sharp({
@@ -85,7 +135,13 @@ export async function GET(req: Request) {
   }
 
   return Response.json(
-    { pixel_accesi_per_font: esiti, pattern_di_rettangoli: pattern, sharp: sharp.versions },
+    {
+      pixel_accesi_per_font: esiti,
+      pattern_di_rettangoli: pattern,
+      TESTO_DENTRO_IL_PATTERN: testoNelPattern,
+      testi_messi_a_mano: testiAMano,
+      sharp: sharp.versions,
+    },
     { headers: { "Cache-Control": "no-store" } },
   );
 }
