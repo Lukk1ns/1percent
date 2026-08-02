@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import Costellazione, { type Stella } from "@/components/Costellazione";
 import { dataCorta } from "@/lib/eventi";
 import { NavBasso } from "@/components/NavBasso";
+import { CHIAVE_INVITO, SOLO_SU_INVITO } from "@/lib/event";
 
 type Carta = {
   ok: boolean;
@@ -81,7 +82,7 @@ export default function TesseraPage() {
   // Il QR del suo link personale: chi lo inquadra si iscrive e resta suo
   useEffect(() => {
     if (!carta || !girata || !qrRef.current) return;
-    const url = `${window.location.origin}/unisciti?ref=${carta.referral_code}`;
+    const url = `${window.location.origin}/unisciti?ref=${carta.referral_code}${SOLO_SU_INVITO ? `&k=${CHIAVE_INVITO}` : ""}`;
     QRCode.toCanvas(qrRef.current, url, {
       width: 200,
       margin: 2,
@@ -115,7 +116,7 @@ export default function TesseraPage() {
 
   async function condividi() {
     if (!carta) return;
-    const url = `${window.location.origin}/unisciti?ref=${carta.referral_code}`;
+    const url = `${window.location.origin}/unisciti?ref=${carta.referral_code}${SOLO_SU_INVITO ? `&k=${CHIAVE_INVITO}` : ""}`;
     if (navigator.share) {
       await navigator.share({ title: "1%", text: "Entra dall'1% con il mio link", url }).catch(() => {});
       return;

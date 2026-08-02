@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
-import { STAND_NON_INGRESSO } from "@/lib/event";
+import { STAND_NON_INGRESSO, CHIAVE_INVITO, SOLO_SU_INVITO } from "@/lib/event";
 import { NavBasso } from "@/components/NavBasso";
 
 /**
@@ -52,7 +52,7 @@ export default function InvitaPage() {
 
   const link =
     refCode && typeof window !== "undefined"
-      ? `${window.location.origin}/unisciti?ref=${refCode}`
+      ? `${window.location.origin}/unisciti?ref=${refCode}${SOLO_SU_INVITO ? `&k=${CHIAVE_INVITO}` : ""}`
       : "";
 
   // Il QR grande: dal vivo è il modo più veloce, si fa inquadrare e basta

@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AVATARS } from "@/lib/avatars";
-import { SIGNUPS_OPEN, SOLO_SU_INVITO } from "@/lib/event";
+import { CHIAVE_INVITO, SIGNUPS_OPEN, SOLO_SU_INVITO } from "@/lib/event";
 import { createClient } from "@/lib/supabase/client";
 import { type Bozza } from "@/lib/registrazione";
 
@@ -66,6 +66,8 @@ function JoinForm() {
   const router = useRouter();
   const params = useSearchParams();
   const refCode = params.get("ref") ?? "";
+  // La chiave che accompagna il link: senza, il `?ref=` se lo inventava chiunque
+  const chiave = params.get("k") ?? "";
 
   // null = sto controllando, true/false = risposta del server
   const [signupsOpen, setSignupsOpen] = useState<boolean | null>(
@@ -162,7 +164,7 @@ function JoinForm() {
   if (signupsOpen === null) return null; // controllo in corso, evita flash del form
   if (signupsOpen === false) return <SignupsClosed />;
   // Solo su invito: senza il link di qualcuno non si passa
-  if (SOLO_SU_INVITO && !refCode) return <SoloSuInvito />;
+  if (SOLO_SU_INVITO && (!refCode || chiave !== CHIAVE_INVITO)) return <SoloSuInvito />;
 
   return (
     <main className="flex-1 flex flex-col items-center px-6 py-12 max-w-md mx-auto w-full">

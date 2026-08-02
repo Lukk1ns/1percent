@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 import { PokeCounter } from "@/components/PokeCounter";
-import { BRAND_AREA } from "@/lib/event";
+import { BRAND_AREA, CHIAVE_INVITO, SOLO_SU_INVITO } from "@/lib/event";
 import { SegnoCrew } from "@/components/SegnoCrew";
 import { NavBasso } from "@/components/NavBasso";
 
@@ -111,7 +111,7 @@ export default function CardPage() {
   }
 
   async function handleShareLink() {
-    const url = `${window.location.origin}/unisciti?ref=${profile?.referral_code}`;
+    const url = `${window.location.origin}/unisciti?ref=${profile?.referral_code}${SOLO_SU_INVITO ? `&k=${CHIAVE_INVITO}` : ""}`;
     if (navigator.share) {
       await navigator.share({ title: "1% — not for everyone", url });
     } else {

@@ -65,3 +65,19 @@ export const SIGNUPS_OPEN = true;
  * tenere in riga un gruppo di promoter va benissimo così.
  */
 export const SOLO_SU_INVITO = true;
+
+/**
+ * La chiave che deve esserci nel link d'invito, oltre al `?ref=`.
+ *
+ * Senza, per entrare bastava che nell'indirizzo ci fosse un `?ref=`
+ * qualunque: chi vedeva il link di un amico si scriveva `?ref=pippo` ed
+ * era dentro. Con la chiave il link non si inventa — si può solo
+ * ricevere da chi ce l'ha.
+ *
+ * Non è un segreto da cassaforte (chi ha il link ce l'ha e può girarlo):
+ * serve a impedire che ci si entri per conto proprio. Per bloccare anche
+ * l'inoltro servono i codici monouso, che sono un altro discorso.
+ *
+ * Si cambia da qui: cambiarla invalida tutti i link già in giro.
+ */
+export const CHIAVE_INVITO = "pn935ad9c1";
