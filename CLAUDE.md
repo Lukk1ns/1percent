@@ -15,6 +15,29 @@ questionario dedicato e approvazione a mano, QR statico, tracciamento click refe
 registro azioni admin. Il blocco social (Muro, profilo, poke, Legami, messaggi) **resta
 acceso**; congelato solo il Mosaico.
 
+**FILIGRANA SULLA LOCANDINA (2 ago).** Fino allo svelamento dell'ospite solo i membri vedono
+la locandina nitida, e devono tenere il segreto. Gli screenshot **non si possono bloccare** (sul
+web non esiste, punto); si può risalire a chi li fa. `app/api/locandina/vista/route.tsx` scarica
+la nitida **con la sessione di chi chiede** (quindi il permesso resta quello del deposito) e ci
+fonde dentro alias + numero di tessera, inclinati di 30° e ripetuti su tutta l'immagine. Lo staff
+senza profilo membro viene firmato con l'email. `Locandina.tsx` punta lì invece che all'URL
+firmato; niente cache condivisa, ogni copia è personale.
+**⚠️ GOTCHA COSTATO UN'ORA — non riscrivere la filigrana come SVG con dentro del `<text>`:** il
+motore SVG dentro sharp cerca i font nel **sistema**, e sui server di Vercel non c'è installato
+**nessun font**. Il testo non viene disegnato e **non arriva nessun errore**: l'immagine esce
+identica all'originale. Verificato facendo disegnare la stessa funzione in locale (scriveva) e in
+produzione (foglio bianco). La scritta la compone **`next/og`**, che il font se lo porta dietro
+(Geist) e non chiede niente al sistema; poi sharp inclina il riquadro e lo ripete con `tile: true`.
+Due copie sovrapposte, una scura e una chiara, perché la locandina ha zone nere **e** una fascia
+bianca. Vale per qualunque immagine con testo generata dal server, non solo per questa.
+
+**DA FARE DOPO IL 5 SETTEMBRE — link d'invito monouso.** Deciso con Luka il 2 ago, **non
+costruito**: oggi resta il blocco attuale. Quando si farà: un codice per persona, si brucia al
+primo uso, controllo **nel database** (non nel browser come `SOLO_SU_INVITO`, che è aggirabile);
+li genera **la crew approvata**, non solo l'admin; il `?ref=` **resta** accanto agli inviti perché
+è quello che dice chi ha portato chi (tessera crew e statistiche). Serve una tabella `invites` +
+il controllo dentro `join_public`, quindi uno script da incollare.
+
 **CANDIDATURE E SEGNO DELLA CREW (2 ago).** Tre correzioni volute da Luka.
 1. **Chi si candida fa solo le sue 6 domande.** Prima faceva 4 (pubblico) + 6 (crew) = 10, ed
    erano troppe: ora `/unisciti` manda dritto a `/candidatura` chi sceglie "Voglio collaborare",
