@@ -51,7 +51,11 @@ export default function Locandina({ coverKey, coverV, nome, className = "" }: Pr
       // Chi decide è il server: la copia firmata arriva solo a chi ha un
       // profilo (o allo staff). Se non è dei nostri risponde 403 e resta
       // la versione sfocata — il controllo non è nel browser.
-      const url = `/api/locandina/vista?key=${encodeURIComponent(coverKey)}`;
+      // `v` è il momento del caricamento: impedisce al telefono di
+      // riproporre una copia vecchia presa prima della filigrana.
+      const url =
+        `/api/locandina/vista?key=${encodeURIComponent(coverKey)}` +
+        (coverV ? `&v=${coverV}` : "");
       const res = await fetch(url, { cache: "no-store" });
       if (!vivo) return;
       setNitida(res.ok ? url : null);
@@ -61,7 +65,7 @@ export default function Locandina({ coverKey, coverV, nome, className = "" }: Pr
     return () => {
       vivo = false;
     };
-  }, [coverKey]);
+  }, [coverKey, coverV]);
 
   if (!coverKey) return null;
 
