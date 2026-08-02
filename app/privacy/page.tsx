@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LEGAL_NAME } from "@/lib/event";
@@ -40,7 +41,15 @@ export default function PrivacyPage() {
 
   return (
     <main className="flex-1 flex flex-col px-6 py-12 max-w-xl mx-auto">
-      <h1 className="font-display text-brand-red text-4xl mb-8">Privacy</h1>
+      {/* Era un vicolo cieco: si entrava e non si tornava indietro */}
+      <Link
+        href="/"
+        className="text-[10px] uppercase tracking-widest text-brand-gray hover:text-white transition-colors"
+      >
+        ← 1%
+      </Link>
+
+      <h1 className="font-display text-brand-red text-4xl mt-6 mb-8">Privacy</h1>
 
       <div className="prose prose-sm prose-invert text-brand-gray space-y-4 text-sm leading-relaxed">
         <h2 className="text-white text-base font-semibold">Titolare del trattamento</h2>

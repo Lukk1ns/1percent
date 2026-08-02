@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import Costellazione, { type Stella } from "@/components/Costellazione";
 import { dataCorta } from "@/lib/eventi";
+import { NavBasso } from "@/components/NavBasso";
 
 type Carta = {
   ok: boolean;
@@ -299,20 +300,7 @@ export default function TesseraPage() {
         </p>
       </div>
 
-      <nav className="mt-10 flex w-full justify-around border-t border-white/5 pt-5 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray/50">
-        <button onClick={() => router.push("/")} className="hover:text-white">
-          Home
-        </button>
-        <button onClick={() => router.push("/card")} className="hover:text-white">
-          Card
-        </button>
-        <button onClick={() => router.push("/invita")} className="hover:text-white">
-          Invita
-        </button>
-        <button onClick={() => router.push("/membri")} className="hover:text-white">
-          Muro
-        </button>
-      </nav>
+      <NavBasso />
     </main>
   );
 }

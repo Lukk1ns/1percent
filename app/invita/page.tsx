@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import { STAND_NON_INGRESSO } from "@/lib/event";
+import { NavBasso } from "@/components/NavBasso";
 
 /**
  * L'invito, fatto per essere usato in piedi in mezzo alla gente.
@@ -177,6 +178,8 @@ Quando vieni, passa dallo stand UNPERCENTO dentro il locale e fai scansionare il
           La tua card
         </button>
       </div>
+
+      <NavBasso />
     </main>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { NavBasso } from "@/components/NavBasso";
 
 type Prize = { id: string; label: string; emoji: string };
 type MyPrize = { drawn: boolean; drawn_at?: string; prize?: Prize | null };
@@ -171,13 +172,7 @@ export default function RegaloPage() {
         </div>
       )}
 
-      <nav className="w-full max-w-xs mt-10 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
-        <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
-        <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
-        <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">QR code</button>
-        <button onClick={() => router.push("/regalo")} className="text-brand-red">Regalo</button>
-        <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
-      </nav>
+      <NavBasso />
     </main>
   );
 }

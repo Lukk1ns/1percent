@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 import { STAND_FRASE, STAND_NON_INGRESSO } from "@/lib/event";
+import { NavBasso } from "@/components/NavBasso";
 
 type PassData = {
   alias: string;
@@ -199,13 +200,18 @@ export default function PassPage() {
         </p>
       )}
 
-      <nav className="w-full max-w-xs mt-10 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
-        <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
-        <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
-        <button onClick={() => router.push("/pass")} className="text-brand-red">QR code</button>
-        <button onClick={() => router.push("/regalo")} className="hover:text-brand-gray transition-colors">Regalo</button>
-        <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
-      </nav>
+      {/* Il regalo non sta nella barra in fondo (sei voci bastano): chi ha
+          già giocato lo ritrova da qui, oltre che qui sopra. */}
+      {drawn && (
+        <button
+          onClick={() => router.push("/regalo")}
+          className="btn btn-ghost mt-4 w-full max-w-xs"
+        >
+          Rivedi il tuo regalo →
+        </button>
+      )}
+
+      <NavBasso />
     </main>
   );
 }
