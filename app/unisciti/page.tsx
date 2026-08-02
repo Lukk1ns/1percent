@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AVATARS } from "@/lib/avatars";
-import { CHIAVE_INVITO, SIGNUPS_OPEN, SOLO_SU_INVITO } from "@/lib/event";
+import { CHIAVE_INVITO, SIGNUPS_OPEN, SOLO_STAFF, SOLO_SU_INVITO } from "@/lib/event";
 import { createClient } from "@/lib/supabase/client";
 import { type Bozza } from "@/lib/registrazione";
 
@@ -100,10 +100,21 @@ function JoinForm() {
   // Candidatura staff: chi la spunta risponde a 4 domande in più e
   // resta in attesa che un admin decida. Nessuno diventa crew da solo.
   const [vuoleStaff, setVuoleStaff] = useState(false);
+  // Finché si recluta soltanto, nessuno dei due riquadri parte scelto:
+  // così "sicuro come cliente?" compare solo se lo sceglie davvero lui.
+  const [scelto, setScelto] = useState(!SOLO_STAFF);
   const [nome, setNome] = useState("");
   const [entrando, setEntrando] = useState(false);
 
   function validate() {
+    if (!scelto) {
+      setAliasError("Scegli come entri.");
+      return false;
+    }
+    if (SOLO_STAFF && !vuoleStaff) {
+      setAliasError("Per ora si entra solo come staff.");
+      return false;
+    }
     if (alias.trim().length < 2) {
       setAliasError("Scegli un alias di almeno 2 caratteri.");
       return false;
@@ -266,10 +277,11 @@ function JoinForm() {
           <button
             onClick={() => {
               setVuoleStaff(false);
+              setScelto(true);
               setAliasError("");
             }}
             className={`flex flex-col items-start gap-1 border px-4 py-4 text-left transition-all ${
-              !vuoleStaff
+              scelto && !vuoleStaff
                 ? "border-brand-red bg-brand-red/10 shadow-[0_0_24px_rgba(224,24,31,0.18)]"
                 : "border-white/10 hover:border-white/30"
             }`}
@@ -291,10 +303,11 @@ function JoinForm() {
           <button
             onClick={() => {
               setVuoleStaff(true);
+              setScelto(true);
               setAliasError("");
             }}
             className={`flex flex-col items-start gap-1 border px-4 py-4 text-left transition-all ${
-              vuoleStaff
+              scelto && vuoleStaff
                 ? "border-brand-red bg-brand-red/10 shadow-[0_0_24px_rgba(224,24,31,0.18)]"
                 : "border-white/10 hover:border-white/30"
             }`}
@@ -310,6 +323,32 @@ function JoinForm() {
             </span>
           </button>
         </div>
+
+        {/* Si recluta e basta: chi sceglie cliente viene fermato qui */}
+        {SOLO_STAFF && scelto && !vuoleStaff && (
+          <div className="mt-4 border border-brand-red bg-brand-red/10 px-4 py-5 text-center">
+            <p className="font-display text-2xl uppercase leading-tight text-white">
+              Sicuro come cliente?
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-brand-gray">
+              In questi giorni stiamo mettendo insieme il gruppo, e le iscrizioni sono
+              aperte <span className="text-white">solo a chi vuole lavorarci</span>.
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-brand-gray">
+              Se ti hanno mandato questo link, è perché ti vogliono dentro. Torna su e
+              scegli <span className="text-brand-red">iscrizione come staff</span>.
+            </p>
+            <button
+              onClick={() => {
+                setVuoleStaff(true);
+                setAliasError("");
+              }}
+              className="btn btn-primary mt-5 w-full"
+            >
+              ★ Mi iscrivo come staff
+            </button>
+          </div>
+        )}
 
         {vuoleStaff && (
           <div className="mt-4 border border-brand-red/40 bg-brand-red/5 px-4 py-4">
@@ -364,7 +403,7 @@ function JoinForm() {
 
       <button
         onClick={handleNext}
-        disabled={entrando}
+        disabled={entrando || (SOLO_STAFF && scelto && !vuoleStaff)}
         className="btn btn-primary w-full"
       >
         {entrando ? "Un attimo…" : "Avanti →"}

@@ -67,6 +67,17 @@ export const SIGNUPS_OPEN = true;
 export const SOLO_SU_INVITO = true;
 
 /**
+ * Per adesso si entra solo come staff.
+ *
+ * true  = chi sceglie "Vengo alle serate" viene fermato con "sicuro come
+ *         cliente?" e non può proseguire. Serve nei giorni in cui si sta
+ *         reclutando la crew e un PR che si iscrive come cliente è un
+ *         PR perso.
+ * false = tutti e due i percorsi aperti, com'era.
+ */
+export const SOLO_STAFF = true;
+
+/**
  * La chiave che deve esserci nel link d'invito, oltre al `?ref=`.
  *
  * Senza, per entrare bastava che nell'indirizzo ci fosse un `?ref=`
