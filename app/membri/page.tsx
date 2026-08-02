@@ -6,12 +6,15 @@ import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 import { fetchLegami, type Legame } from "@/lib/legami";
 import Volto from "@/components/Volto";
+import { SegnoCrew } from "@/components/SegnoCrew";
 import RevealLegame from "@/components/RevealLegame";
 
 type WallRow = {
   member_number: number;
   alias: string;
   avatar_id: string;
+  /** 'crew' se approvato: accanto al nome esce il segno (1%) */
+  role?: string | null;
   photo_blur_path?: string | null;
   photo_updated_at?: string | null;
   poke_count: number;
@@ -305,7 +308,10 @@ function MembriWall() {
                     alt={r.alias}
                   />
                 </button>
-                <span className="text-xs text-white font-mono mt-1 max-w-[5rem] truncate">{r.alias}</span>
+                <span className="text-xs text-white font-mono mt-1 max-w-[5rem] truncate">
+                  {r.alias}
+                  <SegnoCrew role={r.role} />
+                </span>
                 <span className="font-display text-brand-red text-lg mt-0.5" style={{ textShadow: "0 0 12px rgba(224,24,31,0.4)" }}>
                   {r.poke_count} 👊
                 </span>
@@ -352,6 +358,7 @@ function MembriWall() {
                 />
                 <span className="text-sm text-white/85 font-mono truncate">
                   {r.alias}
+                  <SegnoCrew role={r.role} />
                   {r.is_me && <span className="text-brand-red/70 text-[10px] ml-1.5">tu</span>}
                 </span>
               </button>

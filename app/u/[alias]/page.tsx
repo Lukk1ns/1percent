@@ -6,10 +6,13 @@ import { createClient } from "@/lib/supabase/client";
 import { fetchLegami } from "@/lib/legami";
 import Volto from "@/components/Volto";
 import RevealLegame from "@/components/RevealLegame";
+import { SegnoCrew } from "@/components/SegnoCrew";
 
 type PublicProfile = {
   member_number: number;
   alias: string;
+  /** 'crew' se approvato: accanto al nome esce il segno (1%) */
+  role?: string | null;
   avatar_id: string | null;
   photo_blur_path: string | null;
   photo_updated_at: string | null;
@@ -211,7 +214,10 @@ export default function ProfiloPubblicoPage() {
         className={p.photo_blur_path ? "border border-brand-red/40" : ""}
       />
 
-      <h1 className="text-white font-mono text-2xl mt-4">{p.alias}</h1>
+      <h1 className="text-white font-mono text-2xl mt-4">
+        {p.alias}
+        <SegnoCrew role={p.role} />
+      </h1>
       <p className="text-brand-gray/60 text-xs font-mono mt-1">#{p.member_number}</p>
 
       {/* Badge */}

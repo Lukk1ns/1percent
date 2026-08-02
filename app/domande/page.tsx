@@ -8,11 +8,11 @@ import { registraMembro, type Bozza } from "@/lib/registrazione";
 import Questionario, { type Risposte } from "@/components/Questionario";
 
 /**
- * Le 4 domande di chi si iscrive.
+ * Le 4 domande di chi viene alle serate.
  *
- * Ci passano tutti, dopo il modulo di /unisciti. Da qui:
- *   · chi si iscrive e basta viene registrato subito
- *   · chi si è candidato allo staff prosegue con le 6 domande della crew
+ * Ci passa solo il pubblico: chi si candida allo staff va dritto alle
+ * 6 domande sue su /candidatura, senza fare anche queste. In fondo si
+ * è registrati.
  *
  * Le risposte servono anche a calcolare l'archetipo che finisce sulla card.
  */
@@ -39,13 +39,6 @@ export default function DomandePage() {
         q4: typeof risposte.q4 === "object" ? risposte.q4 : undefined,
       }),
     };
-
-    // Chi si candida allo staff non è ancora arrivato in fondo
-    if (bozza.crewRequest) {
-      sessionStorage.setItem("reg_quiz", JSON.stringify(conArchetipo));
-      router.push("/candidatura");
-      return;
-    }
 
     const esito = await registraMembro(bozza, { pubblico: conArchetipo });
     if (!esito.ok) {

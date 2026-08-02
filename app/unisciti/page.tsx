@@ -127,7 +127,9 @@ function JoinForm() {
     sessionStorage.setItem("reg_draft", JSON.stringify(bozza));
     sessionStorage.removeItem("reg_quiz");
     setEntrando(true);
-    router.push("/domande");
+    // Due percorsi separati, non uno dentro l'altro: chi si candida fa le
+    // 6 domande sue e basta, chi viene alle serate fa le 4 del pubblico.
+    router.push(vuoleStaff ? "/candidatura" : "/domande");
   }
 
   if (signupsOpen === null) return null; // controllo in corso, evita flash del form

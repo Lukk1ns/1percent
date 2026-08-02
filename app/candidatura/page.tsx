@@ -9,9 +9,10 @@ import Questionario, { type Risposte } from "@/components/Questionario";
 /**
  * Le 6 domande di chi si candida allo staff.
  *
- * Ci arriva solo chi ha spuntato la casella su /unisciti, e solo dopo
- * aver risposto alle 4 del pubblico. La registrazione si chiude qui,
- * con la candidatura in attesa che un admin decida.
+ * Ci arriva chi ha scelto "Voglio collaborare" su /unisciti, e fa solo
+ * queste: le 4 del pubblico non gliele chiediamo, gli interessa altro.
+ * La registrazione si chiude qui, con la candidatura in attesa che un
+ * admin decida. Niente archetipo, perché nasce dal quiz del pubblico.
  */
 export default function CandidaturaPage() {
   const router = useRouter();

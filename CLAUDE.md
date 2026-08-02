@@ -15,6 +15,34 @@ questionario dedicato e approvazione a mano, QR statico, tracciamento click refe
 registro azioni admin. Il blocco social (Muro, profilo, poke, Legami, messaggi) **resta
 acceso**; congelato solo il Mosaico.
 
+**CANDIDATURE E SEGNO DELLA CREW (2 ago).** Tre correzioni volute da Luka.
+1. **Chi si candida fa solo le sue 6 domande.** Prima faceva 4 (pubblico) + 6 (crew) = 10, ed
+   erano troppe: ora `/unisciti` manda dritto a `/candidatura` chi sceglie "Voglio collaborare",
+   e `/domande` (le 4 del pubblico) resta solo per i clienti. Conseguenza voluta: chi si candida
+   **non ha archetipo**, perché l'archetipo nasce dal quiz del pubblico.
+2. **L'approvazione si annuncia.** `components/StatoCrew.tsx`, montato nel layout: la prima volta
+   che un approvato riapre il sito gli esce a tutto schermo "SEI DELLA CREW" con il bottone per la
+   tessera. Il "già visto" sta in `localStorage` (chiave `crew_approvazione_vista` = id utente),
+   non nel database: se cambia telefono lo rivede una volta, ed è meglio che non vederlo mai.
+   Chi è stato **rifiutato non vede niente**, per scelta di Luka. Su `/card` chi è ancora
+   `in_attesa` trova la striscia "candidatura in attesa", così lo sa anche giorni dopo.
+3. **Il segno `(1%)` accanto al nome** (`components/SegnoCrew.tsx`). **L'alias nel database NON
+   viene toccato**: resta unico ed è ancora l'indirizzo di `/u/<alias>`; il segno lo disegna il
+   sito. Si vede su `/card` (anche nel PNG salvato, e in alto a sinistra c'è "Crew" invece di
+   "Membro") **senza bisogno di SQL**; per vederlo **sul Muro e sulla pagina di un membro** serve
+   **`supabase/07_crew_visibile.sql`** — aggiunge `role` a `members_wall()` e `public_profile()`
+   (le due funzioni cambiano forma, quindi lo script le elimina e le ricrea identiche più una
+   colonna). **PENDING Luka: incollarlo.** Finché non lo fa, sul Muro il segno semplicemente non
+   compare: non si rompe niente.
+
+**LA HOME NON CHIEDE PIÙ L'ISCRIZIONE A CHI È GIÀ DENTRO (2 ago).** Segnalato da Luka: loggato,
+vedeva la locandina nitida e accanto "Iscriviti". Due cause, tutte e due sistemate in
+`app/page.tsx`: (a) finché il controllo del profilo non era finito (`sonoMembro === null`) la
+pagina mostrava già il blocco da visitatore → ora aspetta; (b) **l'account admin non ha una riga
+in `profiles`**, quindi risultava "fuori" → ora `am_i_staff` conta quanto il profilo (`haAccesso`),
+e allo staff senza profilo membro la home mostra il **pannello** (scanner, eventi, candidature,
+regali, dashboard) invece dei bottoni da membro che non potrebbe usare.
+
 **LA HOME È LA PARETE LED (2 ago).** La grafica "LEDWALL" non è più un'anteprima: è
 `app/page.tsx`, cioè quello che si vede su unpercento.it. `/nuovo` ora rimanda alla home
 (vecchi preferiti e schede aperte non restano indietro). Fuori sono rimaste, su decisione di

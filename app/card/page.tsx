@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 import { PokeCounter } from "@/components/PokeCounter";
 import { BRAND_AREA } from "@/lib/event";
+import { SegnoCrew } from "@/components/SegnoCrew";
 
 type Profile = {
   member_number: number;
@@ -14,6 +15,8 @@ type Profile = {
   referral_code: string;
   created_at: string;
   role?: string;
+  /** 'in_attesa' finché un admin non decide sulla candidatura staff */
+  crew_request_status?: string | null;
   quiz_answers?: { archetype?: string };
 };
 
@@ -56,7 +59,9 @@ export default function CardPage() {
 
       const { data } = await supabase
         .from("profiles")
-        .select("member_number,alias,avatar_id,referral_code,created_at,role,quiz_answers")
+        .select(
+          "member_number,alias,avatar_id,referral_code,created_at,role,crew_request_status,quiz_answers",
+        )
         .eq("id", user.id)
         .single();
 
@@ -176,7 +181,13 @@ export default function CardPage() {
         {/* Top bar */}
         <div className="relative flex items-start justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-brand-gray/70">Membro</p>
+            <p
+              className={`text-[10px] uppercase tracking-[0.3em] ${
+                profile.role === "crew" ? "text-brand-red" : "text-brand-gray/70"
+              }`}
+            >
+              {profile.role === "crew" ? "Crew" : "Membro"}
+            </p>
             <p className="font-display text-brand-red text-3xl leading-tight">{memberNum}</p>
           </div>
           <span className="font-display text-brand-red text-5xl leading-none">1%</span>
@@ -199,6 +210,7 @@ export default function CardPage() {
             style={{ fontSize: "clamp(1.5rem, 8vw, 2rem)", letterSpacing: "0.05em" }}
           >
             {profile.alias}
+            <SegnoCrew role={profile.role} />
           </h2>
           {archetype && (
             <p className="text-[10px] uppercase tracking-[0.25em] text-brand-red/80">{archetype}</p>
@@ -243,6 +255,18 @@ export default function CardPage() {
 
       {/* Azioni */}
       <div className="w-full max-w-sm mt-6 flex flex-col gap-3">
+        {/* Chi si è candidato deve sapere a che punto è anche quando torna
+            giorni dopo, non solo nella schermata subito dopo l'iscrizione. */}
+        {profile.role !== "crew" && profile.crew_request_status === "in_attesa" && (
+          <div className="border border-brand-red/40 bg-brand-red/5 px-4 py-3 text-center">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-brand-red">
+              candidatura in attesa
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-brand-gray">
+              Le tue risposte sono arrivate. Se ci interessi, ti scriviamo noi.
+            </p>
+          </div>
+        )}
         <PokeCounter />
         <button
           onClick={handleSaveCard}

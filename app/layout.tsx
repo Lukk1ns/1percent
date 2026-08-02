@@ -3,6 +3,7 @@ import { Anton, Inter, Caveat, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Backdrop } from "@/components/Backdrop";
 import { Notifiche } from "@/components/Notifiche";
+import { StatoCrew } from "@/components/StatoCrew";
 import "./globals.css";
 
 const anton = Anton({
@@ -52,6 +53,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
         <Backdrop />
         <Notifiche />
+        <StatoCrew />
         {children}
         <Analytics />
       </body>

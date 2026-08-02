@@ -120,9 +120,17 @@ export default function Home() {
   const nascosto = evento && evento.svelato === false ? evento : null;
   // Se il server non manda un evento riconoscibile, la sezione lo dice e basta
   const nessunEvento = !svelato && !nascosto;
-  // Chi non è dentro deve capire in due secondi che la locandina è coperta
-  // apposta: è il motivo per cui ci si iscrive.
-  const fuori = sonoMembro === false;
+
+  // Chi sta guardando. Finché il controllo non è finito non si mostra né
+  // "iscriviti" né i bottoni da membro: meglio un buco per mezzo secondo
+  // che chiedere l'iscrizione a uno che è già dentro.
+  const controllato = sonoMembro !== null;
+  // Lo staff è "dentro" anche senza profilo membro: l'account admin nella
+  // tabella dei membri non c'è, e prima si beccava la pagina da visitatore.
+  const haAccesso = sonoMembro === true || staff;
+  // Solo a chi è davvero fuori spieghiamo perché la locandina è coperta:
+  // è il motivo per cui ci si iscrive.
+  const fuori = controllato && !haAccesso;
 
   return (
     // Fondo pieno: su questa pagina la parete sostituisce le aurore dello sfondo
@@ -286,7 +294,11 @@ export default function Home() {
       {/* ─────────────  ENTRA  ───────────── */}
       <section className="led-band px-5 pb-12 pt-9 sm:px-8">
         <div className="mx-auto w-full max-w-3xl">
-          {sonoMembro ? (
+          {!controllato ? (
+            // Controllo in corso: niente. Un buco breve è meglio di un
+            // "iscriviti" sbattuto in faccia a chi è già dentro.
+            <div className="h-24" aria-hidden />
+          ) : sonoMembro ? (
             <>
               <p className="led-label">bentornato{io ? `, ${io.alias}` : ""}</p>
               <p className="mt-4 font-display text-2xl leading-tight text-white sm:text-3xl">
@@ -301,6 +313,37 @@ export default function Home() {
                 )}
                 <Link href="/membri" className="btn btn-ghost">Il muro 👊</Link>
                 <Link href="/profilo" className="btn btn-ghost">Il tuo profilo</Link>
+              </div>
+              {staff && (
+                <div className="mt-6 border-t border-white/10 pt-5">
+                  <p className="led-label">pannello</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <Link href="/admin/scan" className="btn btn-outline">🎁 Scanner</Link>
+                    <Link href="/admin/eventi" className="btn btn-ghost">Eventi</Link>
+                    <Link href="/admin/dashboard" className="btn btn-ghost">Dashboard</Link>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : staff ? (
+            // Account di servizio: è dei nostri ma non è un membro, quindi
+            // non ha card né QR. Gli si danno i suoi strumenti e basta.
+            <>
+              <p className="led-label">pannello</p>
+              <p className="mt-4 font-display text-2xl leading-tight text-white sm:text-3xl">
+                Sei entrato come staff.
+              </p>
+              <p className="mt-3 max-w-[46ch] text-sm leading-relaxed text-brand-gray">
+                Questo account non ha una card da membro: serve a gestire. Per avere
+                anche il tuo QR dello stand, iscriviti con un&apos;altra email.
+              </p>
+              <div className="mt-6 grid gap-2 sm:grid-cols-3">
+                <Link href="/admin/scan" className="btn btn-primary">🎁 Scanner</Link>
+                <Link href="/admin/eventi" className="btn btn-outline">Eventi</Link>
+                <Link href="/admin/crew" className="btn btn-outline">Candidature</Link>
+                <Link href="/admin/regali" className="btn btn-ghost">Regali</Link>
+                <Link href="/admin/dashboard" className="btn btn-ghost">Dashboard</Link>
+                <Link href="/eventi" className="btn btn-ghost">Gli eventi</Link>
               </div>
             </>
           ) : (
