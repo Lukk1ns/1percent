@@ -264,7 +264,9 @@ function JoinForm() {
                 : "border-white/10 hover:border-white/30"
             }`}
           >
-            <span className="text-xl leading-none" aria-hidden>🎤</span>
+            {/* Stella disegnata dal carattere, non emoji: sul nero fa lusso
+                e prende il rosso del marchio invece del giallo di sistema. */}
+            <span className="text-xl leading-none text-brand-red" aria-hidden>★</span>
             <span className="text-sm font-semibold uppercase tracking-wide text-white">
               Voglio collaborare
             </span>
