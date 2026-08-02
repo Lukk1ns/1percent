@@ -49,9 +49,10 @@ const riquadriPronti = new Map<string, Buffer>();
  * resta leggibile.
  */
 async function riquadroFirma(testo: string, larghezza: number): Promise<Buffer> {
-  const dim = Math.max(22, Math.round(larghezza / 32));
-  const w = Math.round(testo.length * dim * 0.62 + dim * 5);
-  const h = Math.round(dim * 3.4);
+  const dim = Math.max(18, Math.round(larghezza / 36));
+  // Vuoto attorno alla scritta: più è stretto, più fitta viene la trama
+  const w = Math.round(testo.length * dim * 0.62 + dim * 2);
+  const h = Math.round(dim * 2.2);
   const scarto = Math.max(1, Math.round(dim / 14));
 
   // Due copie sovrapposte: una scura spostata di poco, una chiara sopra.
