@@ -1,147 +1,50 @@
 import sharp from "sharp";
+import { filigranaSvg } from "@/lib/locandina";
 
 /**
- * Diagnostica temporanea: il server sa disegnare del testo?
+ * Diagnostica temporanea: disegna la filigrana VERA su un rettangolo
+ * finto e la restituisce come immagine, così si guarda con gli occhi
+ * invece di indovinare. Nessun dato reale passa da qui.
  *
- * Sul computer di casa i font ci sono tutti, sul server di Vercel no:
- * se librsvg non trova nessun font, il testo dentro un SVG non viene
- * disegnato e non dà nessun errore — l'immagine esce identica.
- *
- * Questa rotta compone un po' di testo su un rettangolo e dice quanti
- * pixel si sono accesi. Zero = nessun font, ed è la spiegazione della
- * filigrana invisibile. Non tocca nessun dato: si può chiamare senza
- * essere loggati. Da togliere appena capito.
+ * Da togliere appena la filigrana funziona.
  */
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function prova(font: string) {
-  return Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120">
-      <text x="10" y="80" font-family="${font}" font-size="64" font-weight="bold" fill="#ffffff">Prova 123</text>
-    </svg>`,
-  );
-}
+export async function GET() {
+  const w = 1080;
+  const h = 1920;
 
-export async function GET(req: Request) {
-  const famiglie = ["Helvetica, Arial, sans-serif", "sans-serif", "DejaVu Sans", "Liberation Sans"];
-  const esiti: Record<string, number> = {};
+  // Finta locandina: fondo scuro, una zona rossa e una bianca, come una
+  // grafica vera — serve a vedere se la firma si legge su tutte e tre
+  const rosso = await sharp({
+    create: { width: 700, height: 700, channels: 3, background: "#c8452e" },
+  })
+    .png()
+    .toBuffer();
+  const bianco = await sharp({
+    create: { width: 900, height: 160, channels: 3, background: "#f2f2f2" },
+  })
+    .png()
+    .toBuffer();
 
-  for (const f of famiglie) {
-    try {
-      const out = await sharp({
-        create: { width: 400, height: 120, channels: 3, background: "#000000" },
-      })
-        .composite([{ input: prova(f), top: 0, left: 0 }])
-        .raw()
-        .toBuffer();
-      // Conto i pixel non neri: se il testo è stato disegnato, ce ne sono
-      let accesi = 0;
-      for (let i = 0; i < out.length; i += 3) if (out[i] > 40) accesi++;
-      esiti[f] = accesi;
-    } catch (e) {
-      esiti[f] = -1;
-      esiti[`${f} — errore`] = 0;
-      console.error(f, e);
-    }
-  }
+  const base = await sharp({
+    create: { width: w, height: h, channels: 3, background: "#0d0d10" },
+  })
+    .composite([
+      { input: rosso, top: 420, left: 190 },
+      { input: bianco, top: 1350, left: 90 },
+    ])
+    .png()
+    .toBuffer();
 
-  // Anche il motivo ripetuto: potrebbe non piacergli quello, non i font
-  let pattern = -1;
-  try {
-    const svg = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120">
-        <defs><pattern id="p" width="120" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
-          <rect x="0" y="0" width="60" height="30" fill="#ffffff"/>
-        </pattern></defs>
-        <rect width="400" height="120" fill="url(#p)"/>
-      </svg>`,
-    );
-    const out = await sharp({
-      create: { width: 400, height: 120, channels: 3, background: "#000000" },
-    })
-      .composite([{ input: svg, top: 0, left: 0 }])
-      .raw()
-      .toBuffer();
-    let accesi = 0;
-    for (let i = 0; i < out.length; i += 3) if (out[i] > 40) accesi++;
-    pattern = accesi;
-  } catch {
-    pattern = -1;
-  }
+  const png = await sharp(base)
+    .composite([{ input: filigranaSvg(w, h, "jamvulture · #0001"), top: 0, left: 0 }])
+    .png()
+    .toBuffer();
 
-  // Il caso vero: TESTO DENTRO IL MOTIVO ripetuto. resvg (il disegnatore
-  // di SVG dentro sharp) potrebbe saper fare le due cose separate ma non
-  // insieme — sarebbe esattamente la filigrana invisibile.
-  let testoNelPattern = -1;
-  try {
-    const svg = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120">
-        <defs><pattern id="p" width="200" height="70" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
-          <text x="0" y="40" font-family="sans-serif" font-size="30" font-weight="bold" fill="#ffffff">prova</text>
-        </pattern></defs>
-        <rect width="400" height="120" fill="url(#p)"/>
-      </svg>`,
-    );
-    const out = await sharp({
-      create: { width: 400, height: 120, channels: 3, background: "#000000" },
-    })
-      .composite([{ input: svg, top: 0, left: 0 }])
-      .raw()
-      .toBuffer();
-    let accesi = 0;
-    for (let i = 0; i < out.length; i += 3) if (out[i] > 40) accesi++;
-    testoNelPattern = accesi;
-  } catch {
-    testoNelPattern = -1;
-  }
-
-  // E la variante di riserva: niente motivo, tanti <text> messi a mano
-  let testiAMano = -1;
-  try {
-    const righe: string[] = [];
-    for (let y = 20; y < 400; y += 40)
-      righe.push(`<text x="0" y="${y}" font-family="sans-serif" font-size="30" font-weight="bold" fill="#ffffff">prova</text>`);
-    const svg = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120">
-        <g transform="rotate(-30 200 60)">${righe.join("")}</g>
-      </svg>`,
-    );
-    const out = await sharp({
-      create: { width: 400, height: 120, channels: 3, background: "#000000" },
-    })
-      .composite([{ input: svg, top: 0, left: 0 }])
-      .raw()
-      .toBuffer();
-    let accesi = 0;
-    for (let i = 0; i < out.length; i += 3) if (out[i] > 40) accesi++;
-    testiAMano = accesi;
-  } catch {
-    testiAMano = -1;
-  }
-
-  const vuoi = new URL(req.url).searchParams.get("png");
-  if (vuoi) {
-    const png = await sharp({
-      create: { width: 400, height: 120, channels: 3, background: "#000000" },
-    })
-      .composite([{ input: prova("sans-serif"), top: 0, left: 0 }])
-      .png()
-      .toBuffer();
-    return new Response(new Uint8Array(png), {
-      headers: { "Content-Type": "image/png", "Cache-Control": "no-store" },
-    });
-  }
-
-  return Response.json(
-    {
-      pixel_accesi_per_font: esiti,
-      pattern_di_rettangoli: pattern,
-      TESTO_DENTRO_IL_PATTERN: testoNelPattern,
-      testi_messi_a_mano: testiAMano,
-      sharp: sharp.versions,
-    },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  return new Response(new Uint8Array(png), {
+    headers: { "Content-Type": "image/png", "Cache-Control": "no-store" },
+  });
 }
