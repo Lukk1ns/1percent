@@ -66,6 +66,10 @@ export default function LedWall({
     let sampleData: Uint8ClampedArray | null = null;
     // Esposizione automatica: qualunque spezzone, la sala resta in penombra
     let esposizione = 1;
+    // Quanto la sala accende i LED fuori dal marchio. Sul telefono la parete
+    // è stretta e alta come il filmato, quindi si vede quasi tutta la scena:
+    // se resta alta, la folla arriva a toccare le lettere e il "1%" sparisce.
+    let ambiente = 0.34;
 
     // Colori pre-calcolati: costruire stringhe 2000 volte per fotogramma no.
     const acceso: string[] = [];
@@ -104,7 +108,10 @@ export default function LedWall({
       canvas!.style.height = `${h}px`;
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      passo = w >= 900 ? cell + 3 : cell;
+      // Sul telefono la parete è stretta: LED più piccoli, altrimenti il
+      // marchio sta in troppi pochi moduli e le lettere si sbriciolano.
+      passo = w >= 900 ? cell + 3 : w >= 560 ? cell : cell - 2;
+      ambiente = w < 560 ? 0.19 : 0.34;
       cols = Math.max(8, Math.ceil(w / passo));
       rows = Math.max(8, Math.ceil(h / passo));
       sample.width = cols;
@@ -123,7 +130,9 @@ export default function LedWall({
 
       let size = rows * 0.5;
       mctx!.font = `${size}px Anton, Impact, sans-serif`;
-      const larghezzaMax = cols * 0.7;
+      // Sugli schermi stretti il marchio prende quasi tutta la larghezza:
+      // è l'unico modo di dargli abbastanza LED per restare leggibile.
+      const larghezzaMax = cols * (cols < 80 ? 0.86 : 0.7);
       const misurata = mctx!.measureText(testo).width;
       if (misurata > larghezzaMax) {
         size = (size * larghezzaMax) / misurata;
@@ -195,7 +204,7 @@ export default function LedWall({
             const lum =
               (sampleData[i] * 0.299 + sampleData[i + 1] * 0.587 + sampleData[i + 2] * 0.114) / 255;
             // Solo le luci della sala passano: il resto resta parete spenta
-            b = Math.pow(lum, 1.9) * 0.34 * esposizione;
+            b = Math.pow(lum, 1.9) * ambiente * esposizione;
           }
 
           const dentroMarchio = maskData ? maskData[i + 3] > 90 : false;

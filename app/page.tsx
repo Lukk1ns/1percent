@@ -1,286 +1,388 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ProssimoEvento } from "@/components/ProssimoEvento";
-import { MemberCounter } from "@/components/MemberCounter";
-import { EntrySequence } from "@/components/EntrySequence";
-import { LiveFeed } from "@/components/LiveFeed";
-import { PostitBoard } from "@/components/PostitBoard";
-import { PostForm } from "@/components/PostForm";
+import LedWall from "@/components/LedWall";
+import Locandina from "@/components/Locandina";
 import { Marquee } from "@/components/Marquee";
-import { getAvatar } from "@/lib/avatars";
 import { createClient } from "@/lib/supabase/client";
-import { BRAND_AREA, BRAND_CLAIM, BRAND_PAYOFF, SIGNUPS_OPEN } from "@/lib/event";
+import { dataLunga, ora, type Evento } from "@/lib/eventi";
+import { BRAND_AREA, BRAND_CLAIM, BRAND_PAYOFF, STAND_NON_INGRESSO } from "@/lib/event";
 
-const TICKER = SIGNUPS_OPEN
-  ? [
-      "1% · not for everyone",
-      "ogni festa ha un nome · sopra c'è sempre il nostro",
-    ]
-  : [
-      "1% · not for everyone",
-      "iscrizioni chiuse al momento — tieni d'occhio i nostri canali",
-    ];
+const TICKER = [
+  "1% · not for everyone",
+  "ogni festa ha un nome · sopra c'è sempre il nostro",
+];
 
-export default function LandingPage() {
-  const [entered, setEntered] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  // null = ancora da verificare, true/false = esito controllo login
-  const [isMember, setIsMember] = useState<boolean | null>(null);
-  const [me, setMe] = useState<{ alias: string; avatar_id: string | null } | null>(null);
-  const [isStaff, setIsStaff] = useState(false);
-  // Parte dall'interruttore master: se è chiuso a codice, resta chiuso sempre.
-  // Se è aperto, il server (RPC) può comunque chiuderlo al volo.
-  const [signupsOpen, setSignupsOpen] = useState(SIGNUPS_OPEN);
-  const handleDone = useCallback(() => setEntered(true), []);
-  const mainRef = useRef<HTMLElement>(null);
+type Membro = { alias: string };
+
+/* ────────────────────────────────────────────────────────────
+   Countdown in stile parete: quattro moduli accesi
+   ──────────────────────────────────────────────────────────── */
+
+function mancante(target: Date) {
+  const diff = Math.max(0, target.getTime() - Date.now());
+  return {
+    g: Math.floor(diff / 86400000),
+    h: Math.floor((diff / 3600000) % 24),
+    m: Math.floor((diff / 60000) % 60),
+    s: Math.floor((diff / 1000) % 60),
+  };
+}
+
+function CountdownLed({ target, etichetta }: { target: Date; etichetta: string }) {
+  const [t, setT] = useState(() => mancante(target));
 
   useEffect(() => {
-    if (!SIGNUPS_OPEN) return; // chiuso a codice: non interrogo nemmeno il server
-    createClient()
-      .rpc("signups_open")
-      .then(({ data, error }) => {
-        if (!error && data === false) setSignupsOpen(false);
-      });
-  }, []);
+    const i = setInterval(() => setT(mancante(target)), 1000);
+    return () => clearInterval(i);
+  }, [target]);
+
+  const celle = [
+    { v: t.g, l: "giorni" },
+    { v: t.h, l: "ore" },
+    { v: t.m, l: "min" },
+    { v: t.s, l: "sec" },
+  ];
+
+  return (
+    <div>
+      <p className="led-label mb-3">{etichetta}</p>
+      <div className="flex gap-2 sm:gap-3">
+        {celle.map((c) => (
+          <div key={c.l} className="flex flex-col items-center">
+            <div className="led-cell flex items-center justify-center px-3 py-3 text-2xl sm:px-5 sm:py-4 sm:text-4xl">
+              {String(c.v).padStart(2, "0")}
+            </div>
+            <span className="mt-2 font-tech text-[9px] uppercase tracking-[0.3em] text-brand-gray/60">
+              {c.l}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────
+   La home: la parete LED del locale, e sotto la prossima festa
+   ──────────────────────────────────────────────────────────── */
+
+export default function Home() {
+  const [evento, setEvento] = useState<Evento | null>(null);
+  const [dentro, setDentro] = useState<number | null>(null);
+  const [ultimi, setUltimi] = useState<Membro[]>([]);
+  // null = sto ancora controllando: evita di far lampeggiare "iscriviti"
+  // a chi è già dentro
+  const [io, setIo] = useState<{ alias: string; crew: boolean } | null>(null);
+  const [sonoMembro, setSonoMembro] = useState<boolean | null>(null);
+  const [staff, setStaff] = useState(false);
 
   useEffect(() => {
     (async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setIsMember(false); return; }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setSonoMembro(false);
+        return;
+      }
       const [{ data }, staffRes] = await Promise.all([
-        supabase.from("profiles").select("alias,avatar_id").eq("id", user.id).single(),
+        supabase.from("profiles").select("alias,role").eq("id", user.id).single(),
         supabase.rpc("am_i_staff"),
       ]);
-      setIsMember(Boolean(data));
-      if (data) setMe(data as { alias: string; avatar_id: string | null });
-      setIsStaff(Boolean(staffRes.data));
+      setSonoMembro(Boolean(data));
+      if (data) setIo({ alias: data.alias as string, crew: data.role === "crew" });
+      setStaff(Boolean(staffRes.data));
     })();
   }, []);
 
-  const handleLogout = useCallback(async () => {
+  useEffect(() => {
     const supabase = createClient();
-    await supabase.auth.signOut();
-    setMe(null);
-    setIsMember(false);
+    supabase.rpc("next_event").then(({ data, error }) => {
+      if (!error && data) setEvento(data as Evento);
+    });
+    supabase.rpc("member_count").then(({ data }) => {
+      if (typeof data === "number") setDentro(data);
+    });
+    supabase.rpc("recent_members", { limit_count: 6 }).then(({ data }) => {
+      if (Array.isArray(data)) setUltimi(data as Membro[]);
+    });
+  }, []);
+
+  const esci = useCallback(async () => {
+    await createClient().auth.signOut();
     window.location.reload();
   }, []);
 
-  // Spotlight che segue il puntatore (desktop) — solo variabili CSS, zero re-render
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    const el = mainRef.current;
-    if (!el || e.pointerType !== "mouse") return;
-    el.style.setProperty("--spot-x", `${e.clientX}px`);
-    el.style.setProperty("--spot-y", `${e.clientY}px`);
-  }, []);
+  const svelato = evento?.svelato === true ? evento : null;
+  const nascosto = evento && evento.svelato === false ? evento : null;
+  // Se il server non manda un evento riconoscibile, la sezione lo dice e basta
+  const nessunEvento = !svelato && !nascosto;
+  // Chi non è dentro deve capire in due secondi che la locandina è coperta
+  // apposta: è il motivo per cui ci si iscrive.
+  const fuori = sonoMembro === false;
 
   return (
-    <>
-      {!entered && <EntrySequence onDone={handleDone} />}
-      {entered && <PostitBoard />}
-      {showForm && <PostForm onClose={() => setShowForm(false)} />}
-
-      <main
-        ref={mainRef}
-        onPointerMove={handlePointerMove}
-        className={`relative flex-1 flex flex-col overflow-hidden transition-opacity duration-700 ${entered ? "opacity-100" : "opacity-0"}`}
-      >
-        {/* Glow rosso centrale */}
-        <div
-          className="pointer-events-none absolute inset-0 animate-pulse-glow"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 35%, rgba(224,24,31,0.20), transparent 60%)",
-          }}
-          aria-hidden
+    // Fondo pieno: su questa pagina la parete sostituisce le aurore dello sfondo
+    <main className="relative z-0 flex-1 bg-[#070707]">
+      {/* ─────────────  LA PARETE  ───────────── */}
+      <section className="relative">
+        <LedWall
+          testo="1%"
+          videoSrc="/media/sala.mp4"
+          posterSrc="/media/sala.jpg"
+          cell={8}
+          className="h-[64vh] min-h-[360px] w-full sm:h-[76vh]"
         />
+        <h1 className="sr-only">1% — {BRAND_CLAIM}</h1>
 
-        {/* Spotlight che segue il mouse */}
-        <div
-          className="pointer-events-none absolute inset-0 hidden sm:block"
-          style={{
-            background:
-              "radial-gradient(360px circle at var(--spot-x, 50%) var(--spot-y, 35%), rgba(224,24,31,0.10), transparent 70%)",
-          }}
-          aria-hidden
-        />
-
-        {/* Barra utente loggato (in alto a destra) */}
-        {entered && (me || isStaff) && (
-          <div className="absolute top-3 right-3 z-30 flex items-center gap-2 animate-fade-up">
-            {isStaff && (
+        {/* Barra di chi è già dentro: profilo, scanner dello staff, uscita */}
+        {(io || staff) && (
+          <div className="absolute right-3 top-3 z-30 flex items-center gap-2">
+            {staff && (
               <Link
                 href="/admin/scan"
-                className="text-[10px] uppercase tracking-widest text-brand-red border border-brand-red bg-black/70 px-2.5 py-2 hover:bg-brand-red hover:text-white transition-all"
+                className="border border-brand-red bg-black/70 px-2.5 py-2 font-tech text-[9px] uppercase tracking-[0.25em] text-brand-red transition-colors hover:bg-brand-red hover:text-white"
               >
-                🎁 Scanner
+                🎁 scanner
               </Link>
             )}
-            {me && (
+            {io && (
               <Link
                 href="/card"
-                className="flex items-center gap-2 border border-white/10 bg-black/70 backdrop-blur px-3 py-1.5"
+                className="max-w-[9rem] truncate border border-white/15 bg-black/70 px-3 py-2 font-tech text-[9px] uppercase tracking-[0.25em] text-white"
               >
-                <span className="text-lg leading-none">{getAvatar(me.avatar_id ?? "").emoji}</span>
-                <span className="text-xs text-white font-semibold max-w-[100px] truncate">{me.alias}</span>
+                {io.alias}
               </Link>
             )}
             <button
-              onClick={handleLogout}
-              className="text-[10px] uppercase tracking-widest text-brand-gray border border-white/10 bg-black/70 px-2.5 py-2 hover:text-white transition-colors"
+              onClick={esci}
+              className="border border-white/15 bg-black/70 px-2.5 py-2 font-tech text-[9px] uppercase tracking-[0.25em] text-brand-gray transition-colors hover:text-white"
             >
-              Esci
+              esci
             </button>
           </div>
         )}
 
-        {/* Ticker in alto */}
-        <div className="animate-fade-up">
-          <Marquee items={TICKER} />
-        </div>
-
-        {/* Contenuto centrale */}
-        <div className="relative flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
-          <p className="relative z-10 text-xs sm:text-sm uppercase tracking-[0.4em] text-brand-gray animate-fade-up">
+        {/* Striscia di stato in fondo alla parete */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 border-t border-brand-red/25 bg-black/70 px-4 py-2.5 backdrop-blur-sm sm:px-6">
+          <span className="flex items-center gap-2 font-tech text-[10px] uppercase tracking-[0.3em] text-white/80">
+            <span className="led-dot inline-block" aria-hidden />
             {BRAND_PAYOFF}
-          </p>
+          </span>
+          <span className="font-tech text-[10px] uppercase tracking-[0.3em] text-brand-gray/70">
+            {BRAND_CLAIM}
+          </span>
+        </div>
+      </section>
 
-          {/* Logo "1%" — glow + glitch cromatico */}
-          <h1
-            className="glitch font-display relative z-10 mt-2 animate-fade-up leading-none select-none"
-            data-text="1%"
-            aria-label="1%"
-            style={{
-              animationDelay: "0.1s",
-              fontSize: "clamp(6rem, 27vw, 15rem)",
-              color: "#E0181F",
-              letterSpacing: "-0.02em",
-              textShadow:
-                "0 0 8px rgba(224,24,31,0.9), 0 0 28px rgba(224,24,31,0.6), 0 0 64px rgba(224,24,31,0.35)",
-            }}
-          >
-            1%
-          </h1>
+      {/* ─────────────  TICKER  ───────────── */}
+      <div className="led-grain border-y border-white/5 py-1">
+        <Marquee items={TICKER} />
+      </div>
 
-          {/* Chi siamo, in una riga. Il testo sta in lib/event.ts */}
-          <div
-            className="relative z-10 mt-3 animate-fade-up"
-            style={{ animationDelay: "0.25s" }}
-          >
-            <p
-              className="typewriter text-lg sm:text-xl mx-auto uppercase tracking-[0.15em]"
-              style={{ maxWidth: "24ch" }}
-            >
-              {BRAND_CLAIM}
+      {/* ─────────────  LA PROSSIMA  ─────────────
+          Sta qui, subito sotto la parete: la locandina coperta è la prima
+          cosa che si incontra scorrendo, ed è il motivo per iscriversi. */}
+      <section className="led-band px-5 py-10 sm:px-8">
+        <div className="mx-auto w-full max-w-3xl">
+          <p className="led-label">la prossima</p>
+
+          {nessunEvento && (
+            <p className="mt-5 font-display text-2xl text-brand-gray/60 sm:text-3xl">
+              Niente in programma. Per ora.
             </p>
-          </div>
+          )}
 
-          {/* Prima il bottone grande, poi gli eventi sotto */}
-          {isMember ? (
-            <div
-              className="relative z-10 mt-8 w-full max-w-md flex flex-wrap justify-center gap-2 animate-fade-up sm:max-w-2xl sm:gap-3"
-              style={{ animationDelay: "0.45s" }}
-            >
-              <Link href="/eventi" className="btn btn-primary flex-1 min-w-[9rem]">
-                Gli eventi
-              </Link>
-              <Link href="/pass" className="btn btn-outline flex-1 min-w-[9rem]">
-                Il tuo QR code
-              </Link>
-              <Link href="/membri" className="btn btn-outline flex-1 min-w-[9rem]">
-                Il muro 👊
-              </Link>
-              <Link href="/profilo" className="btn btn-outline flex-1 min-w-[9rem]">
-                Il tuo profilo
-              </Link>
-              <Link href="/invita" className="btn btn-ghost flex-1 min-w-[9rem]">
-                Invita
-              </Link>
+          {nascosto && (
+            <div className="led-reveal mt-5 grid gap-9 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-12">
+              <div>
+                <p
+                  className="font-display leading-none text-brand-red"
+                  style={{ fontSize: "clamp(3rem,15vw,6rem)", letterSpacing: "0.06em" }}
+                >
+                  ?????
+                </p>
+                {nascosto.teaser && (
+                  <p className="mt-4 max-w-[28ch] text-lg leading-snug text-white/90">
+                    {nascosto.teaser}
+                  </p>
+                )}
+                <p className="mt-4 font-tech text-xs uppercase tracking-[0.3em] text-brand-gray">
+                  {dataLunga(nascosto.starts_at)}
+                </p>
+              </div>
+              <CountdownLed target={new Date(nascosto.reveal_at)} etichetta="si svela tra" />
             </div>
-          ) : signupsOpen ? (
-            <div
-              className="relative z-10 mt-8 w-full flex flex-col items-center gap-3 animate-fade-up"
-              style={{ animationDelay: "0.45s" }}
-            >
-              <Link
-                href="/unisciti"
-                className="btn btn-primary cta-pulse w-full max-w-sm px-6 py-6 text-center text-sm leading-snug sm:max-w-md sm:px-10 sm:text-base"
-              >
+          )}
+
+          {svelato && (
+            <div className="led-reveal mt-5 grid gap-7 sm:grid-cols-[minmax(0,200px)_1fr] sm:items-start sm:gap-8">
+              {svelato.cover_key && (
+                <Locandina
+                  coverKey={svelato.cover_key}
+                  coverV={svelato.cover_v}
+                  nome={svelato.nome}
+                  className="mx-auto w-56 sm:mx-0 sm:w-full"
+                />
+              )}
+              <div className={svelato.cover_key ? "" : "sm:col-span-2"}>
+                <Link href={`/eventi/${svelato.slug}`} className="group block">
+                  <span
+                    className="block font-display uppercase leading-none text-white transition-colors group-hover:text-brand-red"
+                    style={{ fontSize: "clamp(2rem,9vw,3.8rem)", letterSpacing: "0.02em" }}
+                  >
+                    {svelato.nome}
+                  </span>
+                  <span className="mt-1 block font-tech text-[10px] uppercase tracking-[0.4em] text-brand-gray/60">
+                    by 1%
+                  </span>
+                </Link>
+                <p className="mt-4 font-tech text-xs uppercase tracking-[0.25em] text-brand-gray">
+                  {dataLunga(svelato.starts_at)} · {ora(svelato.starts_at)}
+                </p>
+                {svelato.locale && (
+                  <p className="mt-1 font-tech text-[11px] uppercase tracking-[0.25em] text-brand-gray/55">
+                    {svelato.locale}
+                    {svelato.citta ? ` · ${svelato.citta}` : ""}
+                  </p>
+                )}
+
+                {/* A chi è fuori la locandina resta sfocata: qui gli si dice
+                    perché, e come si sblocca. */}
+                {fuori && svelato.cover_key && (
+                  <div className="mt-6 border-l-2 border-brand-red/60 pl-4">
+                    <p className="font-display text-lg uppercase leading-tight text-white sm:text-xl">
+                      Vuoi vederla nitida?
+                    </p>
+                    <p className="mt-2 max-w-[34ch] text-sm leading-relaxed text-brand-gray">
+                      La locandina intera è per chi è dentro. Trenta secondi per
+                      iscriverti, nessun nome vero.
+                    </p>
+                    <Link href="/unisciti" className="led-cta mt-5 sm:max-w-sm">
+                      Iscriviti
+                    </Link>
+                  </div>
+                )}
+
+                <div className="mt-7">
+                  <CountdownLed target={new Date(svelato.starts_at)} etichetta="si apre tra" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Link
+            href="/eventi"
+            className="mt-8 inline-block border border-brand-red/40 px-5 py-3 font-tech text-[10px] uppercase tracking-[0.3em] text-white transition-colors hover:bg-brand-red/10"
+          >
+            tutti gli eventi →
+          </Link>
+        </div>
+      </section>
+
+      {/* ─────────────  ENTRA  ───────────── */}
+      <section className="led-band px-5 pb-12 pt-9 sm:px-8">
+        <div className="mx-auto w-full max-w-3xl">
+          {sonoMembro ? (
+            <>
+              <p className="led-label">bentornato{io ? `, ${io.alias}` : ""}</p>
+              <p className="mt-4 font-display text-2xl leading-tight text-white sm:text-3xl">
+                Sei dentro.<br />
+                <span className="text-brand-red">Porta chi merita.</span>
+              </p>
+              <div className="mt-6 grid gap-2 sm:grid-cols-2">
+                <Link href="/pass" className="btn btn-primary">Il tuo QR code</Link>
+                <Link href="/invita" className="btn btn-outline">Invita qualcuno</Link>
+                {io?.crew && (
+                  <Link href="/tessera" className="btn btn-outline">La tua tessera crew</Link>
+                )}
+                <Link href="/membri" className="btn btn-ghost">Il muro 👊</Link>
+                <Link href="/profilo" className="btn btn-ghost">Il tuo profilo</Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="led-label">entra</p>
+              <p className="mt-4 font-display text-2xl leading-tight text-white sm:text-3xl">
+                Il 99% guarda le storie.<br />
+                <span className="text-brand-red">L&apos;1% è sulla lista.</span>
+              </p>
+              <Link href="/unisciti" className="led-reveal mt-7 led-cta">
                 Iscriviti o unisciti a noi
               </Link>
-              <Link
-                href="/login"
-                className="text-[10px] uppercase tracking-widest text-brand-gray/70 hover:text-white transition-colors"
-              >
-                Già dell&apos;1%? Rientra →
-              </Link>
-            </div>
-          ) : (
-            <div
-              className="relative z-10 mt-8 w-full max-w-sm animate-fade-up border border-brand-red/40 bg-black/60 px-6 py-5 text-center sm:max-w-md sm:px-8"
-              style={{ animationDelay: "0.45s" }}
-            >
-              <p className="text-sm uppercase tracking-[0.25em] text-brand-red font-semibold">
-                🔒 Iscrizioni chiuse al momento
-              </p>
-              <p className="text-xs text-brand-gray mt-2">
-                Il 1% tornerà. Tieni d&apos;occhio i nostri canali.
-              </p>
-            </div>
+              <div className="mt-4 flex flex-col gap-2 font-tech text-[10px] uppercase tracking-[0.25em] sm:flex-row sm:items-center sm:justify-between">
+                <Link href="/login" className="text-brand-gray hover:text-white">
+                  già dentro? rientra →
+                </Link>
+                <span className="text-brand-gray/50">30 secondi, nessun nome vero</span>
+              </div>
+            </>
           )}
+        </div>
+      </section>
 
-          {/* Gli eventi: subito sotto il bottone */}
-          <ProssimoEvento />
+      {/* ─────────────  LO STAND  ───────────── */}
+      <section className="led-band px-5 py-10 sm:px-8">
+        <div className="mx-auto w-full max-w-3xl">
+          <p className="led-label">lo stand</p>
+          <p className="mt-4 font-display text-2xl uppercase leading-tight text-white sm:text-3xl">
+            Stand <span className="text-brand-red">UNPERCENTO</span>
+          </p>
+          <p className="mt-3 max-w-[46ch] text-sm leading-relaxed text-brand-gray">
+            A ogni serata siamo dentro il locale con il nostro banchetto. Fai scansionare
+            il QR del tuo profilo: parte l&apos;estrazione e ritiri sul momento quello che
+            vinci — drink, shot, magliette e altro.
+          </p>
+          <p className="mt-2 max-w-[46ch] text-sm leading-relaxed text-brand-gray/60">
+            {STAND_NON_INGRESSO}
+          </p>
+        </div>
+      </section>
 
-          {!isMember && (
-            <Link
-              href="/eventi"
-              className="btn btn-ghost relative z-10 mt-6 w-full max-w-sm animate-fade-up sm:w-auto"
-              style={{ animationDelay: "0.7s" }}
+      {/* ─────────────  DENTRO  ───────────── */}
+      <section className="led-band px-5 py-10 sm:px-8">
+        <div className="mx-auto w-full max-w-3xl">
+          <p className="led-label">dentro</p>
+          <div className="mt-4 flex items-end gap-4">
+            <span
+              className="led-digits leading-none"
+              style={{ fontSize: "clamp(3.4rem,18vw,6.5rem)" }}
             >
-              Tutti gli eventi
-            </Link>
-          )}
-
-          <div className="relative z-10 animate-fade-up" style={{ animationDelay: "0.8s" }}>
-            <MemberCounter />
+              {dentro === null ? "—" : String(dentro).padStart(3, "0")}
+            </span>
+            <span className="pb-3 font-tech text-[10px] uppercase leading-relaxed tracking-[0.3em] text-brand-gray">
+              persone
+              <br />
+              hanno la tessera
+            </span>
           </div>
 
-          <LiveFeed />
-
-          <button
-            onClick={() => setShowForm(true)}
-            className="group relative z-10 mt-8 animate-fade-up"
-            style={{ animationDelay: "1.2s" }}
-            aria-label="Lascia un segno sulla bacheca"
-          >
-            <span
-              className="block px-6 py-4 text-black transition-transform group-hover:scale-105 group-hover:-rotate-1"
-              style={{
-                background: "#FFF176",
-                boxShadow: "3px 4px 12px rgba(0,0,0,0.5)",
-                transform: "rotate(-2deg)",
-                fontFamily: "var(--font-caveat)",
-                fontSize: "1.35rem",
-                lineHeight: 1.1,
-              }}
-            >
-              ✏️ Lascia un segno
-              <span className="block text-base text-black/60">scrivi sulla bacheca →</span>
-            </span>
-          </button>
+          {ultimi.length > 0 && (
+            <p className="mt-6 font-tech text-[11px] leading-relaxed text-brand-gray/70">
+              <span className="text-brand-red">ultimi:</span>{" "}
+              {ultimi.map((m) => m.alias).join(" · ")}
+            </p>
+          )}
         </div>
+      </section>
 
-        {/* Ticker in basso (direzione opposta) + info */}
-        <div className="animate-fade-up" style={{ animationDelay: "0.9s" }}>
-          <p className="text-center text-[10px] uppercase tracking-widest text-brand-gray/50 mb-3">
-            1% · {BRAND_AREA}
+      {/* ─────────────  PIEDE  ───────────── */}
+      <footer className="led-band led-grain px-5 py-10 sm:px-8">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+          <span className="font-display text-4xl text-brand-red">1%</span>
+          <p className="font-tech text-[10px] uppercase tracking-[0.3em] text-brand-gray/60">
+            {BRAND_AREA}
           </p>
-          <Marquee items={TICKER} reverse />
+          <div className="flex gap-5 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray/60">
+            <Link href="/eventi" className="hover:text-white">eventi</Link>
+            <Link href="/membri" className="hover:text-white">il muro</Link>
+            <Link href="/privacy" className="hover:text-white">privacy</Link>
+          </div>
         </div>
-      </main>
-    </>
+      </footer>
+    </main>
   );
 }

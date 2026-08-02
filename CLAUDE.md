@@ -1,6 +1,6 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 28 luglio 2026
+> Ultimo aggiornamento: 2 agosto 2026
 
 ## ⚠️ Leggi prima di tutto
 
@@ -15,8 +15,23 @@ questionario dedicato e approvazione a mano, QR statico, tracciamento click refe
 registro azioni admin. Il blocco social (Muro, profilo, poke, Legami, messaggi) **resta
 acceso**; congelato solo il Mosaico.
 
-**Anteprima grafica "LEDWALL" (30 lug):** direzione scelta da Luka per il restyling. Sta su
-**`/nuovo`**, la home vera non è toccata. La firma è `components/LedWall.tsx`: una parete di
+**LA HOME È LA PARETE LED (2 ago).** La grafica "LEDWALL" non è più un'anteprima: è
+`app/page.tsx`, cioè quello che si vede su unpercento.it. `/nuovo` ora rimanda alla home
+(vecchi preferiti e schede aperte non restano indietro). Fuori sono rimaste, su decisione di
+Luka, la **sequenza d'ingresso** (`EntrySequence`) e la **bacheca dei post-it**
+(`PostitBoard`/`PostForm`): i componenti sono ancora nel repo, non li chiama più nessuno.
+La **locandina sfocata del prossimo evento sta subito sotto la parete**, con lucchetto e
+bottone d'iscrizione: è la prima cosa che si incontra scorrendo, ed è il motivo per iscriversi.
+Ritrovata anche la barra in alto a destra di chi è già dentro (alias, scanner dello staff, esci).
+**Taratura per il telefono:** la parete era stata calibrata su schermo largo e sul cellulare
+il "1%" si sbriciolava — il filmato è verticale, quindi su uno schermo stretto si vede quasi
+tutta la scena e la folla arrivava a toccare le lettere. In `LedWall.tsx` sotto i 560px il LED
+scende da 8 a 6 px, il marchio prende l'86% della larghezza invece del 70%, e la sala accende
+i LED fuori dal marchio a 0.19 invece di 0.34 (variabile `ambiente`). Sopra i 560px non cambia
+niente.
+
+**Anteprima grafica "LEDWALL" (30 lug):** direzione scelta da Luka per il restyling. La firma
+è `components/LedWall.tsx`: una parete di
 LED su canvas, la luminosità di ogni LED viene da `public/media/sala.mp4` (spezzone del locale,
 muto e in bianco e nero, 600 KB) campionato a un pixel per LED — la serata si intravede ma
 nessuno è riconoscibile. Il marchio è acceso a potenza piena con la sala visibile dentro le
@@ -32,7 +47,7 @@ dello sfondo globale restano coperte da un fondo pieno.
 nelle policy dello storage, il browser non c'entra. Chi non è iscritto vede la sfocata con il
 lucchetto e l'invito a iscriversi. Upload da `/admin/eventi` (slot "Locandina" su ogni evento)
 → `app/api/locandina/route.ts` (sharp, EXIF strippati, niente tagli: `fit: inside`). Si mostra
-su `/eventi/[slug]` e nella home `/nuovo`. Componente: `components/Locandina.tsx`.
+su `/eventi/[slug]` e in home. Componente: `components/Locandina.tsx`.
 **PENDING Luka: incollare `supabase/04_locandine.sql`** — finché non lo fa, il caricamento
 risponde errore. Deciso di NON usare Cloudflare R2 per le locandine (una immagine per evento,
 banda irrilevante): R2 resta per la galleria foto delle serate, dove le immagini sono centinaia.
@@ -155,7 +170,8 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 
 | Route | Descrizione |
 |---|---|
-| `/` | Landing: glitch 1%, countdown, feed live iscritti |
+| `/` | Home: parete LED, locandina sfocata del prossimo evento, stand, contatore |
+| `/nuovo` | Vecchio indirizzo dell'anteprima: rimanda a `/` |
 | `/unisciti?ref=CODE` | Registrazione in un passo solo: alias + avatar + email + privacy + **casella "voglio entrare nello staff"** (con nome vero). Chi non si candida entra subito, senza domande |
 | `/candidatura` | Le 4 domande di chi si candida allo staff. Ha sostituito `/test` |
 | `/eventi` | Calendario: in programma e già successe. I non svelati compaiono come `?????` |
