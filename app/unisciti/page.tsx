@@ -243,13 +243,17 @@ function JoinForm() {
                 : "border-white/10 hover:border-white/30"
             }`}
           >
-            <span className="text-xl leading-none" aria-hidden>🍹</span>
+            {/* Stessa famiglia della stella dello staff: segni tipografici,
+                niente emoji colorate. Bianco = pubblico, rosso = staff. */}
+            <span className="text-xl leading-none text-white/70" aria-hidden>✦</span>
             <span className="text-sm font-semibold uppercase tracking-wide text-white">
               Vengo alle serate
             </span>
             <span className="text-[11px] leading-relaxed text-brand-gray">
-              Entri, ti diverti e a ogni serata giochi allo stand UNPERCENTO: drink,
-              shot e altro, estratti sul momento.
+              Vedi le locandine complete mentre gli altri le vedono sfocate, e a ogni
+              serata passi allo stand UNPERCENTO: fai scansionare il tuo QR e ritiri sul
+              momento quello che vinci — drink, shot, magliette. Dentro c&apos;è anche il
+              Muro, per sapere chi c&apos;è prima di arrivare.
             </span>
           </button>
 
@@ -268,7 +272,7 @@ function JoinForm() {
                 e prende il rosso del marchio invece del giallo di sistema. */}
             <span className="text-xl leading-none text-brand-red" aria-hidden>★</span>
             <span className="text-sm font-semibold uppercase tracking-wide text-white">
-              Voglio collaborare
+              Iscrizione come staff
             </span>
             <span className="text-[11px] leading-relaxed text-brand-gray">
               Se vuoi unirti al nostro gruppo ci sono 6 semplici domande per te.

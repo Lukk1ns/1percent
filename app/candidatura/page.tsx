@@ -9,7 +9,7 @@ import Questionario, { type Risposte } from "@/components/Questionario";
 /**
  * Le 6 domande di chi si candida allo staff.
  *
- * Ci arriva chi ha scelto "Voglio collaborare" su /unisciti, e fa solo
+ * Ci arriva chi ha scelto "Iscrizione come staff" su /unisciti, e fa solo
  * queste: le 4 del pubblico non gliele chiediamo, gli interessa altro.
  * La registrazione si chiude qui, con la candidatura in attesa che un
  * admin decida. Niente archetipo, perché nasce dal quiz del pubblico.
