@@ -1,7 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { voltoPath } from "@/lib/volto";
 
-// I Legami: poke reciproco = vi vedete nitidi a vicenda.
+// I Legami: il "ciao" ricambiato = vi vedete nitidi a vicenda.
+//
+// NOTA SUI NOMI: per gli utenti il gesto si chiama "ciao" (prima era "poke",
+// e nessuno capiva cos'era — segnalato da Luka il 2 ago). Nel database e nelle
+// RPC si chiama ancora `poke`/`pokes`/`send_poke`: cambiare quelli avrebbe
+// voluto dire riscrivere tabelle e policy per una parola. Se leggi `poke` nel
+// codice, sullo schermo c'è scritto "ciao".
 // La policy storage "volto_link_read" permette gli URL firmati
 // SOLO verso le foto dei propri legami: il server decide, non il client.
 

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { voltoPath } from "@/lib/volto";
 import { downscaleImage } from "@/lib/downscale";
 import Volto from "@/components/Volto";
+import { NavBasso } from "@/components/NavBasso";
 
 type Profile = {
   id: string;
@@ -149,7 +150,7 @@ export default function ProfiloPage() {
   }
 
   async function handleDeleteProfile() {
-    if (!window.confirm("Eliminare il tuo profilo? Spariranno foto, QR code, poke, legami e messaggi. Non si torna indietro.")) return;
+    if (!window.confirm("Eliminare il tuo profilo? Spariranno foto, QR code, ciao, legami e messaggi. Non si torna indietro.")) return;
     if (!window.confirm("Sicuro sicuro? Questa è definitiva.")) return;
     setDeleting(true);
     const supabase = createClient();
@@ -362,15 +363,7 @@ export default function ProfiloPage() {
         🔗 I tuoi legami
       </button>
 
-      {/* Nav bottom */}
-      <nav className="w-full mt-10 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
-        <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
-        <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
-        <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
-        <button onClick={() => router.push("/messaggi")} className="hover:text-brand-gray transition-colors">Chat</button>
-        <button onClick={() => router.push("/profilo")} className="text-brand-red">Profilo</button>
-        <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>
-      </nav>
+      <NavBasso />
 
       {/* ---- Zona pericolosa: elimina profilo ---- */}
       <div className="w-full mt-8 pt-6 border-t border-white/5 flex flex-col items-center">
@@ -382,7 +375,7 @@ export default function ProfiloPage() {
           {deleting ? "elimino..." : "elimina il mio profilo"}
         </button>
         <p className="text-[9px] text-brand-gray/30 mt-2 text-center max-w-xs">
-          Cancella tutto: foto, QR code, poke, legami e messaggi. Definitivo.
+          Cancella tutto: foto, QR code, ciao, legami e messaggi. Definitivo.
         </p>
       </div>
     </main>

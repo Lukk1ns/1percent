@@ -36,7 +36,7 @@ export default function RevealLegame({ alias, clearUrl, avatarId, onClose }: Pro
       aria-label={`Legame con ${alias}`}
     >
       <p className="text-[10px] uppercase tracking-[0.4em] text-brand-gray/60 mb-6">
-        poke reciproco
+ciao ricambiato
       </p>
 
       <div

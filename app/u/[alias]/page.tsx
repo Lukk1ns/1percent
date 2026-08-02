@@ -7,6 +7,7 @@ import { fetchLegami } from "@/lib/legami";
 import Volto from "@/components/Volto";
 import RevealLegame from "@/components/RevealLegame";
 import { SegnoCrew } from "@/components/SegnoCrew";
+import { NavBasso } from "@/components/NavBasso";
 
 type PublicProfile = {
   member_number: number;
@@ -242,13 +243,13 @@ export default function ProfiloPubblicoPage() {
         <p className="text-white/80 text-sm text-center mt-5 max-w-xs italic">&ldquo;{p.bio}&rdquo;</p>
       )}
 
-      {/* Statistiche poke */}
+      {/* Quanti gli hanno detto ciao */}
       <div className="flex items-center gap-8 mt-8">
         <div className="flex flex-col items-center">
           <span className="font-display text-brand-red text-3xl" style={{ textShadow: "0 0 12px rgba(224,24,31,0.4)" }}>
             {p.poke_count}
           </span>
-          <span className="text-[9px] uppercase tracking-widest text-brand-gray/60 mt-1">poke 👊</span>
+          <span className="text-[9px] uppercase tracking-widest text-brand-gray/60 mt-1">ciao</span>
         </div>
         {showRank && (
           <div className="flex flex-col items-center">
@@ -281,7 +282,7 @@ export default function ProfiloPubblicoPage() {
             disabled={p.poked_by_me_today}
             className={`btn w-full ${p.poked_by_me_today ? "btn-outline opacity-40 cursor-default" : "btn-primary"}`}
           >
-            {p.poked_by_me_today ? "✓ pokato oggi" : "👊 Poke"}
+            {p.poked_by_me_today ? "✓ gliel'hai detto oggi" : "Digli ciao"}
           </button>
 
           {!showCompose ? (
@@ -332,14 +333,7 @@ export default function ProfiloPubblicoPage() {
         </div>
       )}
 
-      {/* Nav bottom */}
-      <nav className="w-full mt-10 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
-        <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
-        <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
-        <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
-        <button onClick={() => router.push("/messaggi")} className="hover:text-brand-gray transition-colors">Chat</button>
-        <button onClick={() => router.push("/profilo")} className="hover:text-brand-gray transition-colors">Profilo</button>
-      </nav>
+      <NavBasso />
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchLegami, type Legame } from "@/lib/legami";
 import Volto from "@/components/Volto";
+import { NavBasso } from "@/components/NavBasso";
 
 export default function LegamiPage() {
   const router = useRouter();
@@ -42,7 +43,8 @@ export default function LegamiPage() {
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">i tuoi legami</p>
       <h1 className="font-display text-brand-red text-5xl mb-3">1%</h1>
       <p className="text-brand-gray text-sm text-center mb-8 max-w-xs">
-        Poke reciproco = <span className="text-white">vi vedete davvero</span>. Solo voi due.
+        Ve lo siete detti tutti e due = <span className="text-white">vi vedete davvero</span>.
+        Solo voi due.
       </p>
 
       {legami.length === 0 ? (
@@ -95,14 +97,7 @@ export default function LegamiPage() {
         </>
       )}
 
-      {/* Nav bottom */}
-      <nav className="w-full mt-10 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
-        <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
-        <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
-        <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
-        <button onClick={() => router.push("/legami")} className="text-brand-red">Legami</button>
-        <button onClick={() => router.push("/profilo")} className="hover:text-brand-gray transition-colors">Profilo</button>
-      </nav>
+      <NavBasso />
     </main>
   );
 }

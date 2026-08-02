@@ -35,8 +35,7 @@ export function PokeCounter() {
       href="/membri?ricevuti=1"
       className="btn btn-outline w-full relative"
     >
-      <span className="text-base">👊</span>
-      Hai {count} {count === 1 ? "poke" : "poke"} — scopri chi
+      {count} {count === 1 ? "ti ha" : "ti hanno"} detto ciao — scopri chi
       {unseen > 0 && (
         <span className="ml-1 px-2 py-0.5 text-[10px] bg-brand-red text-white rounded-full animate-pulse-glow">
           {unseen} {unseen === 1 ? "nuovo" : "nuovi"}

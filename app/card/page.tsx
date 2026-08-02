@@ -7,6 +7,7 @@ import { getAvatar } from "@/lib/avatars";
 import { PokeCounter } from "@/components/PokeCounter";
 import { BRAND_AREA } from "@/lib/event";
 import { SegnoCrew } from "@/components/SegnoCrew";
+import { NavBasso } from "@/components/NavBasso";
 
 type Profile = {
   member_number: number;
@@ -268,46 +269,41 @@ export default function CardPage() {
           </div>
         )}
         <PokeCounter />
+        {/* Prima quello che serve davvero (il QR dello stand), poi il resto.
+            Salvare la card è un vezzo: sta in fondo e non urla. */}
         <button
-          onClick={handleSaveCard}
-          disabled={saving}
+          onClick={() => router.push("/pass")}
           className="btn btn-primary w-full"
         >
-          {saving ? "Preparazione…" : saved ? "Salvata ✓" : "Salva card"}
+          QR code estrazione →
         </button>
-        {saveError && (
-          <p className="text-center text-xs text-brand-red">{saveError}</p>
-        )}
         {profile.role === "crew" && (
           <button
             onClick={() => router.push("/tessera")}
-            className="btn btn-primary w-full"
+            className="btn btn-outline w-full"
           >
             La tua tessera crew →
           </button>
         )}
-        <button
-          onClick={() => router.push("/pass")}
-          className="btn btn-outline w-full"
-        >
-          QR code estrazione →
-        </button>
         <button
           onClick={handleShareLink}
           className="btn btn-ghost w-full"
         >
           Porta un altro 1%
         </button>
+        <button
+          onClick={handleSaveCard}
+          disabled={saving}
+          className="btn btn-ghost w-full"
+        >
+          {saving ? "Preparazione…" : saved ? "Salvata ✓" : "Salva la card come immagine"}
+        </button>
+        {saveError && (
+          <p className="text-center text-xs text-brand-red">{saveError}</p>
+        )}
       </div>
 
-      {/* Nav bottom */}
-      <nav className="w-full max-w-sm mt-8 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
-        <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
-        <button onClick={() => router.push("/card")} className="text-brand-red">Card</button>
-        <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">QR code</button>
-        <button onClick={() => router.push("/regalo")} className="hover:text-brand-gray transition-colors">Regalo</button>
-        <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
-      </nav>
+      <NavBasso />
     </main>
   );
 }

@@ -71,10 +71,10 @@ export default function BenvenutoPage() {
           )}
 
           <button
-            onClick={() => router.push("/card")}
+            onClick={() => router.push("/")}
             className="btn btn-primary cta-pulse mt-4 px-10"
           >
-            La tua card →
+            Vai al sito →
           </button>
         </div>
       )}

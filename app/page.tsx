@@ -311,7 +311,7 @@ export default function Home() {
                 {io?.crew && (
                   <Link href="/tessera" className="btn btn-outline">La tua tessera crew</Link>
                 )}
-                <Link href="/membri" className="btn btn-ghost">Il muro 👊</Link>
+                <Link href="/membri" className="btn btn-ghost">Il muro</Link>
                 <Link href="/profilo" className="btn btn-ghost">Il tuo profilo</Link>
               </div>
               {staff && (

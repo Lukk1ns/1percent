@@ -8,6 +8,7 @@ import { fetchLegami, type Legame } from "@/lib/legami";
 import Volto from "@/components/Volto";
 import { SegnoCrew } from "@/components/SegnoCrew";
 import RevealLegame from "@/components/RevealLegame";
+import { NavBasso } from "@/components/NavBasso";
 
 type WallRow = {
   member_number: number;
@@ -194,7 +195,7 @@ function MembriWall() {
   if (wallError) {
     return (
       <main className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-        <p className="font-display text-brand-red text-5xl mb-4">👊</p>
+        <p className="font-display text-brand-red text-5xl mb-4">1%</p>
         <p className="text-white text-lg mb-2">Il muro sta aprendo.</p>
         <p className="text-brand-gray text-sm">Torna tra poco.</p>
       </main>
@@ -219,10 +220,11 @@ function MembriWall() {
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">il muro</p>
       <h1 className="font-display text-brand-red text-5xl mb-3">1%</h1>
       <p className="text-brand-gray text-sm text-center mb-1 max-w-xs">
-        Un <span className="text-white">poke 👊</span> al giorno a chi ti sta simpatico.
+        Di&apos; <span className="text-white">ciao</span> a chi ti interessa. Uno al giorno a testa.
       </p>
       <p className="text-brand-gray/60 text-xs text-center mb-8 max-w-xs">
-        Gli altri vedono solo i numeri. Chi lo riceve scopre chi sei.
+        Se te lo dice anche lui, vi vedete in faccia e la chat si apre. Gli altri vedono
+        solo i numeri.
       </p>
 
       {/* Legami + messaggi */}
@@ -249,7 +251,7 @@ function MembriWall() {
             onClick={toggleReceived}
             className="btn btn-outline w-full relative"
           >
-            👊 I tuoi poke: {received.length}
+            Ti hanno detto ciao: {received.length}
             {unseen > 0 && (
               <span className="ml-2 px-2 py-0.5 text-[10px] bg-brand-red text-white rounded-full animate-pulse-glow">
                 {unseen} {unseen === 1 ? "nuovo" : "nuovi"}
@@ -259,7 +261,7 @@ function MembriWall() {
           {showReceived && (
             <div className="mt-2 flex flex-col gap-1.5 animate-fade-up">
               <p className="text-[10px] uppercase tracking-[0.3em] text-brand-gray/60 px-1 py-1">
-                stai simpatico a questa gente — solo tu puoi vederlo
+                questi ti hanno detto ciao — lo vedi solo tu
               </p>
               {received.map((p, i) => (
                 <div
@@ -313,7 +315,7 @@ function MembriWall() {
                   <SegnoCrew role={r.role} />
                 </span>
                 <span className="font-display text-brand-red text-lg mt-0.5" style={{ textShadow: "0 0 12px rgba(224,24,31,0.4)" }}>
-                  {r.poke_count} 👊
+                  {r.poke_count} ciao
                 </span>
               </div>
             );
@@ -374,9 +376,9 @@ function MembriWall() {
                       ? "border-white/10 text-brand-gray/40 cursor-default"
                       : "border-brand-red/60 text-white bg-brand-red/10 hover:bg-brand-red hover:scale-105 active:scale-95"
                   }`}
-                  aria-label={`Poke a ${r.alias}`}
+                  aria-label={`Di' ciao a ${r.alias}`}
                 >
-                  {r.poked_by_me_today ? "✓ oggi" : "poke"}
+                  {r.poked_by_me_today ? "✓ detto" : "ciao"}
                 </button>
               )}
             </div>
@@ -387,15 +389,7 @@ function MembriWall() {
         )}
       </div>
 
-      {/* Nav bottom */}
-      <nav className="w-full mt-10 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
-        <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
-        <button onClick={() => router.push("/card")} className="hover:text-brand-gray transition-colors">Card</button>
-        <button onClick={() => router.push("/pass")} className="hover:text-brand-gray transition-colors">QR code</button>
-        <button onClick={() => router.push("/membri")} className="text-brand-red">Muro</button>
-        <button onClick={() => router.push("/profilo")} className="hover:text-brand-gray transition-colors">Profilo</button>
-        <button onClick={() => router.push("/invita")} className="hover:text-brand-gray transition-colors">Invita</button>
-      </nav>
+      <NavBasso />
     </main>
   );
 }

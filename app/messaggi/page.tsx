@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchLegami } from "@/lib/legami";
 import Volto from "@/components/Volto";
+import { NavBasso } from "@/components/NavBasso";
 
 type ChatRequest = {
   id: string;
@@ -249,14 +250,7 @@ export default function MessaggiPage() {
         </section>
       )}
 
-      {/* Nav bottom */}
-      <nav className="w-full mt-10 pt-6 border-t border-white/5 flex justify-around text-[10px] uppercase tracking-widest text-brand-gray/50">
-        <button onClick={() => router.push("/")} className="hover:text-brand-gray transition-colors">Home</button>
-        <button onClick={() => router.push("/membri")} className="hover:text-brand-gray transition-colors">Muro</button>
-        <button onClick={() => router.push("/legami")} className="hover:text-brand-gray transition-colors">Legami</button>
-        <button onClick={() => router.push("/messaggi")} className="text-brand-red">Chat</button>
-        <button onClick={() => router.push("/profilo")} className="hover:text-brand-gray transition-colors">Profilo</button>
-      </nav>
+      <NavBasso />
     </main>
   );
 }

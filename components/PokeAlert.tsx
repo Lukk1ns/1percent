@@ -33,8 +33,7 @@ export function PokeAlert() {
         boxShadow: "0 0 24px rgba(224,24,31,0.35)",
       }}
     >
-      <span className="text-base">👊</span>
-      Stai simpatico a qualcuno
+      Ti hanno detto ciao
       <span className="px-1.5 py-0.5 text-[10px] bg-brand-red rounded-full">{count}</span>
     </Link>
   );
