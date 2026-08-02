@@ -47,3 +47,21 @@ export const LEGAL_NAME = "Papi on the Beach";
  * serve più una serata sola ma tutti gli eventi.
  */
 export const SIGNUPS_OPEN = true;
+
+/**
+ * Si entra SOLO col link di qualcuno.
+ *
+ * true  = chi arriva su /unisciti senza `?ref=` viene fermato, e la home
+ *         non mostra il bottone d'iscrizione ma "si entra su invito".
+ * false = porta aperta a chiunque (com'era prima).
+ *
+ * Serve per le prime ore: Luka manda il suo link nel gruppo e tutti
+ * entrano sotto di lui, poi si apre a tutti quando si svela l'ospite.
+ *
+ * ⚠️ È una porta, non una cassaforte: il controllo sta nel browser,
+ * quindi uno che sa cosa fa può inventarsi un `?ref=` qualunque ed
+ * entrare lo stesso (finirebbe senza chi l'ha portato). Per bloccarlo
+ * davvero servirebbe la regola dentro `join_public` sul server. Per
+ * tenere in riga un gruppo di promoter va benissimo così.
+ */
+export const SOLO_SU_INVITO = true;

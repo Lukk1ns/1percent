@@ -4,11 +4,38 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AVATARS } from "@/lib/avatars";
-import { SIGNUPS_OPEN } from "@/lib/event";
+import { SIGNUPS_OPEN, SOLO_SU_INVITO } from "@/lib/event";
 import { createClient } from "@/lib/supabase/client";
 import { type Bozza } from "@/lib/registrazione";
 
 // Schermata mostrata quando le iscrizioni sono chiuse (interruttore admin)
+/** Porta chiusa a chi non ha il link di nessuno. */
+function SoloSuInvito() {
+  return (
+    <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 max-w-md mx-auto w-full text-center">
+      <p className="font-display text-6xl text-brand-red mb-6">1%</p>
+      <h1 className="font-display text-3xl text-white mb-4 uppercase leading-tight">
+        Si entra solo su invito
+      </h1>
+      <p className="text-brand-gray text-sm leading-relaxed mb-2">
+        Non ci si iscrive da soli: serve il link di chi è già dentro.
+      </p>
+      <p className="text-brand-gray text-sm leading-relaxed mb-10">
+        Fattelo mandare da chi ti ha parlato di noi.
+      </p>
+      <Link href="/" className="btn btn-outline">
+        ← Torna alla home
+      </Link>
+      <Link
+        href="/login"
+        className="mt-6 text-xs uppercase tracking-widest text-brand-gray hover:text-white transition-colors"
+      >
+        Già dell&apos;1%? Rientra →
+      </Link>
+    </main>
+  );
+}
+
 function SignupsClosed() {
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 max-w-md mx-auto w-full text-center">
@@ -134,11 +161,13 @@ function JoinForm() {
 
   if (signupsOpen === null) return null; // controllo in corso, evita flash del form
   if (signupsOpen === false) return <SignupsClosed />;
+  // Solo su invito: senza il link di qualcuno non si passa
+  if (SOLO_SU_INVITO && !refCode) return <SoloSuInvito />;
 
   return (
     <main className="flex-1 flex flex-col items-center px-6 py-12 max-w-md mx-auto w-full">
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">
-        {vuoleStaff ? "passo 1 di 3" : "passo 1 di 2"}
+        passo 1 di 2
       </p>
       <h1 className="font-display text-4xl text-brand-red mb-1">Chi sei?</h1>
       <p className="text-brand-gray text-sm mb-10">

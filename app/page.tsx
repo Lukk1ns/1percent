@@ -7,7 +7,13 @@ import Locandina from "@/components/Locandina";
 import { Marquee } from "@/components/Marquee";
 import { createClient } from "@/lib/supabase/client";
 import { dataLunga, ora, type Evento } from "@/lib/eventi";
-import { BRAND_AREA, BRAND_CLAIM, BRAND_PAYOFF, STAND_NON_INGRESSO } from "@/lib/event";
+import {
+  BRAND_AREA,
+  BRAND_CLAIM,
+  BRAND_PAYOFF,
+  SOLO_SU_INVITO,
+  STAND_NON_INGRESSO,
+} from "@/lib/event";
 
 const TICKER = [
   "1% · not for everyone",
@@ -265,13 +271,23 @@ export default function Home() {
                     <p className="font-display text-lg uppercase leading-tight text-white sm:text-xl">
                       Vuoi vederla nitida?
                     </p>
-                    <p className="mt-2 max-w-[34ch] text-sm leading-relaxed text-brand-gray">
-                      La locandina intera è per chi è dentro. Trenta secondi per
-                      iscriverti, nessun nome vero.
-                    </p>
-                    <Link href="/unisciti" className="led-cta mt-5 sm:max-w-sm">
-                      Iscriviti
-                    </Link>
+                    {SOLO_SU_INVITO ? (
+                      <p className="mt-2 max-w-[34ch] text-sm leading-relaxed text-brand-gray">
+                        La locandina intera è per chi è dentro, e adesso si entra{" "}
+                        <span className="text-white">solo su invito</span>: serve il link
+                        di qualcuno che c&apos;è già.
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mt-2 max-w-[34ch] text-sm leading-relaxed text-brand-gray">
+                          La locandina intera è per chi è dentro. Trenta secondi per
+                          iscriverti, nessun nome vero.
+                        </p>
+                        <Link href="/unisciti" className="led-cta mt-5 sm:max-w-sm">
+                          Iscriviti
+                        </Link>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -353,14 +369,29 @@ export default function Home() {
                 Il 99% guarda le storie.<br />
                 <span className="text-brand-red">L&apos;1% è sulla lista.</span>
               </p>
-              <Link href="/unisciti" className="led-reveal mt-7 led-cta">
-                Iscriviti o unisciti a noi
-              </Link>
+              {SOLO_SU_INVITO ? (
+                // Porta su invito: niente bottone che porterebbe a un muro
+                <div className="led-reveal mt-7 border border-brand-red/40 bg-brand-red/[0.06] px-5 py-6 sm:px-7">
+                  <p className="font-display text-xl uppercase leading-tight text-white sm:text-2xl">
+                    Si entra solo su invito
+                  </p>
+                  <p className="mt-3 max-w-[42ch] text-sm leading-relaxed text-brand-gray">
+                    Non ci si iscrive da soli: serve il link di chi è già dentro.
+                    Fattelo mandare da chi ti ha parlato di noi.
+                  </p>
+                </div>
+              ) : (
+                <Link href="/unisciti" className="led-reveal mt-7 led-cta">
+                  Iscriviti o unisciti a noi
+                </Link>
+              )}
               <div className="mt-4 flex flex-col gap-2 font-tech text-[10px] uppercase tracking-[0.25em] sm:flex-row sm:items-center sm:justify-between">
                 <Link href="/login" className="text-brand-gray hover:text-white">
                   già dentro? rientra →
                 </Link>
-                <span className="text-brand-gray/50">30 secondi, nessun nome vero</span>
+                {!SOLO_SU_INVITO && (
+                  <span className="text-brand-gray/50">30 secondi, nessun nome vero</span>
+                )}
               </div>
             </>
           )}
