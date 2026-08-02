@@ -821,12 +821,32 @@ export default function AdminDashboardPage() {
       })()}
 
       {/* Lista membri */}
-      {tab === "members" && <>
+      {tab === "members" && (() => {
+      // Il ruolo arriva solo dopo aver incollato 08_chi_e_chi.sql
+      const datiRuolo = members.some((m) => typeof m.role === "string");
+      return <>
       <p className="text-xs uppercase tracking-widest text-brand-gray mb-3">
         Tutti i membri — dal più recente
       </p>
 
+      {/* Se il ruolo non arriva dal database, NON si indovina: dire
+          "cliente" a uno staff approvato è peggio che non dire niente. */}
+      {!datiRuolo && members.length > 0 && (
+        <div className="border border-amber-300/40 bg-amber-300/5 px-4 py-3 mb-4">
+          <p className="text-amber-300 text-[10px] uppercase tracking-widest">
+            manca uno script
+          </p>
+          <p className="text-brand-gray text-xs leading-relaxed mt-1.5">
+            Il database non manda ancora il ruolo, quindi qui non si può sapere chi è
+            staff e chi cliente. Incolla{" "}
+            <span className="text-white font-mono">supabase/08_chi_e_chi.sql</span> nel
+            SQL Editor di Supabase e ricarica.
+          </p>
+        </div>
+      )}
+
       {/* Chi è entrato come cosa. I numeri sono cliccabili: filtrano. */}
+      {datiRuolo && (
       <div className="flex flex-wrap gap-2 mb-4">
         {FILTRI.map((f) => {
           const quanti =
@@ -847,6 +867,7 @@ export default function AdminDashboardPage() {
           );
         })}
       </div>
+      )}
 
       {loading ? (
         <p className="text-brand-gray text-sm animate-pulse-glow">Caricamento…</p>
@@ -858,7 +879,7 @@ export default function AdminDashboardPage() {
             .filter((m) => filtro === "tutti" || tipoDi(m) === filtro)
             .map((m) => {
             const avatar = m.avatar_id ? getAvatar(m.avatar_id) : null;
-            const etichetta = ETICHETTE[tipoDi(m)];
+            const etichetta = datiRuolo ? ETICHETTE[tipoDi(m)] : null;
             const date = new Date(m.created_at).toLocaleDateString("it-IT", {
               day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
             });
@@ -889,11 +910,13 @@ export default function AdminDashboardPage() {
                   ) : (
                     <p className="text-white text-sm font-medium truncate flex items-center gap-2">
                       <span className="truncate">{m.alias}</span>
-                      <span
-                        className={`flex-shrink-0 border px-1.5 py-0.5 text-[9px] uppercase tracking-widest ${etichetta.classe}`}
-                      >
-                        {etichetta.testo}
-                      </span>
+                      {etichetta && (
+                        <span
+                          className={`flex-shrink-0 border px-1.5 py-0.5 text-[9px] uppercase tracking-widest ${etichetta.classe}`}
+                        >
+                          {etichetta.testo}
+                        </span>
+                      )}
                     </p>
                   )}
                   <p className="text-brand-gray/50 text-[10px]">
@@ -952,7 +975,8 @@ export default function AdminDashboardPage() {
           })}
         </div>
       )}
-      </>}
+      </>;
+      })()}
     </main>
   );
 }
