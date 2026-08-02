@@ -70,7 +70,38 @@ type Member = {
   member_number: number;
   created_at: string;
   email: string | null;
+  /* Arrivano da supabase/08_chi_e_chi.sql. Finché non è stato incollato
+     restano vuoti e la lista si comporta come prima. */
+  role?: string | null;
+  crew_request_status?: string | null;
+  nome?: string | null;
+  invitato_da?: string | null;
 };
+
+/** Come è entrato: una parola sola, quella che serve a Luka. */
+type Tipo = "crew" | "attesa" | "rifiutato" | "cliente";
+
+function tipoDi(m: Member): Tipo {
+  if (m.role === "crew") return "crew";
+  if (m.crew_request_status === "in_attesa") return "attesa";
+  if (m.crew_request_status === "rifiutata") return "rifiutato";
+  return "cliente";
+}
+
+const ETICHETTE: Record<Tipo, { testo: string; classe: string }> = {
+  crew: { testo: "staff", classe: "text-brand-red border-brand-red/50 bg-brand-red/10" },
+  attesa: { testo: "si è candidato", classe: "text-amber-300 border-amber-300/40 bg-amber-300/10" },
+  rifiutato: { testo: "rifiutato", classe: "text-white/40 border-white/15" },
+  cliente: { testo: "cliente", classe: "text-sky-300/80 border-sky-300/30 bg-sky-300/5" },
+};
+
+const FILTRI: { id: Tipo | "tutti"; testo: string }[] = [
+  { id: "tutti", testo: "tutti" },
+  { id: "crew", testo: "staff" },
+  { id: "attesa", testo: "candidati" },
+  { id: "cliente", testo: "clienti" },
+  { id: "rifiutato", testo: "rifiutati" },
+];
 
 type Report = {
   id: string;
@@ -104,6 +135,7 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [filtro, setFiltro] = useState<Tipo | "tutti">("tutti");
   const [answerMembers, setAnswerMembers] = useState<AnswerMember[]>([]);
   const [onlyWritten, setOnlyWritten] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -790,9 +822,31 @@ export default function AdminDashboardPage() {
 
       {/* Lista membri */}
       {tab === "members" && <>
-      <p className="text-xs uppercase tracking-widest text-brand-gray mb-4">
+      <p className="text-xs uppercase tracking-widest text-brand-gray mb-3">
         Tutti i membri — dal più recente
       </p>
+
+      {/* Chi è entrato come cosa. I numeri sono cliccabili: filtrano. */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {FILTRI.map((f) => {
+          const quanti =
+            f.id === "tutti" ? members.length : members.filter((m) => tipoDi(m) === f.id).length;
+          const attivo = filtro === f.id;
+          return (
+            <button
+              key={f.id}
+              onClick={() => setFiltro(f.id)}
+              className={`border px-3 py-1.5 text-[10px] uppercase tracking-widest transition-all ${
+                attivo
+                  ? "border-brand-red bg-brand-red/15 text-white"
+                  : "border-white/10 text-brand-gray hover:border-white/30"
+              }`}
+            >
+              {f.testo} <span className="tabular-nums text-white/80">{quanti}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {loading ? (
         <p className="text-brand-gray text-sm animate-pulse-glow">Caricamento…</p>
@@ -800,8 +854,11 @@ export default function AdminDashboardPage() {
         <p className="text-brand-gray/40 text-sm">Nessun membro ancora.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {members.map((m) => {
+          {members
+            .filter((m) => filtro === "tutti" || tipoDi(m) === filtro)
+            .map((m) => {
             const avatar = m.avatar_id ? getAvatar(m.avatar_id) : null;
+            const etichetta = ETICHETTE[tipoDi(m)];
             const date = new Date(m.created_at).toLocaleDateString("it-IT", {
               day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
             });
@@ -830,12 +887,26 @@ export default function AdminDashboardPage() {
                       autoFocus
                     />
                   ) : (
-                    <p className="text-white text-sm font-medium truncate">{m.alias}</p>
+                    <p className="text-white text-sm font-medium truncate flex items-center gap-2">
+                      <span className="truncate">{m.alias}</span>
+                      <span
+                        className={`flex-shrink-0 border px-1.5 py-0.5 text-[9px] uppercase tracking-widest ${etichetta.classe}`}
+                      >
+                        {etichetta.testo}
+                      </span>
+                    </p>
                   )}
                   <p className="text-brand-gray/50 text-[10px]">
                     #{String(m.member_number).padStart(4, "0")} · {date}
                     {m.email && <> · {m.email}</>}
                   </p>
+                  {(m.nome || m.invitato_da) && (
+                    <p className="text-brand-gray/40 text-[10px]">
+                      {m.nome && <>{m.nome}</>}
+                      {m.nome && m.invitato_da && <> · </>}
+                      {m.invitato_da && <>portato da {m.invitato_da}</>}
+                    </p>
+                  )}
                 </div>
 
                 {/* Azioni */}
