@@ -220,7 +220,8 @@ function MembriWall() {
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">il muro</p>
       <h1 className="font-display text-brand-red text-5xl mb-3">1%</h1>
       <p className="text-brand-gray text-sm text-center mb-1 max-w-xs">
-        Di&apos; <span className="text-white">ciao</span> a chi ti interessa. Uno al giorno a testa.
+        Di&apos; <span className="text-white">ciao</span> a chi ti interesserebbe capire chi è.
+        Uno al giorno a testa.
       </p>
       <p className="text-brand-gray/60 text-xs text-center mb-8 max-w-xs">
         Se te lo dice anche lui, vi vedete in faccia e la chat si apre. Gli altri vedono

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { BUCKET_NITIDA, locandinaSfocataUrl } from "@/lib/locandina";
+import { locandinaSfocataUrl } from "@/lib/locandina";
 
 type Props = {
   /** Il file della locandina, come lo manda il server. Se manca, non si mostra niente. */
@@ -22,6 +22,10 @@ type Props = {
  * sfocata — quella che il server ha ridotto a 180px prima di sfocarla,
  * quindi non c'è nessun modo di ricavarne l'originale — con il lucchetto
  * e l'invito a iscriversi.
+ *
+ * La nitida non arriva più come URL firmato: passa da /api/locandina/vista,
+ * che ci fonde dentro il nome di chi la guarda. Se uno screenshot esce
+ * prima del momento, dallo screenshot si risale a chi l'ha fatto.
  */
 export default function Locandina({ coverKey, coverV, nome, className = "" }: Props) {
   const [nitida, setNitida] = useState<string | null>(null);
@@ -44,14 +48,13 @@ export default function Locandina({ coverKey, coverV, nome, className = "" }: Pr
         return;
       }
       if (vivo) setLoggato(true);
-      // Chi decide è il server: la firma arriva solo a chi ha un profilo
-      // (o allo staff). Se non è dei nostri, qui torna un errore e resta
+      // Chi decide è il server: la copia firmata arriva solo a chi ha un
+      // profilo (o allo staff). Se non è dei nostri risponde 403 e resta
       // la versione sfocata — il controllo non è nel browser.
-      const { data: firmata } = await supabase.storage
-        .from(BUCKET_NITIDA)
-        .createSignedUrl(coverKey, 3600);
+      const url = `/api/locandina/vista?key=${encodeURIComponent(coverKey)}`;
+      const res = await fetch(url, { cache: "no-store" });
       if (!vivo) return;
-      setNitida(firmata?.signedUrl ?? null);
+      setNitida(res.ok ? url : null);
       setControllato(true);
     })();
 
