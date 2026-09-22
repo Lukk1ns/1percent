@@ -425,9 +425,27 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
               </div>
 
               {fasce.length === 0 ? (
-                <p className="text-[11px] leading-relaxed text-brand-gray">
-                  Per questa serata non ci sono ancora i prezzi. Avvisa Luka.
-                </p>
+                r.senza_limite ? (
+                  <div className="border border-amber-400/40 bg-amber-400/5 px-4 py-4">
+                    <p className="font-display text-lg uppercase leading-none text-amber-300">
+                      Mancano i prezzi
+                    </p>
+                    <p className="mt-2 text-[11px] leading-relaxed text-white/70">
+                      Senza almeno una fascia di prezzo non si può fare nessun biglietto:
+                      è il prezzo che finisce dentro al biglietto.
+                    </p>
+                    <Link
+                      href="/admin/pr"
+                      className="mt-3 inline-block border border-amber-400/60 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-amber-200"
+                    >
+                      metti i prezzi →
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="text-[11px] leading-relaxed text-brand-gray">
+                    Per questa serata non ci sono ancora i prezzi. Avvisa Luka.
+                  </p>
+                )
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {fasce.map((f) => {
@@ -458,13 +476,20 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
 
               {esito && <p className="text-sm text-brand-red">{esito}</p>}
 
-              <button
-                type="submit"
-                disabled={salvando || !fascia}
-                className="mt-1 bg-brand-red py-4 text-sm font-semibold uppercase tracking-widest text-white disabled:opacity-40"
-              >
-                {salvando ? "Salvo…" : "Fai il biglietto"}
-              </button>
+              {fasce.length > 0 && (
+                <button
+                  type="submit"
+                  disabled={salvando || !fascia}
+                  className="mt-1 bg-brand-red py-4 text-sm font-semibold uppercase tracking-widest text-white disabled:opacity-40"
+                >
+                  {salvando ? "Salvo…" : "Fai il biglietto"}
+                </button>
+              )}
+              {fasce.length > 0 && !fascia && (
+                <p className="text-[11px] text-amber-300">
+                  Scegli una fascia qui sopra: è quella che decide il prezzo.
+                </p>
+              )}
 
               {!r.senza_limite && (
                 <p className="text-[10px] leading-relaxed text-brand-gray/60">

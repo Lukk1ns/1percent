@@ -409,7 +409,29 @@ export default function AdminPrPage() {
           </select>
         </div>
 
-        {ev && (
+        {ev && fasce.length === 0 && (
+          <div className="mt-4 border border-amber-400/50 bg-amber-400/5 px-4 py-4">
+            <p className="font-display text-xl uppercase leading-none text-amber-300">
+              Prima i prezzi
+            </p>
+            <p className="mt-2 text-[12px] leading-relaxed text-white/70">
+              Questa serata non ha ancora nessuna fascia di prezzo, e senza prezzo non si può
+              fare nessun biglietto — né tu né i PR. Si mettono qui sotto, nella scheda
+              &quot;Prezzi&quot;: nome (Donna, Uomo, Prevendita…) e quanto costa.
+            </p>
+            <button
+              onClick={() => {
+                setScheda("prezzi");
+                document.getElementById("schede")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="mt-3 border border-amber-400/60 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-amber-200"
+            >
+              portami ai prezzi →
+            </button>
+          </div>
+        )}
+
+        {ev && fasce.length > 0 && (
           <Link
             href={`/pr/${evento}`}
             className="mt-4 block border border-brand-red bg-brand-red/10 px-4 py-4 transition-colors hover:bg-brand-red/20"
@@ -495,7 +517,7 @@ export default function AdminPrPage() {
         )}
 
         {/* Schede */}
-        <div className="mt-8 flex gap-2 border-b border-white/10">
+        <div id="schede" className="mt-8 flex gap-2 border-b border-white/10">
           {(
             [
               ["pr", "PR"],
