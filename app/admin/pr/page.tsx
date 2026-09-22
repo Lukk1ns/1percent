@@ -69,6 +69,29 @@ type BigliettoAdmin = {
 
 type Config = { aperta: boolean; vendite_on: boolean; soglia: number };
 
+type Movimento = {
+  quando: string;
+  tipo: string;
+  pr_alias: string;
+  pr_nome: string | null;
+  importo: number | null;
+  biglietti: number | null;
+  nota: string | null;
+  segnato_da: string | null;
+  id: string;
+};
+
+type Conto = {
+  pr_alias: string;
+  pr_nome: string | null;
+  biglietti: number;
+  valore_venduto: number;
+  soldi_portati: number;
+  differenza: number;
+  attivi_coperti: boolean;
+  nota: string;
+};
+
 type Cruscotto = {
   consegnate: number;
   vendute: number;
@@ -291,7 +314,11 @@ export default function AdminPrPage() {
     v: null,
   });
   const [perFascia, setPerFascia] = useState<PerFascia[]>([]);
-  const [scheda, setScheda] = useState<"pr" | "prezzi" | "grafica" | "biglietti">("pr");
+  const [scheda, setScheda] = useState<
+    "pr" | "prezzi" | "grafica" | "biglietti" | "registro"
+  >("pr");
+  const [registro, setRegistro] = useState<Movimento[]>([]);
+  const [conti, setConti] = useState<Conto[]>([]);
   const [aperto, setAperto] = useState<string | null>(null);
   const [lavorando, setLavorando] = useState(false);
 
@@ -303,16 +330,20 @@ export default function AdminPrPage() {
   const caricaEvento = useCallback(async (id: string) => {
     if (!id) return;
     const supabase = createClient();
-    const [prRes, fRes, bRes, cRes, pfRes, gRes] = await Promise.all([
+    const [prRes, fRes, bRes, cRes, pfRes, gRes, regRes, contiRes] = await Promise.all([
       supabase.rpc("admin_pr_lista", { p_event: id }),
       supabase.rpc("pr_fasce", { p_event: id }),
       supabase.rpc("admin_presales", { p_event: id }),
       supabase.rpc("admin_pr_cruscotto", { p_event: id }),
       supabase.rpc("admin_pr_per_fascia", { p_event: id }),
       supabase.rpc("admin_event_ticket", { p_event: id }),
+      supabase.rpc("admin_registro_soldi", { p_event: id }),
+      supabase.rpc("admin_controllo_conti", { p_event: id }),
     ]);
     // Stessa regola del resto: se il database si lamenta, si legge.
-    const primoErrore = [prRes, fRes, bRes, cRes, pfRes, gRes].find((r) => r.error)?.error;
+    const primoErrore = [prRes, fRes, bRes, cRes, pfRes, gRes, regRes, contiRes].find(
+      (r) => r.error,
+    )?.error;
     setErrore(primoErrore ? primoErrore.message : null);
 
     setPr(prRes.data ?? []);
@@ -324,6 +355,8 @@ export default function AdminPrPage() {
       key: gRes.data?.[0]?.ticket_key ?? null,
       v: gRes.data?.[0]?.ticket_v ?? null,
     });
+    setRegistro(regRes.data ?? []);
+    setConti(contiRes.data ?? []);
   }, []);
 
   const carica = useCallback(async () => {
@@ -550,6 +583,64 @@ export default function AdminPrPage() {
       return;
     }
     await caricaEvento(evento);
+  }
+
+  /** Correggere un incasso sbagliato senza cancellarlo: si scrive il contrario. */
+  async function storna(m: Movimento) {
+    const motivo = window.prompt(
+      `Stornare l'incasso di ${euro(m.importo ?? 0)} da ${m.pr_alias}?\n\n` +
+        `La riga NON viene cancellata: ne viene scritta una uguale e contraria,\n` +
+        `così resta la storia di cos'è successo e i conti tornano.\n\nPerché lo storni?`,
+      "",
+    );
+    if (motivo === null) return;
+    setLavorando(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("admin_pr_storna", {
+      p_settlement: m.id,
+      p_motivo: motivo,
+    });
+    setLavorando(false);
+    if (error) {
+      window.alert(error.message);
+      return;
+    }
+    if (data?.[0]?.esito !== "ok") {
+      window.alert("Movimento non trovato.");
+      return;
+    }
+    await caricaEvento(evento);
+    await carica();
+  }
+
+  /** Il registro su un file, da tenere fuori dal sito. */
+  function scaricaRegistro() {
+    const righe = [
+      ["quando", "tipo", "pr", "nome", "importo", "biglietti", "nota", "segnato da"],
+      ...registro.map((m) => [
+        new Date(m.quando).toLocaleString("it-IT"),
+        m.tipo,
+        m.pr_alias,
+        m.pr_nome ?? "",
+        m.importo !== null ? String(m.importo) : "",
+        m.biglietti !== null ? String(m.biglietti) : "",
+        m.nota ?? "",
+        m.segnato_da ?? "",
+      ]),
+    ];
+    // il punto e virgola è quello che Excel italiano si aspetta
+    const csv = righe
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+    const nome = (ev?.nome ?? "serata").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `soldi-${nome}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   async function annulla(b: BigliettoAdmin) {
@@ -827,6 +918,7 @@ export default function AdminPrPage() {
               ["prezzi", "Prezzi"],
               ["grafica", "Grafica"],
               ["biglietti", `Biglietti (${biglietti.length})`],
+              ["registro", "Soldi"],
             ] as const
           ).map(([k, etichetta]) => (
             <button
@@ -1038,6 +1130,142 @@ export default function AdminPrPage() {
             versione={grafica.v}
             onFatto={() => caricaEvento(evento)}
           />
+        )}
+
+        {scheda === "registro" && (
+          <div className="mt-5">
+            {/* Il controllo: i conti tornano? */}
+            <div className="border border-white/10 px-4 py-4">
+              <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+                i conti tornano?
+              </p>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-brand-gray/70">
+                Rifatti da zero partendo dalle righe, non da un totale salvato. Da guardare
+                a fine serata prima di chiudere la cassa.
+              </p>
+
+              <div className="mt-4 flex flex-col gap-2">
+                {conti.map((c) => {
+                  const allarme = c.nota.startsWith("⚠️");
+                  return (
+                    <div
+                      key={c.pr_alias}
+                      className={`border px-3 py-3 ${
+                        allarme ? "border-brand-red/50 bg-brand-red/5" : "border-white/10"
+                      }`}
+                    >
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="truncate text-sm text-white">
+                          {c.pr_alias}
+                          {c.pr_nome && (
+                            <span className="ml-2 text-brand-gray">{c.pr_nome}</span>
+                          )}
+                        </p>
+                        <p
+                          className={`flex-shrink-0 font-display text-lg leading-none ${
+                            c.differenza > 0
+                              ? "text-brand-red"
+                              : c.differenza < 0
+                                ? "text-amber-300"
+                                : "text-emerald-400"
+                          }`}
+                        >
+                          {euro(c.differenza)}
+                        </p>
+                      </div>
+                      <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                        {c.biglietti} biglietti · venduto {euro(c.valore_venduto)} · portato{" "}
+                        {euro(c.soldi_portati)}
+                      </p>
+                      <p
+                        className={`mt-1 text-[11px] ${
+                          allarme ? "text-brand-red" : "text-brand-gray/70"
+                        }`}
+                      >
+                        {c.nota}
+                      </p>
+                    </div>
+                  );
+                })}
+
+                {conti.length === 0 && (
+                  <p className="px-3 py-4 text-center text-[12px] text-brand-gray">
+                    Ancora nessun movimento per questa serata.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Il registro vero e proprio */}
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+                registro · {registro.length} movimenti
+              </p>
+              <button
+                onClick={scaricaRegistro}
+                disabled={registro.length === 0}
+                className="border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red disabled:opacity-40"
+              >
+                scarica il registro
+              </button>
+            </div>
+
+            <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
+              Niente qui dentro si cancella: gli sbagli si correggono scrivendo il movimento
+              contrario, e resta scritto tutto. Scarica il file dopo ogni serata e tienilo
+              fuori dal sito.
+            </p>
+
+            <div className="mt-4 flex flex-col gap-2">
+              {registro.map((m) => (
+                <div key={m.id + m.quando} className="border border-white/10 px-3 py-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="truncate text-sm text-white">
+                      <span
+                        className={
+                          m.tipo === "incasso"
+                            ? "text-emerald-400"
+                            : m.tipo === "vendita direzione"
+                              ? "text-brand-red"
+                              : "text-brand-gray"
+                        }
+                      >
+                        {m.tipo}
+                      </span>
+                      <span className="ml-2">{m.pr_alias}</span>
+                    </p>
+                    <p className="flex-shrink-0 font-tech text-[12px] text-white">
+                      {m.importo !== null
+                        ? euro(m.importo)
+                        : `${(m.biglietti ?? 0) > 0 ? "+" : ""}${m.biglietti} prev.`}
+                    </p>
+                  </div>
+                  <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                    {new Date(m.quando).toLocaleString("it-IT")}
+                    {m.segnato_da ? ` · ${m.segnato_da}` : ""}
+                  </p>
+                  {m.nota && (
+                    <p className="mt-1 text-[11px] text-brand-gray/80">{m.nota}</p>
+                  )}
+                  {m.tipo === "incasso" && (
+                    <button
+                      onClick={() => storna(m)}
+                      disabled={lavorando}
+                      className="mt-2 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray hover:text-brand-red disabled:opacity-40"
+                    >
+                      storna
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {registro.length === 0 && (
+                <p className="border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">
+                  Nessun movimento. Compare tutto qui: consegne, incassi, vendite tue.
+                </p>
+              )}
+            </div>
+          </div>
         )}
 
         {scheda === "biglietti" && (

@@ -4,6 +4,22 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**I SOLDI NON SI CANCELLANO (22 set, `supabase/19_soldi_al_sicuro.sql`).** Richiesta di Luka dopo il
+controllo di sicurezza: *"non posso rischiare di perdere traccia dei soldi raccolti e da chi"* —
+gli sforamenti di una prevendita e i link condivisi li accetta, la contabilità no.
+`pr_settlements` e `pr_allocations` hanno un **trigger che rifiuta UPDATE e DELETE**: sono un
+registro, si scrive in fondo e basta. Le correzioni si fanno con un **movimento contrario**
+(`admin_pr_storna`, che scrive `-importo` con la nota "STORNO di <data>"), come in contabilità:
+resta l'errore e resta la correzione. **Conseguenza voluta: una serata con dei soldi registrati
+non si può più cancellare** — prima si storna.
+`admin_registro_soldi(event)` = chi ha portato quanto, quando e chi l'ha segnato (incassi +
+consegne/ritiri + vendite della direzione, in ordine di tempo). `admin_controllo_conti(event)`
+**rifà le somme da zero partendo dalle righe**, non da un totale salvato, e segnala col ⚠️ chi ha
+portato più di quanto ha venduto o ha biglietti validi senza soldi dietro (gli "attiva al volo").
+Nel pannello è la scheda **Soldi**, con il bottone **scarica il registro** (CSV con `;` e BOM, per
+Excel italiano): va scaricato dopo ogni serata e tenuto fuori dal sito, perché è l'unica copia che
+non dipende da Supabase.
+
 **CONTROLLO DI SICUREZZA del 22 settembre 2026 (`supabase/18_sicurezza.sql`).** Fatto attaccando il
 sito da fuori con la sola chiave pubblica. **Reggono:** RLS su tutte le tabelle (nessuna riga esce
 in lettura diretta), tutte le RPC `admin_*` respingono chi non è admin, `members_wall`/
