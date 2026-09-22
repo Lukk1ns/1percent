@@ -30,6 +30,19 @@ valido**, perché i soldi li ha in mano lui. `presales.pr_id` è diventata nulla
 solo dell'admin**: i PR non hanno nessuna funzione per farlo.
 **PENDING Luka: incollare `10_prevendite_direzione.sql` dopo il 09.**
 
+**⚠️ GOTCHA — i nomi delle colonne di ritorno sono variabili (22 set, `11_prevendite_fix.sql`).**
+In una funzione `plpgsql` con `returns table (...)`, ogni colonna dichiarata diventa una variabile:
+se una tabella interrogata ha una colonna con lo stesso nome, Postgres si ferma con
+*"column reference ... is ambiguous"*. È successo con `event_id`, `pr_id` e `vendite_on`, e
+l'effetto era subdolo — `/pr` diceva "nessuna serata", il pannello "nessuna crew approvata",
+la vendita non partiva: il sito **ignorava l'errore** e mostrava una lista vuota.
+Regola: dentro queste funzioni **ogni colonna va scritta `tabella.colonna`**, alias compresi nei
+`lateral`. Nel sito, mai `const { data } = await rpc(...)` senza guardare `error`.
+Il cruscotto della serata (`admin_pr_cruscotto` + `admin_pr_per_fascia`) rifà quello che Luka
+guardava su Evently: consegnate, vendute, in attesa, valide, entrate, incasso, già in cassa,
+da ritirare, e la divisione per fascia. Tavoli e omaggi restano Fase 3.
+**PENDING Luka: incollare `11_prevendite_fix.sql` dopo il 10.**
+
 Restano da fare: **Fase 2** scanner porta offline (oggi `/admin/scan` non legge ancora i token
 delle prevendite) e **Fase 3** tavoli, omaggi, stampe di fine serata.
 Il biglietto mostra la locandina **sfocata** come sfondo: la nitida è riservata ai membri dalle

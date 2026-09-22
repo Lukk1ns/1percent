@@ -57,7 +57,59 @@ type BigliettoAdmin = {
 
 type Config = { aperta: boolean; vendite_on: boolean };
 
+type Cruscotto = {
+  consegnate: number;
+  vendute: number;
+  da_vendere: number;
+  in_attesa: number;
+  valide: number;
+  entrate: number;
+  persone: number;
+  incasso: number;
+  raccolto: number;
+  da_incassare: number;
+  pr_attivi: number;
+  pr_in_debito: number;
+};
+
+type PerFascia = {
+  label: string;
+  prezzo: number;
+  vendute: number;
+  incasso: number;
+  stock: number | null;
+  rimaste: number | null;
+};
+
 const euro = (n: number) => `${Number(n ?? 0).toFixed(0)} €`;
+
+/** Un numero grande con la sua etichetta sotto. */
+function Riquadro({
+  n,
+  etichetta,
+  colore,
+  forte,
+}: {
+  n: number | string;
+  etichetta: string;
+  colore?: string;
+  forte?: boolean;
+}) {
+  return (
+    <div className="border border-white/10 px-3 py-3">
+      <p
+        className={`font-display leading-none ${forte ? "text-3xl" : "text-2xl"} ${
+          colore ?? "text-white"
+        }`}
+      >
+        {n}
+      </p>
+      <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+        {etichetta}
+      </p>
+    </div>
+  );
+}
 
 /**
  * Prevendite: il pannello di Luka.
@@ -77,6 +129,8 @@ export default function AdminPrPage() {
   const [pr, setPr] = useState<RigaPR[]>([]);
   const [fasce, setFasce] = useState<Fascia[]>([]);
   const [biglietti, setBiglietti] = useState<BigliettoAdmin[]>([]);
+  const [cruscotto, setCruscotto] = useState<Cruscotto | null>(null);
+  const [perFascia, setPerFascia] = useState<PerFascia[]>([]);
   const [scheda, setScheda] = useState<"pr" | "prezzi" | "biglietti">("pr");
   const [aperto, setAperto] = useState<string | null>(null);
   const [lavorando, setLavorando] = useState(false);
@@ -89,14 +143,18 @@ export default function AdminPrPage() {
   const caricaEvento = useCallback(async (id: string) => {
     if (!id) return;
     const supabase = createClient();
-    const [prRes, fRes, bRes] = await Promise.all([
+    const [prRes, fRes, bRes, cRes, pfRes] = await Promise.all([
       supabase.rpc("admin_pr_lista", { p_event: id }),
       supabase.rpc("pr_fasce", { p_event: id }),
       supabase.rpc("admin_presales", { p_event: id }),
+      supabase.rpc("admin_pr_cruscotto", { p_event: id }),
+      supabase.rpc("admin_pr_per_fascia", { p_event: id }),
     ]);
     setPr(prRes.data ?? []);
     setFasce(fRes.data ?? []);
     setBiglietti(bRes.data ?? []);
+    setCruscotto(cRes.data?.[0] ?? null);
+    setPerFascia(pfRes.data ?? []);
   }, []);
 
   const carica = useCallback(async () => {
@@ -361,32 +419,65 @@ export default function AdminPrPage() {
           </Link>
         )}
 
-        {ev && (
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="border border-white/10 px-3 py-3">
-              <p className="font-display text-2xl leading-none text-white">{ev.vendute}</p>
-              <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-                vendute
-              </p>
+        {/* Il cruscotto della serata: quello che si guardava su Evently */}
+        {cruscotto && (
+          <div className="mt-5">
+            <div className="grid grid-cols-3 gap-3">
+              <Riquadro n={cruscotto.consegnate} etichetta="consegnate ai pr" />
+              <Riquadro n={cruscotto.vendute} etichetta="vendute" forte />
+              <Riquadro n={cruscotto.da_vendere} etichetta="ancora in mano" />
             </div>
-            <div className="border border-white/10 px-3 py-3">
-              <p className="font-display text-2xl leading-none text-emerald-400">{ev.attive}</p>
-              <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-                valide
-              </p>
+
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              <Riquadro
+                n={cruscotto.in_attesa}
+                etichetta="in attesa"
+                colore={cruscotto.in_attesa > 0 ? "text-amber-300" : undefined}
+              />
+              <Riquadro n={cruscotto.valide} etichetta="valide" colore="text-emerald-400" />
+              <Riquadro n={cruscotto.entrate} etichetta="entrate" />
             </div>
-            <div className="border border-white/10 px-3 py-3">
-              <p className="font-display text-2xl leading-none text-white">{euro(ev.incasso)}</p>
-              <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-                incasso atteso
-              </p>
+
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              <Riquadro n={euro(cruscotto.incasso)} etichetta="incasso serata" />
+              <Riquadro n={euro(cruscotto.raccolto)} etichetta="già in cassa" />
+              <Riquadro
+                n={euro(cruscotto.da_incassare)}
+                etichetta="da ritirare"
+                colore={cruscotto.da_incassare > 0 ? "text-brand-red" : "text-emerald-400"}
+              />
             </div>
-            <div className="border border-white/10 px-3 py-3">
-              <p className="font-display text-2xl leading-none text-white">{euro(ev.raccolto)}</p>
-              <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-                già in cassa
-              </p>
-            </div>
+
+            {/* Come si dividono: su Evently era Donne / Uomini */}
+            {perFascia.length > 0 && (
+              <div className="mt-3 border border-white/10 px-4 py-3">
+                <p className="font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray">
+                  per fascia
+                </p>
+                <div className="mt-2 flex flex-col gap-2">
+                  {perFascia.map((f) => (
+                    <div key={f.label} className="flex items-baseline justify-between gap-3">
+                      <p className="text-sm text-white">
+                        {f.label}
+                        <span className="ml-2 font-tech text-[10px] text-brand-gray">
+                          {euro(f.prezzo)}
+                          {f.rimaste !== null ? ` · ne restano ${Math.max(f.rimaste, 0)}` : ""}
+                        </span>
+                      </p>
+                      <p className="flex-shrink-0 font-tech text-[11px] text-white">
+                        {f.vendute} <span className="text-brand-gray">· {euro(f.incasso)}</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="mt-3 text-[10px] leading-relaxed text-brand-gray/60">
+              {cruscotto.pr_attivi} PR con prevendite in mano
+              {cruscotto.pr_in_debito > 0 && `, di cui ${cruscotto.pr_in_debito} devono ancora portare i soldi`}
+              . Tavoli e omaggi non sono ancora nel conto: arrivano con la Fase 3.
+            </p>
           </div>
         )}
 
