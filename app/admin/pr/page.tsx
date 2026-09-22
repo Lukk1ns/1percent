@@ -67,7 +67,7 @@ type BigliettoAdmin = {
   created_at: string;
 };
 
-type Config = { aperta: boolean; vendite_on: boolean };
+type Config = { aperta: boolean; vendite_on: boolean; soglia: number };
 
 type Cruscotto = {
   consegnate: number;
@@ -93,6 +93,8 @@ type PerFascia = {
   stock: number | null;
   rimaste: number | null;
   countdown_on: boolean;
+  /** Partito da sé perché il tetto è agli sgoccioli. */
+  countdown_auto: boolean;
   countdown_base: number | null;
   percentuale: number | null;
 };
@@ -351,6 +353,7 @@ export default function AdminPrPage() {
     setConfig({
       aperta: Boolean(cfgRes.data?.[0]?.aperta),
       vendite_on: Boolean(cfgRes.data?.[0]?.vendite_on),
+      soglia: Number(cfgRes.data?.[0]?.soglia ?? 13),
     });
     const lista: EventoAdmin[] = evRes.data ?? [];
     setEventi(lista);
@@ -375,6 +378,25 @@ export default function AdminPrPage() {
       p_aperta: nuovo.aperta,
       p_vendite_on: nuovo.vendite_on,
     });
+  }
+
+  /** Da quante prevendite in giù l'avviso parte da solo. */
+  async function cambiaSoglia() {
+    const risposta = window.prompt(
+      "Quando il tetto di una fascia sta per finire, l'avviso ai PR parte da solo.\n\n" +
+        "Da quante prevendite rimaste deve partire?",
+      String(config?.soglia ?? 13),
+    );
+    if (risposta === null) return;
+    const n = Number(risposta);
+    if (!Number.isInteger(n) || n < 1) {
+      window.alert("Serve un numero intero, almeno 1.");
+      return;
+    }
+    const supabase = createClient();
+    await supabase.rpc("admin_set_soglia_countdown", { p_soglia: n });
+    await carica();
+    await caricaEvento(evento);
   }
 
   async function assegna(prId: string, delta: number) {
@@ -461,12 +483,19 @@ export default function AdminPrPage() {
 
   /** "ULTIME 13": da qui in poi i PR vedono una percentuale, non un numero. */
   async function accendiCountdown(f: PerFascia) {
+    const avvisoTetto =
+      f.rimaste !== null && f.rimaste > 0
+        ? `\nATTENZIONE: questa fascia ha già un tetto e ne restano ${f.rimaste}.\n` +
+          `Confermando, il tetto scende a quante ne scrivi qui sotto.\n`
+        : "";
+
     const risposta = window.prompt(
-      `Ultime prevendite ${f.label.toUpperCase()}.\n\n` +
-        `Quante ne restano da adesso? Da questo momento i PR non vedono più\n` +
+      `Ultime prevendite ${f.label.toUpperCase()}.\n` +
+        avvisoTetto +
+        `\nQuante ne restano da adesso? Da questo momento i PR non vedono\n` +
         `nessun numero: gli compare solo "${f.label} al 75%", che sale mano a mano.\n` +
         `Quando finiscono, per loro la fascia è chiusa (tu continui a vendere).`,
-      "13",
+      String(config?.soglia ?? 13),
     );
     if (risposta === null) return;
     const base = Number(risposta);
@@ -724,34 +753,52 @@ export default function AdminPrPage() {
                   avviso ai pr
                 </p>
                 <p className="mt-1.5 text-[11px] leading-relaxed text-brand-gray/70">
-                  Finché non premi niente, i PR non sanno quante prevendite restano.
-                  Premendo qui gli compare un avviso in percentuale — mai un numero.
+                  Finché non parte niente, i PR non sanno quante prevendite restano.
+                  Quando parte, gli compare una percentuale — mai un numero. Lo accendi
+                  tu quando vuoi, e se una fascia ha un tetto parte comunque da solo alle
+                  ultime {config?.soglia ?? 13}, anche mentre dormi.
                 </p>
                 <div className="mt-3 flex flex-col gap-2">
-                  {perFascia.map((f) => (
-                    <button
-                      key={f.id}
-                      disabled={lavorando}
-                      onClick={() => (f.countdown_on ? spegniCountdown(f) : accendiCountdown(f))}
-                      className={`border px-4 py-3 text-left transition-colors disabled:opacity-40 ${
-                        f.countdown_on
-                          ? "border-amber-400/60 bg-amber-400/10"
-                          : "border-white/20 hover:border-brand-red"
-                      }`}
-                    >
-                      <span className="block font-display text-lg uppercase leading-none text-white">
-                        {f.countdown_on
-                          ? `${f.label} · acceso al ${f.percentuale}%`
-                          : `ultime 13 · ${f.label}`}
-                      </span>
-                      <span className="mt-1 block font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-                        {f.countdown_on
-                          ? `ne restano ${Math.max(f.rimaste ?? 0, 0)} · premi per spegnere`
-                          : "premi per far partire l'avviso"}
-                      </span>
-                    </button>
-                  ))}
+                  {perFascia.map((f) => {
+                    const acceso = f.countdown_on || f.countdown_auto;
+                    return (
+                      <button
+                        key={f.id}
+                        disabled={lavorando}
+                        onClick={() =>
+                          f.countdown_on ? spegniCountdown(f) : accendiCountdown(f)
+                        }
+                        className={`border px-4 py-3 text-left transition-colors disabled:opacity-40 ${
+                          acceso
+                            ? "border-amber-400/60 bg-amber-400/10"
+                            : "border-white/20 hover:border-brand-red"
+                        }`}
+                      >
+                        <span className="block font-display text-lg uppercase leading-none text-white">
+                          {acceso
+                            ? `${f.label} · al ${f.percentuale}%`
+                            : `ultime ${config?.soglia ?? 13} · ${f.label}`}
+                        </span>
+                        <span className="mt-1 block font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                          {f.countdown_auto
+                            ? `partito da solo · ne restano ${Math.max(f.rimaste ?? 0, 0)}`
+                            : f.countdown_on
+                              ? `acceso da te · ne restano ${Math.max(f.rimaste ?? 0, 0)} · premi per spegnere`
+                              : f.rimaste !== null
+                                ? `tetto a ${f.stock}, ne restano ${f.rimaste} · premi per far partire l'avviso adesso`
+                                : "nessun tetto · premi per far partire l'avviso adesso"}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
+
+                <button
+                  onClick={cambiaSoglia}
+                  className="mt-3 font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray hover:text-white"
+                >
+                  parte da solo alle ultime {config?.soglia ?? 13} · cambia →
+                </button>
               </div>
             )}
 

@@ -18,7 +18,13 @@ type EventoPR = {
   residue: number;
 };
 
-type Stato = { aperta: boolean; vendite_on: boolean; sono_pr: boolean; sono_admin: boolean };
+type Stato = {
+  aperta: boolean;
+  vendite_on: boolean;
+  sono_pr: boolean;
+  sono_admin: boolean;
+  soglia: number;
+};
 
 /**
  * L'ingresso dell'area PR.
@@ -59,6 +65,7 @@ export default function PrPage() {
         vendite_on: false,
         sono_pr: false,
         sono_admin: false,
+        soglia: 13,
       };
       setStato(s);
 

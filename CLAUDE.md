@@ -85,7 +85,14 @@ resta una, 100% = finite. Accendere il countdown mette il tetto della fascia a `
 quindi a zero la fascia è chiusa **per i PR** (Luka continua a vendere, vedi il 10); spegnerlo
 toglie tetto e avviso. Dalla percentuale non si ricava il numero: non sanno da quanti si parte né
 con che passo sale.
-**PENDING Luka: incollare `14_countdown.sql`.**
+**E parte anche da solo (`15_countdown_automatico.sql`).** Seconda richiesta di Luka, stessa sera:
+"magari dormo e i PR continuano a vendere". Quindi l'avviso è acceso se `countdown_on` **oppure**
+se la fascia ha un tetto e `rimaste <= soglia`: nessun job, è un calcolo fatto a ogni lettura, quindi
+scatta anche alle quattro di notte. La soglia sta in `prevendite_config.soglia_countdown` (13 di
+serie, si cambia dal pannello) e vale per tutte le fasce. Il tasto manuale funziona **con o senza
+tetto**; se un tetto c'è già, accenderlo lo **abbassa** a `vendute + base`, e la conferma lo dice
+esplicitamente perché è una decisione, non un incidente.
+**PENDING Luka: incollare `14_countdown.sql` e poi `15_countdown_automatico.sql`.**
 
 Restano da fare: **Fase 2** scanner porta offline (oggi `/admin/scan` non legge ancora i token
 delle prevendite) e **Fase 3** tavoli, omaggi, stampe di fine serata.
