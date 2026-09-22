@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { dataLunga } from "@/lib/eventi";
+import { graficaBigliettoUrl } from "@/lib/biglietto";
 
 type EventoAdmin = {
   event_id: string;
@@ -84,6 +85,144 @@ type PerFascia = {
 
 const euro = (n: number) => `${Number(n ?? 0).toFixed(0)} €`;
 
+/**
+ * La grafica che il cliente vede sul biglietto.
+ *
+ * È un'immagine a parte dalla locandina dell'evento: quella nitida la
+ * vedono solo i membri iscritti, mentre questa finisce su WhatsApp a
+ * gente che non è iscritta a niente. Tenendole separate, si decide cosa
+ * far girare senza scoprire la locandina prima del tempo.
+ */
+function SlotGrafica({
+  evento,
+  chiave,
+  versione,
+  onFatto,
+}: {
+  evento: string;
+  chiave: string | null;
+  versione: number | null;
+  onFatto: () => void | Promise<void>;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [lavorando, setLavorando] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
+
+  async function carica(f: File) {
+    setLavorando(true);
+    setErrore(null);
+    const fd = new FormData();
+    fd.append("file", f);
+    fd.append("event_id", evento);
+    const res = await fetch("/api/biglietto-grafica", { method: "POST", body: fd });
+    setLavorando(false);
+    if (fileRef.current) fileRef.current.value = "";
+    if (!res.ok) {
+      const j = await res.json().catch(() => null);
+      setErrore(
+        j?.error === "troppo-grande"
+          ? "Immagine troppo pesante (massimo 12 MB)."
+          : j?.error === "non-e-un-immagine"
+            ? "Questo file non è un'immagine."
+            : `Non caricata (${j?.error ?? res.status}).`,
+      );
+      return;
+    }
+    await onFatto();
+  }
+
+  async function rimuovi() {
+    if (!window.confirm("Togliere la grafica dai biglietti di questa serata?")) return;
+    setLavorando(true);
+    await fetch("/api/biglietto-grafica", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event_id: evento }),
+    });
+    setLavorando(false);
+    await onFatto();
+  }
+
+  return (
+    <div className="mt-5">
+      <div className="border border-white/10 px-4 py-4">
+        <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+          grafica del biglietto
+        </p>
+        <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
+          È l&apos;immagine che il cliente si trova sul biglietto, con il QR appoggiato
+          sopra. Formato storia (1080×1920) come le locandine: non viene tagliata, quindi
+          se è di un altro formato ci sta dentro intera. Il QR copre la parte bassa: tienici
+          conto se ci metti scritte.
+        </p>
+        <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
+          Non è la locandina dell&apos;evento: quella resta riservata ai membri. Questa la
+          vede chiunque riceva un biglietto.
+        </p>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) carica(f);
+          }}
+        />
+
+        {errore && <p className="mt-3 text-[11px] text-brand-red">{errore}</p>}
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={lavorando}
+            className="border border-white/20 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red disabled:opacity-50"
+          >
+            {lavorando ? "Carico…" : chiave ? "Sostituisci" : "Carica la grafica"}
+          </button>
+          {chiave && (
+            <button
+              onClick={rimuovi}
+              disabled={lavorando}
+              className="border border-white/10 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:border-brand-red/40 hover:text-brand-red disabled:opacity-50"
+            >
+              togli
+            </button>
+          )}
+        </div>
+      </div>
+
+      {chiave ? (
+        <div className="mt-4">
+          <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+            come la vede il cliente
+          </p>
+          <div className="relative mt-2 overflow-hidden border border-white/10 bg-black">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={graficaBigliettoUrl(chiave, versione)}
+              alt="Grafica del biglietto"
+              className="block w-full"
+            />
+            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center bg-gradient-to-t from-black via-black/90 to-transparent px-4 pb-5 pt-16">
+              <div className="h-24 w-24 bg-white/90" aria-hidden />
+              <p className="mt-3 font-display text-xl uppercase leading-none text-white">
+                nome cognome
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-4 border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">
+          Nessuna grafica: il biglietto esce con il solo QR su sfondo nero. Funziona
+          lo stesso, ma è anonimo.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** Un numero grande con la sua etichetta sotto. */
 function Riquadro({
   n,
@@ -131,8 +270,12 @@ export default function AdminPrPage() {
   const [fasce, setFasce] = useState<Fascia[]>([]);
   const [biglietti, setBiglietti] = useState<BigliettoAdmin[]>([]);
   const [cruscotto, setCruscotto] = useState<Cruscotto | null>(null);
+  const [grafica, setGrafica] = useState<{ key: string | null; v: number | null }>({
+    key: null,
+    v: null,
+  });
   const [perFascia, setPerFascia] = useState<PerFascia[]>([]);
-  const [scheda, setScheda] = useState<"pr" | "prezzi" | "biglietti">("pr");
+  const [scheda, setScheda] = useState<"pr" | "prezzi" | "grafica" | "biglietti">("pr");
   const [aperto, setAperto] = useState<string | null>(null);
   const [lavorando, setLavorando] = useState(false);
 
@@ -144,15 +287,16 @@ export default function AdminPrPage() {
   const caricaEvento = useCallback(async (id: string) => {
     if (!id) return;
     const supabase = createClient();
-    const [prRes, fRes, bRes, cRes, pfRes] = await Promise.all([
+    const [prRes, fRes, bRes, cRes, pfRes, gRes] = await Promise.all([
       supabase.rpc("admin_pr_lista", { p_event: id }),
       supabase.rpc("pr_fasce", { p_event: id }),
       supabase.rpc("admin_presales", { p_event: id }),
       supabase.rpc("admin_pr_cruscotto", { p_event: id }),
       supabase.rpc("admin_pr_per_fascia", { p_event: id }),
+      supabase.rpc("admin_event_ticket", { p_event: id }),
     ]);
     // Stessa regola del resto: se il database si lamenta, si legge.
-    const primoErrore = [prRes, fRes, bRes, cRes, pfRes].find((r) => r.error)?.error;
+    const primoErrore = [prRes, fRes, bRes, cRes, pfRes, gRes].find((r) => r.error)?.error;
     setErrore(primoErrore ? primoErrore.message : null);
 
     setPr(prRes.data ?? []);
@@ -160,6 +304,10 @@ export default function AdminPrPage() {
     setBiglietti(bRes.data ?? []);
     setCruscotto(cRes.data?.[0] ?? null);
     setPerFascia(pfRes.data ?? []);
+    setGrafica({
+      key: gRes.data?.[0]?.ticket_key ?? null,
+      v: gRes.data?.[0]?.ticket_v ?? null,
+    });
   }, []);
 
   const carica = useCallback(async () => {
@@ -523,6 +671,7 @@ export default function AdminPrPage() {
             [
               ["pr", "PR"],
               ["prezzi", "Prezzi"],
+              ["grafica", "Grafica"],
               ["biglietti", `Biglietti (${biglietti.length})`],
             ] as const
           ).map(([k, etichetta]) => (
@@ -722,6 +871,15 @@ export default function AdminPrPage() {
               </p>
             </div>
           </div>
+        )}
+
+        {scheda === "grafica" && ev && (
+          <SlotGrafica
+            evento={evento}
+            chiave={grafica.key}
+            versione={grafica.v}
+            onFatto={() => caricaEvento(evento)}
+          />
         )}
 
         {scheda === "biglietti" && (

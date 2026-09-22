@@ -63,6 +63,17 @@ delega** firmata da chi accompagna, con il link preso da `DELEGA_UNDER16_URL` in
 manda il PDF**, e finché è vuoto la pagina dice di chiedere il modulo a chi ha venduto la prevendita.
 **PENDING Luka: incollare `12_biglietto_under16.sql`, e mandare il link della delega.**
 
+**La grafica del biglietto (22 set, `13_grafica_biglietto.sql`).** Luka la voleva come su Evently:
+l'immagine della serata grande, col QR appoggiato sopra ("che la copra un po' non è un problema").
+**Deposito nuovo e pubblico `biglietti`, separato dalle locandine**, perché la locandina nitida è
+riservata ai membri e prima dello svelamento resta nascosta, mentre la grafica del biglietto finisce
+su WhatsApp a centinaia di persone non iscritte: è pubblica per forza. Così Luka sceglie cosa far
+girare senza scoprire la locandina. Colonne `events.ticket_key` / `ticket_updated_at`, RPC
+`admin_set_event_ticket` e `admin_event_ticket`, upload da `/api/biglietto-grafica` (sharp, EXIF via,
+`fit: inside` in 1080×1920), slot nella scheda **Grafica** di `/admin/pr` con l'anteprima di come
+la vede il cliente. Senza grafica il biglietto esce col solo QR: funziona, ma è anonimo.
+**PENDING Luka: incollare `13_grafica_biglietto.sql`.**
+
 Restano da fare: **Fase 2** scanner porta offline (oggi `/admin/scan` non legge ancora i token
 delle prevendite) e **Fase 3** tavoli, omaggi, stampe di fine serata.
 Il biglietto mostra la locandina **sfocata** come sfondo: la nitida è riservata ai membri dalle
