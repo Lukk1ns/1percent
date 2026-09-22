@@ -4,6 +4,27 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**CONTROLLO DI SICUREZZA del 22 settembre 2026 (`supabase/18_sicurezza.sql`).** Fatto attaccando il
+sito da fuori con la sola chiave pubblica. **Reggono:** RLS su tutte le tabelle (nessuna riga esce
+in lettura diretta), tutte le RPC `admin_*` respingono chi non è admin, `members_wall`/
+`public_profile`/`my_profile`/`admin_stats` non danno niente agli sconosciuti, i depositi privati
+sono chiusi. **Due buchi trovati e chiusi:**
+1. **`_pr_applica_credito` era chiamabile da chiunque.** ⚠️ **In Postgres una funzione nasce
+   eseguibile da PUBLIC**: `revoke ... from anon, authenticated` **non serve a niente** se non si
+   toglie prima il permesso a `public`. Vale per ogni funzione interna: `revoke ... from public,
+   anon, authenticated`. Le altre `admin_*` con lo stesso revoke incompleto sono salve solo perché
+   hanno `is_admin()` in testa — la riga di difesa vera è quella, il revoke è la seconda.
+2. **La percentuale del countdown si ribaltava.** `soglia_countdown()` era pubblica e diceva 13;
+   sapendo il punto di partenza e che la scala era una riga dritta, da "91%" si ricavava "restano 5"
+   — cioè esattamente ciò che Luka voleva impedire. Ora: `soglia_countdown`, `percentuale_countdown`
+   e `scarto_fascia` sono **revocate a tutti** (le funzioni `security definer` che le usano girano
+   come owner, quindi continuano a funzionare), `prevendite_stato` dà la soglia **solo all'admin**,
+   e la scala ha **uno sfasamento per fascia** (da -3 a +3, da `md5(seme_segreto || tier_id)`, seme
+   in `prevendite_config.countdown_seme`) più **scatti di 4 punti**: la stessa percentuale copre 2-3
+   numeri diversi e due fasce mostrano percentuali diverse a parità di rimanenze.
+Tolta anche `/api/diag/filigrana`, aperta a chiunque e non più utile da agosto.
+**PENDING Luka: incollare `18_sicurezza.sql`.**
+
 **GALLERIA FOTO — costruita il 22 settembre 2026 (`supabase/17_galleria.sql`).** Nata da una
 richiesta di Luka: "ho le foto dell'ultimo evento che nessuno ha visto e tutti le vogliono vedere".
 È la funzione che porta gente nuova nel sito.
