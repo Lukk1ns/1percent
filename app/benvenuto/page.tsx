@@ -16,11 +16,19 @@ export default function BenvenutoPage() {
   const router = useRouter();
   const [member, setMember] = useState<MemberData | null>(null);
   const [phase, setPhase] = useState<"reveal" | "done">("reveal");
+  // Chi si è iscritto per vedere le foto ci torna direttamente
+  const [dove, setDove] = useState("/");
 
   useEffect(() => {
     const raw = sessionStorage.getItem("member_data");
     if (!raw) { router.replace("/unisciti"); return; }
     setMember(JSON.parse(raw));
+
+    const next = sessionStorage.getItem("reg_next");
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      setDove(next);
+      sessionStorage.removeItem("reg_next");
+    }
 
     const t = setTimeout(() => setPhase("done"), 2200);
     return () => clearTimeout(t);
@@ -71,10 +79,10 @@ export default function BenvenutoPage() {
           )}
 
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push(dove)}
             className="btn btn-primary cta-pulse mt-4 px-10"
           >
-            Vai al sito →
+            {dove.startsWith("/foto") ? "Guarda le foto →" : "Vai al sito →"}
           </button>
         </div>
       )}

@@ -47,6 +47,8 @@ export default function DomandePage() {
     }
 
     sessionStorage.setItem("member_data", JSON.stringify(esito.membro));
+    // Dove tornare: chi è arrivato dalle foto vuole le foto, non la home
+    if (bozza.next) sessionStorage.setItem("reg_next", bozza.next);
     sessionStorage.removeItem("reg_draft");
     sessionStorage.removeItem("reg_quiz");
     router.push("/benvenuto");

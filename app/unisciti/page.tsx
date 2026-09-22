@@ -4,7 +4,13 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AVATARS } from "@/lib/avatars";
-import { CHIAVE_INVITO, SIGNUPS_OPEN, SOLO_STAFF, SOLO_SU_INVITO } from "@/lib/event";
+import {
+  CHIAVE_INVITO,
+  FOTO_APRONO_LA_PORTA,
+  SIGNUPS_OPEN,
+  SOLO_STAFF,
+  SOLO_SU_INVITO,
+} from "@/lib/event";
 import { createClient } from "@/lib/supabase/client";
 import { type Bozza } from "@/lib/registrazione";
 
@@ -69,6 +75,13 @@ function JoinForm() {
   // La chiave che accompagna il link: senza, il `?ref=` se lo inventava chiunque
   const chiave = params.get("k") ?? "";
 
+  // Dove torna appena è dentro. Chi arriva da un album di foto entra
+  // come cliente anche mentre il resto del sito è su invito: è tutto il
+  // senso della galleria, portare gente nuova.
+  const grezzo = params.get("next");
+  const next = grezzo && grezzo.startsWith("/") && !grezzo.startsWith("//") ? grezzo : null;
+  const dalleFoto = FOTO_APRONO_LA_PORTA && Boolean(next?.startsWith("/foto"));
+
   // null = sto controllando, true/false = risposta del server
   const [signupsOpen, setSignupsOpen] = useState<boolean | null>(
     SIGNUPS_OPEN ? null : false,
@@ -102,7 +115,7 @@ function JoinForm() {
   const [vuoleStaff, setVuoleStaff] = useState(false);
   // Finché si recluta soltanto, nessuno dei due riquadri parte scelto:
   // così "sicuro come cliente?" compare solo se lo sceglie davvero lui.
-  const [scelto, setScelto] = useState(!SOLO_STAFF);
+  const [scelto, setScelto] = useState(!SOLO_STAFF || dalleFoto);
   const [nome, setNome] = useState("");
   const [entrando, setEntrando] = useState(false);
 
@@ -111,7 +124,7 @@ function JoinForm() {
       setAliasError("Scegli come entri.");
       return false;
     }
-    if (SOLO_STAFF && !vuoleStaff) {
+    if (SOLO_STAFF && !vuoleStaff && !dalleFoto) {
       setAliasError("Per ora si entra solo come staff.");
       return false;
     }
@@ -162,6 +175,7 @@ function JoinForm() {
       refCode: refCode || null,
       crewRequest: vuoleStaff,
       nome: vuoleStaff ? nome.trim() : null,
+      next,
     };
 
     sessionStorage.setItem("reg_draft", JSON.stringify(bozza));
@@ -175,7 +189,8 @@ function JoinForm() {
   if (signupsOpen === null) return null; // controllo in corso, evita flash del form
   if (signupsOpen === false) return <SignupsClosed />;
   // Solo su invito: senza il link di qualcuno non si passa
-  if (SOLO_SU_INVITO && (!refCode || chiave !== CHIAVE_INVITO)) return <SoloSuInvito />;
+  if (SOLO_SU_INVITO && !dalleFoto && (!refCode || chiave !== CHIAVE_INVITO))
+    return <SoloSuInvito />;
 
   return (
     <main className="flex-1 flex flex-col items-center px-6 py-12 max-w-md mx-auto w-full">

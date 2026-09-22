@@ -103,3 +103,20 @@ export const CHIAVE_INVITO = "pn935ad9c1";
  * Luka: quando hai caricato il PDF, incolla il suo link qui dentro.
  */
 export const DELEGA_UNDER16_URL = "";
+
+/**
+ * Le foto aprono la porta.
+ *
+ * Il resto del sito è ancora su invito e accetta solo candidature staff
+ * (SOLO_SU_INVITO e SOLO_STAFF qui sopra), impostazioni nate quando si
+ * reclutavano i PR. Ma la galleria serve proprio a far entrare gente
+ * nuova: chi arriva da un album e vuole vedere le foto della serata in
+ * cui c'era deve potersi iscrivere come cliente, subito.
+ *
+ * Con questa accesa, chi atterra su /unisciti arrivando da /foto passa
+ * senza link d'invito e senza doversi candidare. Chi arriva da
+ * qualunque altra parte trova le regole di prima.
+ *
+ * Spegnila se un giorno vuoi che anche le foto siano solo per invitati.
+ */
+export const FOTO_APRONO_LA_PORTA = true;

@@ -4,6 +4,37 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**GALLERIA FOTO — costruita il 22 settembre 2026 (`supabase/17_galleria.sql`).** Nata da una
+richiesta di Luka: "ho le foto dell'ultimo evento che nessuno ha visto e tutti le vogliono vedere".
+È la funzione che porta gente nuova nel sito.
+**Decisioni sue:** le foto le vedono **solo gli iscritti, sempre** (non la preview 24h che
+prevedeva il piano di luglio) · **download in alta qualità solo per gli iscritti** · storage
+**Cloudflare R2**, come deciso a luglio, perché "sono tante foto che pesano" e spera in 1000
+visitatori: su Supabase la banda del piano gratuito (5 GB) finirebbe in una sera, su R2 la banda
+in uscita **non si paga mai**.
+**Come regge il muro:** il deposito R2 è privato e nessun indirizzo pubblico esiste. Il sito chiede
+una foto per volta a `/api/foto/[id]?f=thumb|medium|hd`, che interroga `foto_chiave()`: se chi
+guarda non ha un profilo la risposta è `null` e la route dà 403. Chi ha diritto viene rimandato a
+un URL firmato **con scadenza arrotondata all'ora**, così due persone che guardano la stessa foto
+ricevono lo stesso indirizzo e la CDN può tenerlo in cache.
+Tre formati generati all'upload (sharp, EXIF via — dentro c'è anche il luogo dello scatto):
+thumb 500px per la griglia, medium 1400px per lo schermo pieno, 2400px per il download.
+**L'upload va una foto per volta**, non tutte insieme: 300 foto in una richiesta sola cadrebbero a
+metà senza far sapere quali sono arrivate; così si vede la barra e i falliti sono elencati per nome.
+Rotte: **`/foto`** (vetrina, aperta a tutti: nomi e numeri, non le immagini) · **`/foto/[album]`**
+(la porta per chi non è iscritto, griglia + schermo pieno + download per chi lo è) ·
+**`/admin/foto`**. C'è anche `chiedi_rimozione()`: "in questa foto ci sono io e non mi va" —
+con le foto di una serata è il minimo.
+**⚠️ LA PORTA ERA CHIUSA:** `SOLO_SU_INVITO` e `SOLO_STAFF` (impostazioni di agosto, per reclutare
+i PR) impedivano a chiunque di iscriversi come cliente, il che avrebbe reso la galleria inutile.
+Nuova costante **`FOTO_APRONO_LA_PORTA`** in `lib/event.ts`: chi arriva su `/unisciti?next=/foto/...`
+entra come cliente senza link d'invito; **per tutti gli altri ingressi non cambia niente**.
+Il `next` viaggia nella bozza in sessionStorage fino a `/benvenuto`, che rimanda alle foto.
+**PENDING Luka: incollare `17_galleria.sql`** e **creare l'account Cloudflare R2** — servono
+`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (bucket `1percent-foto`, EU) nelle
+variabili d'ambiente di Vercel. Finché mancano, le API rispondono `r2-non-configurato` e il resto
+del sito non cambia.
+
 **PREVENDITE / PR — Fase 1 costruita (22 settembre 2026).** Il modulo che sostituisce Evently.
 Piano completo in `~/Desktop/ClaudeLukkins/PROPOSTE/proposta_prevendite_pr.md`.
 Decisioni di Luka del 22 set: **niente import dei PR da Evently** — i PR sono la crew già

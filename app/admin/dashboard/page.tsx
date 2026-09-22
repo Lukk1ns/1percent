@@ -361,6 +361,13 @@ export default function AdminDashboardPage() {
               cosa: "Blocchetti ai PR, incassi, biglietti",
               acceso: false,
             },
+            {
+              href: "/admin/foto",
+              emoji: "📸",
+              titolo: "Foto",
+              cosa: "Album delle serate: carica e pubblica",
+              acceso: false,
+            },
           ].map((p) => (
             <button
               key={p.href}

@@ -19,6 +19,8 @@ export type Bozza = {
   crewRequest: boolean;
   /** nome vero, chiesto solo a chi si candida */
   nome: string | null;
+  /** dove rimandarlo appena è dentro: chi arriva dalle foto torna alle foto */
+  next?: string | null;
 };
 
 /** Le risposte a un questionario, così come escono da Questionario. */

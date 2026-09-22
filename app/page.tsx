@@ -298,12 +298,20 @@ export default function Home() {
             </div>
           )}
 
-          <Link
-            href="/eventi"
-            className="mt-8 inline-block border border-brand-red/40 px-5 py-3 font-tech text-[10px] uppercase tracking-[0.3em] text-white transition-colors hover:bg-brand-red/10"
-          >
-            tutti gli eventi →
-          </Link>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              href="/foto"
+              className="inline-block border border-brand-red bg-brand-red/10 px-5 py-3 font-tech text-[10px] uppercase tracking-[0.3em] text-white transition-colors hover:bg-brand-red/20"
+            >
+              le foto delle serate →
+            </Link>
+            <Link
+              href="/eventi"
+              className="inline-block border border-brand-red/40 px-5 py-3 font-tech text-[10px] uppercase tracking-[0.3em] text-white transition-colors hover:bg-brand-red/10"
+            >
+              tutti gli eventi →
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -452,6 +460,7 @@ export default function Home() {
           </p>
           <div className="flex gap-5 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray/60">
             <Link href="/eventi" className="hover:text-white">eventi</Link>
+            <Link href="/foto" className="hover:text-white">foto</Link>
             <Link href="/membri" className="hover:text-white">il muro</Link>
             <Link href="/privacy" className="hover:text-white">privacy</Link>
           </div>
