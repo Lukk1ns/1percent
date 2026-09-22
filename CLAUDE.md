@@ -94,6 +94,14 @@ tetto**; se un tetto c'è già, accenderlo lo **abbassa** a `vendute + base`, e 
 esplicitamente perché è una decisione, non un incidente.
 **PENDING Luka: incollare `14_countdown.sql` e poi `15_countdown_automatico.sql`.**
 
+**Doppioni (22 set, `16_niente_doppioni.sql`).** Regole chieste da Luka: **stesso telefono sì**
+(uno compra per tutto il gruppo e riceve lui i biglietti), **stesso nome+cognome nella stessa serata
+no** (è la stessa persona due volte), **stesso solo cognome sì** (fratelli). Il confronto normalizza
+maiuscole e spazi doppi, e i biglietti annullati non contano — quel nome torna libero. L'admin può
+**forzare** con `p_forza`, perché gli omonimi veri esistono; il PR no, e gli si dice di chiedere a
+Luka. `pr_vendi` ha un parametro in più, quindi la vecchia firma va eliminata (lo script lo fa).
+**PENDING Luka: incollare `16_niente_doppioni.sql`.**
+
 Restano da fare: **Fase 2** scanner porta offline (oggi `/admin/scan` non legge ancora i token
 delle prevendite) e **Fase 3** tavoli, omaggi, stampe di fine serata.
 Il biglietto mostra la locandina **sfocata** come sfondo: la nitida è riservata ai membri dalle

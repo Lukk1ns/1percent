@@ -108,6 +108,8 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   const [fascia, setFascia] = useState<string>("");
   const [salvando, setSalvando] = useState(false);
   const [esito, setEsito] = useState<string | null>(null);
+  // Nome già presente: all'admin si offre di insistere, al PR no.
+  const [omonimo, setOmonimo] = useState(false);
   const [appenaFatto, setAppenaFatto] = useState<Biglietto | null>(null);
   const [copiato, setCopiato] = useState(false);
 
@@ -147,10 +149,11 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
     carica();
   }, [carica]);
 
-  async function vendi(e: React.FormEvent) {
+  async function vendi(e: React.FormEvent, forza = false) {
     e.preventDefault();
     setSalvando(true);
     setEsito(null);
+    setOmonimo(false);
 
     const supabase = createClient();
     const { data, error } = await supabase.rpc("pr_vendi", {
@@ -160,6 +163,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
       p_cognome: cognome,
       p_anno: Number(anno),
       p_telefono: telefono,
+      p_forza: forza,
     });
     setSalvando(false);
 
@@ -169,6 +173,16 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
     }
 
     const res = data?.[0];
+    if (res?.esito === "gia_presente") {
+      setEsito(
+        `${nome.trim()} ${cognome.trim()} ha già un biglietto per questa serata. ` +
+          (r?.senza_limite
+            ? "Se è un omonimo davvero diverso, puoi farlo lo stesso."
+            : "Se è un'altra persona con lo stesso nome, chiedi a Luka."),
+      );
+      setOmonimo(true);
+      return;
+    }
     if (res?.esito !== "ok") {
       setEsito(
         {
@@ -452,14 +466,20 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                 <input
                   placeholder="nome"
                   value={nome}
-                  onChange={(e) => setNome(e.target.value)}
+                  onChange={(e) => {
+                    setNome(e.target.value);
+                    setOmonimo(false);
+                  }}
                   required
                   className="w-1/2 border-b border-white/20 bg-transparent pb-2 text-sm text-white placeholder-brand-gray/50 outline-none transition-colors focus:border-brand-red"
                 />
                 <input
                   placeholder="cognome"
                   value={cognome}
-                  onChange={(e) => setCognome(e.target.value)}
+                  onChange={(e) => {
+                    setCognome(e.target.value);
+                    setOmonimo(false);
+                  }}
                   required
                   className="w-1/2 border-b border-white/20 bg-transparent pb-2 text-sm text-white placeholder-brand-gray/50 outline-none transition-colors focus:border-brand-red"
                 />
@@ -536,6 +556,16 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
               )}
 
               {esito && <p className="text-sm text-brand-red">{esito}</p>}
+              {omonimo && r.senza_limite && (
+                <button
+                  type="button"
+                  disabled={salvando}
+                  onClick={(e) => vendi(e, true)}
+                  className="border border-amber-400/60 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-amber-200 disabled:opacity-40"
+                >
+                  è un&apos;altra persona · fallo lo stesso
+                </button>
+              )}
 
               {fasce.length > 0 && (
                 <button
