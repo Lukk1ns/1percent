@@ -169,11 +169,12 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
         {!annullato && (
           <div className="mt-4 border border-white/10 px-4 py-3">
             <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
-              porta un documento
+              porta il documento fisico
             </p>
             <p className="mt-2 text-[11px] leading-relaxed text-white/70">
-              All&apos;ingresso serve un documento d&apos;identità valido. Vale per tutti,
-              senza eccezioni: senza documento non si entra.
+              All&apos;ingresso serve il documento d&apos;identità <strong>vero, in mano</strong>:
+              la foto sul telefono non vale. Vale per tutti, senza eccezioni — senza
+              documento non si entra.
             </p>
 
             {b.under16 && (

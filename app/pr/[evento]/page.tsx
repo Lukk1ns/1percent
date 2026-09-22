@@ -71,7 +71,7 @@ function messaggio(b: { nome: string; token: string }, evento: string, quando: s
     `Ciao ${b.nome}! Ecco il tuo biglietto per ${evento} — ${quando}.\n\n` +
     `${linkBiglietto(b.token)}\n\n` +
     `Fallo scansionare all'ingresso, non serve stamparlo. ` +
-    `Ricordati il documento: serve a tutti.`
+    `Ricordati il documento fisico, non la foto sul telefono: serve a tutti.`
   );
 }
 
@@ -243,8 +243,8 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                 meno di 16 anni
               </p>
               <p className="mt-1 text-[11px] leading-relaxed text-white/70">
-                Oltre al documento gli serve la delega firmata da un genitore. Diglielo
-                adesso, non in porta.
+                Oltre al documento fisico gli serve la delega firmata da un genitore.
+                Diglielo adesso, non in porta.
               </p>
             </div>
           )}
