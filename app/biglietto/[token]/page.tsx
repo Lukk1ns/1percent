@@ -165,27 +165,32 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
           </div>
         </div>
 
-        {b.minorenne && !annullato && (
+        {/* Il documento riguarda tutti, non solo i ragazzini */}
+        {!annullato && (
           <div className="mt-4 border border-white/10 px-4 py-3">
             <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
-              sei minorenne
+              porta un documento
             </p>
-            <p className="mt-2 text-[11px] leading-relaxed text-white/60">
-              All&apos;ingresso serve un documento d&apos;identità.
+            <p className="mt-2 text-[11px] leading-relaxed text-white/70">
+              All&apos;ingresso serve un documento d&apos;identità valido. Vale per tutti,
+              senza eccezioni: senza documento non si entra.
             </p>
+
             {b.under16 && (
-              <>
-                <p className="mt-3 text-[11px] leading-relaxed text-white">
-                  Se non hai ancora compiuto <strong>16 anni</strong> serve anche la{" "}
-                  <strong>delega</strong>, firmata da un genitore o da chi ti accompagna.
-                  Senza quella non si entra.
+              <div className="mt-4 border-t border-white/10 pt-3">
+                <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-amber-300">
+                  hai meno di 16 anni
+                </p>
+                <p className="mt-2 text-[11px] leading-relaxed text-white">
+                  Oltre al documento serve la <strong>delega</strong>, firmata da un genitore
+                  o da chi ti accompagna. Senza quella non si entra.
                 </p>
                 {DELEGA_UNDER16_URL ? (
                   <a
                     href={DELEGA_UNDER16_URL}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-3 inline-block border border-white/25 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-white"
+                    className="mt-3 inline-block border border-amber-400/50 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-amber-200"
                   >
                     scarica la delega →
                   </a>
@@ -194,7 +199,7 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
                     Chiedi il modulo a chi ti ha venduto il biglietto.
                   </p>
                 )}
-              </>
+              </div>
             )}
           </div>
         )}

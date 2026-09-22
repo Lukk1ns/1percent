@@ -732,9 +732,9 @@ export default function AdminPrPage() {
                   <div className="min-w-0">
                     <p className="truncate text-sm text-white">
                       {b.nome} {b.cognome}
-                      {b.minorenne && (
+                      {b.under16 && (
                         <span className="ml-2 font-tech text-[9px] uppercase tracking-[0.15em] text-amber-300">
-                          {b.under16 ? "under 16 · delega" : "minorenne"}
+                          under 16 · delega
                         </span>
                       )}
                     </p>

@@ -57,8 +57,9 @@ abbia saldato resta **un fatto interno**, visibile solo nel pannello e nell'area
 **Conseguenza da tenere presente in porta:** un cliente può presentarsi convinto di essere a posto
 mentre il suo PR non ha ancora consegnato i contanti — il controllo va fatto dal pannello, non dalla
 faccia del cliente.
-Sotto i 18 il biglietto chiede il documento; **sotto i 16 chiede anche la delega** firmata da chi
-accompagna, con il link preso da `DELEGA_UNDER16_URL` in `lib/event.ts` — **vuoto finché Luka non
+**Il documento lo chiede a tutti**, non solo ai minorenni (correzione di Luka: "serve per chiunque"),
+ed è ricordato anche nel messaggio WhatsApp che il PR manda al cliente; **sotto i 16 si aggiunge la
+delega** firmata da chi accompagna, con il link preso da `DELEGA_UNDER16_URL` in `lib/event.ts` — **vuoto finché Luka non
 manda il PDF**, e finché è vuoto la pagina dice di chiedere il modulo a chi ha venduto la prevendita.
 **PENDING Luka: incollare `12_biglietto_under16.sql`, e mandare il link della delega.**
 

@@ -70,7 +70,8 @@ function messaggio(b: { nome: string; token: string }, evento: string, quando: s
   return (
     `Ciao ${b.nome}! Ecco il tuo biglietto per ${evento} — ${quando}.\n\n` +
     `${linkBiglietto(b.token)}\n\n` +
-    `Fallo scansionare all'ingresso. Non serve stamparlo.`
+    `Fallo scansionare all'ingresso, non serve stamparlo. ` +
+    `Ricordati il documento: serve a tutti.`
   );
 }
 
@@ -236,15 +237,14 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
             {appenaFatto.tier_label} · {Number(appenaFatto.prezzo).toFixed(0)} € da incassare
           </p>
 
-          {appenaFatto.minorenne && (
+          {appenaFatto.under16 && (
             <div className="mt-4 border border-amber-400/40 bg-amber-400/5 px-4 py-3">
               <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-amber-300">
-                {appenaFatto.under16 ? "meno di 16 anni" : "minorenne"}
+                meno di 16 anni
               </p>
               <p className="mt-1 text-[11px] leading-relaxed text-white/70">
-                {appenaFatto.under16
-                  ? "All'ingresso servono documento e delega firmata da un genitore. Diglielo adesso, non in porta."
-                  : "Avvisalo che all'ingresso serve il documento."}
+                Oltre al documento gli serve la delega firmata da un genitore. Diglielo
+                adesso, non in porta.
               </p>
             </div>
           )}
@@ -527,9 +527,9 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                     <div className="min-w-0">
                       <p className="truncate text-sm text-white">
                         {b.nome} {b.cognome}
-                        {b.minorenne && (
+                        {b.under16 && (
                           <span className="ml-2 font-tech text-[9px] uppercase tracking-[0.15em] text-amber-300">
-                            {b.under16 ? "under 16 · delega" : "minorenne"}
+                            under 16 · delega
                           </span>
                         )}
                       </p>
