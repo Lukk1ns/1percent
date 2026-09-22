@@ -313,6 +313,7 @@ export default function AdminPrPage() {
     key: null,
     v: null,
   });
+  const [delega, setDelega] = useState<string | null>(null);
   const [perFascia, setPerFascia] = useState<PerFascia[]>([]);
   const [scheda, setScheda] = useState<
     "pr" | "prezzi" | "grafica" | "biglietti" | "registro"
@@ -355,6 +356,7 @@ export default function AdminPrPage() {
       key: gRes.data?.[0]?.ticket_key ?? null,
       v: gRes.data?.[0]?.ticket_v ?? null,
     });
+    setDelega(gRes.data?.[0]?.delega_url ?? null);
     setRegistro(regRes.data ?? []);
     setConti(contiRes.data ?? []);
   }, []);
@@ -1159,12 +1161,80 @@ export default function AdminPrPage() {
         )}
 
         {scheda === "grafica" && ev && (
-          <SlotGrafica
-            evento={evento}
-            chiave={grafica.key}
-            versione={grafica.v}
-            onFatto={() => caricaEvento(evento)}
-          />
+          <>
+            <SlotGrafica
+              evento={evento}
+              chiave={grafica.key}
+              versione={grafica.v}
+              onFatto={() => caricaEvento(evento)}
+            />
+
+            {/* Il modulo per gli under 16: cambia da locale a locale,
+                perché cambia la società che tratta i dati. */}
+            <div className="mt-5 border border-white/10 px-4 py-4">
+              <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+                modulo per gli under 16
+              </p>
+              <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
+                Chi compra una prevendita per un ragazzo sotto i 16 anni se lo scarica dal
+                biglietto, già pronto da stampare. Scegli quello del locale dove si fa la
+                serata: i due hanno società diverse, e l&apos;informativa privacy non è la stessa.
+              </p>
+
+              <div className="mt-3 flex flex-col gap-2">
+                {[
+                  { url: "/moduli/delega-papion.pdf", nome: "PAPI ON THE BEACH", soc: "QFB SRL" },
+                  { url: "/moduli/delega-pr1me.pdf", nome: "PR1ME CLUB", soc: "EXO SRLS" },
+                ].map((m) => (
+                  <button
+                    key={m.url}
+                    disabled={lavorando}
+                    onClick={async () => {
+                      const supabase = createClient();
+                      await supabase.rpc("admin_set_event_delega", {
+                        p_id: evento,
+                        p_url: delega === m.url ? null : m.url,
+                      });
+                      await caricaEvento(evento);
+                    }}
+                    className={`border px-4 py-3 text-left transition-colors ${
+                      delega === m.url
+                        ? "border-emerald-400/60 bg-emerald-400/5"
+                        : "border-white/15 hover:border-white/40"
+                    }`}
+                  >
+                    <span className="block text-sm text-white">
+                      {m.nome}
+                      {delega === m.url && (
+                        <span className="ml-2 font-tech text-[9px] uppercase text-emerald-400">
+                          in uso
+                        </span>
+                      )}
+                    </span>
+                    <span className="block font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                      {m.soc}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {delega ? (
+                <a
+                  href={delega}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-block border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] text-white"
+                >
+                  guarda il modulo →
+                </a>
+              ) : (
+                <p className="mt-3 text-[11px] text-amber-300">
+                  Nessun modulo impostato: a un under 16 il biglietto dirà di chiederlo a chi
+                  gliel&apos;ha venduto.
+                </p>
+              )}
+            </div>
+          </>
         )}
 
         {scheda === "registro" && (

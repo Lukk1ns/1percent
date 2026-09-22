@@ -22,6 +22,8 @@ type Biglietto = {
   starts_at: string;
   ticket_key: string | null;
   ticket_v: number | null;
+  /** Il modulo di delega del locale dove si va: i due locali hanno società diverse. */
+  delega_url: string | null;
 };
 
 /**
@@ -196,14 +198,14 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
                   Oltre al documento serve la <strong>delega</strong>, firmata da un genitore
                   o da chi ti accompagna. Senza quella non si entra.
                 </p>
-                {DELEGA_UNDER16_URL ? (
+                {b.delega_url || DELEGA_UNDER16_URL ? (
                   <a
-                    href={DELEGA_UNDER16_URL}
+                    href={b.delega_url || DELEGA_UNDER16_URL}
                     target="_blank"
                     rel="noreferrer"
                     className="mt-3 inline-block border border-amber-400/50 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-amber-200"
                   >
-                    scarica la delega →
+                    scarica il modulo →
                   </a>
                 ) : (
                   <p className="mt-2 text-[11px] leading-relaxed text-brand-gray">

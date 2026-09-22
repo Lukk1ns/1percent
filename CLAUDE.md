@@ -173,6 +173,15 @@ abbia saldato resta **un fatto interno**, visibile solo nel pannello e nell'area
 **Conseguenza da tenere presente in porta:** un cliente può presentarsi convinto di essere a posto
 mentre il suo PR non ha ancora consegnato i contanti — il controllo va fatto dal pannello, non dalla
 faccia del cliente.
+**Il modulo per gli under 16 è per serata (22 set, `22_delega_per_serata.sql`).** I due locali sono
+**due società diverse** — PAPI ON THE BEACH è QFB SRL, PR1ME CLUB è EXO SRLS — quindi hanno due
+moduli con due informative privacy diverse: un link unico per tutto il sito darebbe al cliente
+l'informativa di un'altra società, che non vale niente. Colonna `events.delega_url`, si sceglie dalla
+scheda **Grafica** di `/admin/pr`, e il biglietto usa quello della sua serata (`DELEGA_UNDER16_URL`
+resta solo come ripiego). I PDF stanno in `public/moduli/`, sorgenti HTML in
+`ClaudeLukkins/STAGIONE_INVERNALE_2026-27/PDF/` (si rigenerano con `weasyprint file.html file.pdf`).
+**⚠️ Nel modulo PAPI-ON mancano P.IVA e PEC di QFB**, marcati in nero "DA INSERIRE" perché non
+si possa stampare per sbaglio: nelle fatture c'era solo la partita IVA del fornitore.
 **Il documento lo chiede a tutti**, non solo ai minorenni (correzione di Luka: "serve per chiunque"),
 ed è ricordato anche nel messaggio WhatsApp che il PR manda al cliente; **sotto i 16 si aggiunge la
 delega** firmata da chi accompagna, con il link preso da `DELEGA_UNDER16_URL` in `lib/event.ts` — **vuoto finché Luka non
