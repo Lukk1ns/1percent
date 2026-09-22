@@ -39,10 +39,15 @@ e ordine: `grant execute on function f(uuid, text, uuid)` su una funzione `f(uui
 fa fallire lo script con *"function ... does not exist"*, e siccome il SQL Editor esegue tutto in
 una transazione **annulla l'intero blocco**. Prima di consegnare uno script, controllare ogni grant
 contro la sua funzione (si fa in venti righe di script, cercando le due forme con una regex).
-**PENDING Luka: incollare `17_galleria.sql`** e **creare l'account Cloudflare R2** — servono
-`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (bucket `1percent-foto`, EU) nelle
-variabili d'ambiente di Vercel. Finché mancano, le API rispondono `r2-non-configurato` e il resto
-del sito non cambia.
+**FATTO il 22 set, la galleria è accesa:** script incollato, **R2 configurato** (bucket
+`1percent-foto`, Eastern Europe, **privato** — il *Public Development URL* va lasciato disabilitato,
+accenderlo renderebbe le foto visibili senza iscrizione) e le quattro `R2_*` sono su Vercel in
+All Environments. Verificato dal vivo: scrittura/lettura/cancellazione su R2 funzionano, e
+`/api/foto/<id>` risponde **403** a chi non è iscritto.
+**Come si controlla senza fidarsi:** le RPC si interrogano dal terminale con la chiave anon —
+`curl -X POST "$URL/rest/v1/rpc/<nome>" -H "apikey: $KEY" -d '<parametri veri>'`. Attenzione:
+va passato il **parametro giusto**, con `{}` una funzione esistente risponde comunque
+`PGRST202` e sembra mancante. `PGRST202` = non c'è · `P0001 Non autorizzato` = c'è e funziona.
 
 **PREVENDITE / PR — Fase 1 costruita (22 settembre 2026).** Il modulo che sostituisce Evently.
 Piano completo in `~/Desktop/ClaudeLukkins/PROPOSTE/proposta_prevendite_pr.md`.
