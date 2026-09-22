@@ -17,6 +17,8 @@ type Riepilogo = {
   consegnato: number;
   da_portare: number;
   vendite_on: boolean;
+  /** L'admin vende senza blocchetti e senza scorte: niente lo ferma. */
+  senza_limite: boolean;
 };
 
 type Fascia = { id: string; label: string; price: number; stock: number | null; rimaste: number | null };
@@ -180,7 +182,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
       tier_label: fasce.find((f) => f.id === fascia)?.label ?? "",
       prezzo: Number(res.prezzo),
       token: res.token,
-      stato: "in_attesa",
+      stato: r?.senza_limite ? "attiva" : "in_attesa",
       minorenne: Boolean(res.minorenne),
       created_at: new Date().toISOString(),
     });
@@ -266,10 +268,17 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           </button>
 
           <div className="mt-6 border border-white/10 px-4 py-3">
-            <p className="text-[11px] leading-relaxed text-brand-gray">
-              Il biglietto è <strong className="text-white">in attesa</strong> finché non
-              consegni l&apos;incasso a Luka. Prima di allora in porta non passa.
-            </p>
+            {r.senza_limite ? (
+              <p className="text-[11px] leading-relaxed text-brand-gray">
+                Questo biglietto è <strong className="text-emerald-400">già valido</strong>:
+                l&apos;hai fatto tu, i soldi sono in cassa. In porta passa subito.
+              </p>
+            ) : (
+              <p className="text-[11px] leading-relaxed text-brand-gray">
+                Il biglietto è <strong className="text-white">in attesa</strong> finché non
+                consegni l&apos;incasso a Luka. Prima di allora in porta non passa.
+              </p>
+            )}
           </div>
 
           <button
@@ -295,32 +304,62 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
         </h1>
         {ev && <p className="mt-2 text-xs text-brand-gray">{quando}</p>}
 
-        {/* I numeri che contano, in ordine di importanza */}
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          <div className="border border-white/10 px-3 py-4">
-            <p className="font-display text-3xl leading-none text-brand-red">{r.residue}</p>
-            <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-              da vendere
-            </p>
+        {/* Chi vende come direzione non ha blocchetti da consumare */}
+        {r.senza_limite ? (
+          <>
+            <div className="mt-6 border border-brand-red/40 bg-brand-red/5 px-4 py-3">
+              <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-red">
+                stai vendendo come direzione
+              </p>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-white/70">
+                Nessun limite: vendi anche a vendite chiuse e a fascia esaurita. Quello che
+                fai tu nasce già valido, perché i soldi li hai in mano.
+              </p>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="border border-white/10 px-3 py-4">
+                <p className="font-display text-3xl leading-none text-white">{r.vendute}</p>
+                <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                  fatte da te
+                </p>
+              </div>
+              <div className="border border-white/10 px-3 py-4">
+                <p className="font-display text-3xl leading-none text-white">
+                  {Number(r.dovuto).toFixed(0)}€
+                </p>
+                <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                  incassati
+                </p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="border border-white/10 px-3 py-4">
+              <p className="font-display text-3xl leading-none text-brand-red">{r.residue}</p>
+              <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                da vendere
+              </p>
+            </div>
+            <div className="border border-white/10 px-3 py-4">
+              <p className="font-display text-3xl leading-none text-white">{r.vendute}</p>
+              <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                fatte
+              </p>
+            </div>
+            <div className="border border-white/10 px-3 py-4">
+              <p className="font-display text-3xl leading-none text-white">
+                {Number(r.da_portare).toFixed(0)}€
+              </p>
+              <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                da portare
+              </p>
+            </div>
           </div>
-          <div className="border border-white/10 px-3 py-4">
-            <p className="font-display text-3xl leading-none text-white">{r.vendute}</p>
-            <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-              fatte
-            </p>
-          </div>
-          <div className="border border-white/10 px-3 py-4">
-            <p className="font-display text-3xl leading-none text-white">
-              {Number(r.da_portare).toFixed(0)}€
-            </p>
-            <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-              da portare
-            </p>
-          </div>
-        </div>
+        )}
 
         {/* L'avviso che evita la gente bloccata in porta */}
-        {r.in_attesa > 0 && (
+        {r.in_attesa > 0 && !r.senza_limite && (
           <div className="mt-4 border border-amber-400/40 bg-amber-400/5 px-4 py-4">
             <p className="font-display text-xl uppercase leading-none text-amber-300">
               {r.in_attesa} {r.in_attesa === 1 ? "biglietto" : "biglietti"} in attesa
@@ -338,11 +377,11 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
             nuovo nominativo
           </p>
 
-          {r.residue <= 0 ? (
+          {r.residue <= 0 && !r.senza_limite ? (
             <p className="mt-3 text-sm leading-relaxed text-white">
               Hai usato tutte le prevendite che ti sono state date. Chiedine altre a Luka.
             </p>
-          ) : !r.vendite_on ? (
+          ) : !r.vendite_on && !r.senza_limite ? (
             <p className="mt-3 text-sm leading-relaxed text-white">
               Le vendite sono chiuse in questo momento.
             </p>
@@ -392,7 +431,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {fasce.map((f) => {
-                    const esaurita = f.rimaste !== null && f.rimaste <= 0;
+                    const esaurita = f.rimaste !== null && f.rimaste <= 0 && !r.senza_limite;
                     const scelta = fascia === f.id;
                     return (
                       <button
@@ -427,10 +466,12 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                 {salvando ? "Salvo…" : "Fai il biglietto"}
               </button>
 
-              <p className="text-[10px] leading-relaxed text-brand-gray/60">
-                Inserisci il nominativo solo quando hai in mano i soldi: il biglietto non si
-                cancella e la cifra resta a tuo carico.
-              </p>
+              {!r.senza_limite && (
+                <p className="text-[10px] leading-relaxed text-brand-gray/60">
+                  Inserisci il nominativo solo quando hai in mano i soldi: il biglietto non si
+                  cancella e la cifra resta a tuo carico.
+                </p>
+              )}
             </form>
           )}
         </div>

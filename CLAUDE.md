@@ -21,6 +21,15 @@ l'importo li copre); in porta c'è "attiva al volo" per chi salda a serata inizi
 Prezzo e fascia vengono **copiati dentro il biglietto** alla vendita: cambiare i prezzi dopo non
 tocca quelli già fatti. **PENDING Luka: incollare `supabase/09_prevendite.sql`** — finché non lo
 fa, `/pr` e `/admin/pr` dicono che il modulo non è installato e il resto del sito non cambia.
+**Le prevendite della direzione (22 set, `supabase/10_prevendite_direzione.sql`).** Voluto da
+Luka dopo aver visto la Fase 1: l'admin entra su `/pr` anche senza profilo crew, **vende sempre**
+(niente blocchetti, niente scorta esaurita, niente vendite chiuse) e quello che vende **nasce già
+valido**, perché i soldi li ha in mano lui. `presales.pr_id` è diventata nullable — vuota significa
+"venduta dalla direzione", e c'è `da_admin` a dirlo; nel pannello quelle righe si leggono
+`DIREZIONE`, e i loro soldi entrano fra i raccolti della serata. **Annullare un biglietto resta
+solo dell'admin**: i PR non hanno nessuna funzione per farlo.
+**PENDING Luka: incollare `10_prevendite_direzione.sql` dopo il 09.**
+
 Restano da fare: **Fase 2** scanner porta offline (oggi `/admin/scan` non legge ancora i token
 delle prevendite) e **Fase 3** tavoli, omaggi, stampe di fine serata.
 Il biglietto mostra la locandina **sfocata** come sfondo: la nitida è riservata ai membri dalle

@@ -118,13 +118,15 @@ export default function PrPage() {
   return (
     <main className="flex-1 px-5 py-10">
       <div className="mx-auto w-full max-w-lg">
-        {!stato.aperta && stato.sono_admin && (
-          <div className="mb-6 border border-amber-400/40 bg-amber-400/5 px-4 py-3">
-            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-amber-300">
-              modalità prova
+        {stato.sono_admin && (
+          <div className="mb-6 border border-brand-red/40 bg-brand-red/5 px-4 py-3">
+            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-red">
+              direzione
             </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-white/60">
-              L&apos;area è chiusa: la stai vedendo perché sei admin. I PR non entrano.
+            <p className="mt-1 text-[11px] leading-relaxed text-white/70">
+              Vendi senza limiti, su qualsiasi serata, anche quando per gli altri è tutto
+              esaurito. Quello che fai tu è valido subito.
+              {!stato.aperta && " L'area per i PR è ancora chiusa: loro non entrano."}
             </p>
           </div>
         )}
@@ -136,9 +138,13 @@ export default function PrPage() {
 
         {eventi.length === 0 ? (
           <div className="mt-8 border border-white/10 px-5 py-8 text-center">
-            <p className="text-sm text-white">Non hai ancora prevendite in mano.</p>
+            <p className="text-sm text-white">
+              {stato.sono_admin ? "Non c'è nessuna serata in archivio." : "Non hai ancora prevendite in mano."}
+            </p>
             <p className="mt-2 text-[12px] leading-relaxed text-brand-gray">
-              Te le consegna Luka, serata per serata. Appena te ne dà, le trovi qui.
+              {stato.sono_admin
+                ? "Creane una da /admin/eventi e comparirà qui."
+                : "Te le consegna Luka, serata per serata. Appena te ne dà, le trovi qui."}
             </p>
           </div>
         ) : (
@@ -155,24 +161,39 @@ export default function PrPage() {
                   {e.locale ? ` · ${e.locale}` : ""}
                 </p>
                 <div className="mt-3 flex items-end gap-5">
-                  <div>
-                    <p className="font-display text-2xl leading-none text-brand-red">{e.residue}</p>
-                    <p className="font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray">
-                      da vendere
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-display text-2xl leading-none text-white">{e.vendute}</p>
-                    <p className="font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray">
-                      fatte
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-display text-2xl leading-none text-white/40">{e.assegnate}</p>
-                    <p className="font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray">
-                      avute
-                    </p>
-                  </div>
+                  {stato.sono_admin ? (
+                    <div>
+                      <p className="font-display text-2xl leading-none text-white">{e.vendute}</p>
+                      <p className="font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray">
+                        fatte da te
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="font-display text-2xl leading-none text-brand-red">
+                          {e.residue}
+                        </p>
+                        <p className="font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray">
+                          da vendere
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-display text-2xl leading-none text-white">{e.vendute}</p>
+                        <p className="font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray">
+                          fatte
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-display text-2xl leading-none text-white/40">
+                          {e.assegnate}
+                        </p>
+                        <p className="font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray">
+                          avute
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </Link>
             ))}

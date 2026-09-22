@@ -348,6 +348,20 @@ export default function AdminPrPage() {
         </div>
 
         {ev && (
+          <Link
+            href={`/pr/${evento}`}
+            className="mt-4 block border border-brand-red bg-brand-red/10 px-4 py-4 transition-colors hover:bg-brand-red/20"
+          >
+            <p className="font-display text-lg uppercase leading-none text-white">
+              Fai tu una prevendita →
+            </p>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-white/60">
+              Senza limiti di scorte e di blocchetti. Quello che vendi tu è valido subito.
+            </p>
+          </Link>
+        )}
+
+        {ev && (
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="border border-white/10 px-3 py-3">
               <p className="font-display text-2xl leading-none text-white">{ev.vendute}</p>
