@@ -49,6 +49,19 @@ Il SQL Editor esegue tutto in **una transazione sola**: quella riga fa **annulla
 funzioni comprese, e sembra che non sia stato incollato niente. I controlli in fondo leggono le
 tabelle (`select count(*) from public.profiles ...`), mai le funzioni.
 
+**Il biglietto non parla di soldi (22 set, `12_biglietto_under16.sql`).** Luka, vedendolo dal vivo,
+ha tolto "in attesa di conferma": per il cliente il biglietto è **valido dal momento in cui lo
+riceve**, e gli unici stati che vede sono *valido* e *già usato* (rosso, "vale una volta sola: al
+primo ingresso viene staccato" — serve a togliere l'idea di girare uno screenshot). Che il PR
+abbia saldato resta **un fatto interno**, visibile solo nel pannello e nell'area PR.
+**Conseguenza da tenere presente in porta:** un cliente può presentarsi convinto di essere a posto
+mentre il suo PR non ha ancora consegnato i contanti — il controllo va fatto dal pannello, non dalla
+faccia del cliente.
+Sotto i 18 il biglietto chiede il documento; **sotto i 16 chiede anche la delega** firmata da chi
+accompagna, con il link preso da `DELEGA_UNDER16_URL` in `lib/event.ts` — **vuoto finché Luka non
+manda il PDF**, e finché è vuoto la pagina dice di chiedere il modulo a chi ha venduto la prevendita.
+**PENDING Luka: incollare `12_biglietto_under16.sql`, e mandare il link della delega.**
+
 Restano da fare: **Fase 2** scanner porta offline (oggi `/admin/scan` non legge ancora i token
 delle prevendite) e **Fase 3** tavoli, omaggi, stampe di fine serata.
 Il biglietto mostra la locandina **sfocata** come sfondo: la nitida è riservata ai membri dalle

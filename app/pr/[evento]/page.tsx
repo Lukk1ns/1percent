@@ -34,6 +34,7 @@ type Biglietto = {
   token: string;
   stato: "in_attesa" | "attiva" | "usata" | "annullata";
   minorenne: boolean;
+  under16: boolean;
   created_at: string;
 };
 
@@ -184,6 +185,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
       token: res.token,
       stato: r?.senza_limite ? "attiva" : "in_attesa",
       minorenne: Boolean(res.minorenne),
+      under16: Boolean(res.under16),
       created_at: new Date().toISOString(),
     });
     setNome("");
@@ -237,10 +239,12 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           {appenaFatto.minorenne && (
             <div className="mt-4 border border-amber-400/40 bg-amber-400/5 px-4 py-3">
               <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-amber-300">
-                minorenne
+                {appenaFatto.under16 ? "meno di 16 anni" : "minorenne"}
               </p>
-              <p className="mt-1 text-[11px] leading-relaxed text-white/60">
-                Avvisalo che all&apos;ingresso serve il documento.
+              <p className="mt-1 text-[11px] leading-relaxed text-white/70">
+                {appenaFatto.under16
+                  ? "All'ingresso servono documento e delega firmata da un genitore. Diglielo adesso, non in porta."
+                  : "Avvisalo che all'ingresso serve il documento."}
               </p>
             </div>
           )}
@@ -283,10 +287,17 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
 
           <button
             onClick={() => setAppenaFatto(null)}
-            className="mt-6 w-full py-3 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white"
+            className="mt-6 w-full border border-white/20 py-4 font-tech text-[10px] uppercase tracking-[0.25em] text-white transition-colors hover:border-brand-red"
           >
             un altro nominativo →
           </button>
+
+          <Link
+            href={r.senza_limite ? "/admin/pr" : "/pr"}
+            className="mt-3 block w-full py-3 text-center font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white"
+          >
+            {r.senza_limite ? "← ho finito, torno al pannello" : "← ho finito, torno alle serate"}
+          </Link>
         </div>
       </main>
     );
@@ -518,7 +529,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                         {b.nome} {b.cognome}
                         {b.minorenne && (
                           <span className="ml-2 font-tech text-[9px] uppercase tracking-[0.15em] text-amber-300">
-                            minorenne
+                            {b.under16 ? "under 16 · delega" : "minorenne"}
                           </span>
                         )}
                       </p>

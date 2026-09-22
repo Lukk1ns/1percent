@@ -50,6 +50,7 @@ type BigliettoAdmin = {
   token: string;
   stato: string;
   minorenne: boolean;
+  under16: boolean;
   pr_alias: string;
   pr_nome: string | null;
   created_at: string;
@@ -733,7 +734,7 @@ export default function AdminPrPage() {
                       {b.nome} {b.cognome}
                       {b.minorenne && (
                         <span className="ml-2 font-tech text-[9px] uppercase tracking-[0.15em] text-amber-300">
-                          minorenne
+                          {b.under16 ? "under 16 · delega" : "minorenne"}
                         </span>
                       )}
                     </p>

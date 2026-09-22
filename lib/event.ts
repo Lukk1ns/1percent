@@ -92,3 +92,14 @@ export const SOLO_STAFF = true;
  * Si cambia da qui: cambiarla invalida tutti i link già in giro.
  */
 export const CHIAVE_INVITO = "pn935ad9c1";
+
+/**
+ * Il modulo di delega per chi ha meno di 16 anni compiuti.
+ *
+ * Lo firma chi accompagna il minore e va portato all'ingresso insieme al
+ * documento. Finché qui non c'è un indirizzo, il biglietto dice comunque
+ * che la delega serve, e di chiederla a chi ha venduto la prevendita.
+ *
+ * Luka: quando hai caricato il PDF, incolla il suo link qui dentro.
+ */
+export const DELEGA_UNDER16_URL = "";

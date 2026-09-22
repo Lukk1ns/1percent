@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import { locandinaSfocataUrl } from "@/lib/locandina";
 import { dataLunga, ora } from "@/lib/eventi";
+import { DELEGA_UNDER16_URL } from "@/lib/event";
 
 type Biglietto = {
   nome: string;
@@ -13,6 +14,7 @@ type Biglietto = {
   prezzo: number;
   stato: "in_attesa" | "attiva" | "usata" | "annullata";
   minorenne: boolean;
+  under16: boolean;
   evento: string;
   locale: string | null;
   citta: string | null;
@@ -90,7 +92,6 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
   }
 
   const annullato = b.stato === "annullata";
-  const inAttesa = b.stato === "in_attesa";
   const usato = b.stato === "usata";
   const sfondo = b.cover_key ? locandinaSfocataUrl(b.cover_key, b.cover_v) : null;
 
@@ -145,19 +146,13 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
                 </p>
               </div>
             ) : usato ? (
-              <div className="border border-white/15 px-4 py-3 text-center">
-                <p className="font-tech text-[11px] uppercase tracking-[0.2em] text-brand-gray">
-                  già entrato
+              <div className="border border-brand-red/50 bg-brand-red/10 px-4 py-4 text-center">
+                <p className="font-display text-xl uppercase leading-none text-brand-red">
+                  già usato
                 </p>
-              </div>
-            ) : inAttesa ? (
-              <div className="border border-amber-400/40 bg-amber-400/5 px-4 py-3 text-center">
-                <p className="font-tech text-[11px] uppercase tracking-[0.2em] text-amber-300">
-                  in attesa di conferma
-                </p>
-                <p className="mt-2 text-[11px] leading-relaxed text-white/60">
-                  Diventa valido quando chi te l&apos;ha venduto consegna l&apos;incasso.
-                  Di solito è questione di ore: riapri questa pagina prima di partire.
+                <p className="mt-2 text-[11px] leading-relaxed text-white/70">
+                  Questo biglietto è già entrato. Vale una volta sola: una volta passato
+                  in porta viene staccato e non serve più a nessuno.
                 </p>
               </div>
             ) : (
@@ -176,8 +171,31 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
               sei minorenne
             </p>
             <p className="mt-2 text-[11px] leading-relaxed text-white/60">
-              All&apos;ingresso serve un documento. Presentati con chi ti accompagna.
+              All&apos;ingresso serve un documento d&apos;identità.
             </p>
+            {b.under16 && (
+              <>
+                <p className="mt-3 text-[11px] leading-relaxed text-white">
+                  Se non hai ancora compiuto <strong>16 anni</strong> serve anche la{" "}
+                  <strong>delega</strong>, firmata da un genitore o da chi ti accompagna.
+                  Senza quella non si entra.
+                </p>
+                {DELEGA_UNDER16_URL ? (
+                  <a
+                    href={DELEGA_UNDER16_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-block border border-white/25 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-white"
+                  >
+                    scarica la delega →
+                  </a>
+                ) : (
+                  <p className="mt-2 text-[11px] leading-relaxed text-brand-gray">
+                    Chiedi il modulo a chi ti ha venduto il biglietto.
+                  </p>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -190,8 +208,9 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
         )}
 
         <p className="mt-8 text-center text-[10px] leading-relaxed text-brand-gray/40">
-          Questo biglietto vale per una persona sola. Non farne screenshot da girare:
-          al primo ingresso viene bruciato.
+          Vale per una persona sola e si usa una volta sola: al primo ingresso viene
+          staccato. Uno screenshot girato a un amico non fa entrare nessuno — entra chi
+          arriva per primo, l&apos;altro resta fuori.
         </p>
       </div>
     </main>
