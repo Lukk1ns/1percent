@@ -317,14 +317,14 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* I pannelli: le quattro porte, scritte grandi e cosa c'è dentro.
-          Prima erano quattro bottoncini grigi in alto a destra e non si
+      {/* I pannelli: le porte, scritte grandi e cosa c'è dentro.
+          Prima erano bottoncini grigi in alto a destra e non si
           trovavano più. */}
       <div className="mb-8">
         <p className="text-[10px] uppercase tracking-[0.4em] text-brand-gray/60 mb-3">
           i pannelli
         </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {[
             {
               href: "/admin/eventi",
@@ -352,6 +352,13 @@ export default function AdminDashboardPage() {
               emoji: "📷",
               titolo: "Scanner QR",
               cosa: "Valida gli ingressi alla serata",
+              acceso: false,
+            },
+            {
+              href: "/admin/pr",
+              emoji: "🎟️",
+              titolo: "Prevendite",
+              cosa: "Blocchetti ai PR, incassi, biglietti",
               acceso: false,
             },
           ].map((p) => (

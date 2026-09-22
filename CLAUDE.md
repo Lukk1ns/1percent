@@ -1,8 +1,30 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 2 agosto 2026
+> Ultimo aggiornamento: 22 settembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**PREVENDITE / PR — Fase 1 costruita (22 settembre 2026).** Il modulo che sostituisce Evently.
+Piano completo in `~/Desktop/ClaudeLukkins/PROPOSTE/proposta_prevendite_pr.md`.
+Decisioni di Luka del 22 set: **niente import dei PR da Evently** — i PR sono la crew già
+approvata su questo sito (`profiles.role = 'crew'`), nessun ruolo nuovo; **tavoli, omaggi e
+delega under 16 rimandati**; l'area resta **invisibile finché non è provata**.
+L'interruttore è nel database (`prevendite_config.aperta`, parte a **false**): con l'area chiusa
+`/pr` la apre **solo l'admin**, i PR sbattono sulla porta. Nessun link al modulo esiste nel sito
+pubblico, e `/pr` e `/biglietto` sono `noindex`.
+Rotte: **`/pr`** (le sue serate) · **`/pr/<event_id>`** (contatori, nuovo nominativo, invio
+WhatsApp, lista clienti) · **`/biglietto/<token>`** (pagina pubblica del cliente, si aggiorna da
+sola ogni 20s) · **`/admin/pr`** (interruttore, blocchetti, incassi, fasce di prezzo, biglietti).
+La regola che regge tutto: il biglietto nasce **in attesa** e diventa valido **solo quando Luka
+segna che i contanti sono arrivati** (`admin_pr_incassa` attiva i biglietti dal più vecchio finché
+l'importo li copre); in porta c'è "attiva al volo" per chi salda a serata iniziata.
+Prezzo e fascia vengono **copiati dentro il biglietto** alla vendita: cambiare i prezzi dopo non
+tocca quelli già fatti. **PENDING Luka: incollare `supabase/09_prevendite.sql`** — finché non lo
+fa, `/pr` e `/admin/pr` dicono che il modulo non è installato e il resto del sito non cambia.
+Restano da fare: **Fase 2** scanner porta offline (oggi `/admin/scan` non legge ancora i token
+delle prevendite) e **Fase 3** tavoli, omaggi, stampe di fine serata.
+Il biglietto mostra la locandina **sfocata** come sfondo: la nitida è riservata ai membri dalle
+policy dello storage, servirebbe una route dedicata per darla a chi ha un token.
 
 Il progetto è in **migrazione da serata a organizzazione**. Il piano completo, con
 schema database, schermate e ordine di lavorazione, è in

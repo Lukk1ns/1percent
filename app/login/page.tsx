@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  // Chi arriva da una pagina riservata (es. /pr) ci torna dopo il login,
+  // invece di finire sulla sua card.
+  const searchParams = useSearchParams();
+  const grezzo = searchParams.get("next");
+  const next = grezzo && grezzo.startsWith("/") && !grezzo.startsWith("//") ? grezzo : null;
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,7 +23,11 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error: err } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo:
+          `${window.location.origin}/auth/callback` +
+          (next ? `?next=${encodeURIComponent(next)}` : ""),
+      },
     });
     if (err) {
       const msg = err.message?.toLowerCase() ?? "";
@@ -80,5 +89,19 @@ export default function LoginPage() {
         Non hai ancora un profilo? Registrati →
       </button>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex-1 flex items-center justify-center">
+          <div className="font-display text-brand-red text-6xl animate-pulse-glow">1%</div>
+        </main>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
