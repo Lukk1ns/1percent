@@ -94,15 +94,18 @@ export const SOLO_STAFF = true;
 export const CHIAVE_INVITO = "pn935ad9c1";
 
 /**
- * Il modulo di delega per chi ha meno di 16 anni compiuti.
+ * Il modulo per chi ha meno di 16 anni compiuti, quando la serata non
+ * ne ha uno suo.
  *
- * Lo firma chi accompagna il minore e va portato all'ingresso insieme al
- * documento. Finché qui non c'è un indirizzo, il biglietto dice comunque
- * che la delega serve, e di chiederla a chi ha venduto la prevendita.
+ * Ogni serata può avere il proprio (`events.delega_url`, si sceglie dal
+ * pannello) perché i due locali sono due società diverse e hanno due
+ * informative privacy diverse. Questo è il ripiego, usato solo se per
+ * quella serata non è stato scelto niente.
  *
- * Luka: quando hai caricato il PDF, incolla il suo link qui dentro.
+ * I file stanno in `public/moduli/`; i sorgenti da cui si rigenerano
+ * sono in ClaudeLukkins/STAGIONE_INVERNALE_2026-27/PDF/.
  */
-export const DELEGA_UNDER16_URL = "";
+export const DELEGA_UNDER16_URL = "/moduli/delega-pr1me.pdf";
 
 /**
  * Le foto aprono la porta.
