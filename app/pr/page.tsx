@@ -63,7 +63,15 @@ export default function PrPage() {
       setStato(s);
 
       if (s.sono_pr && (s.aperta || s.sono_admin)) {
-        const { data } = await supabase.rpc("pr_eventi");
+        // Un errore qui non va nascosto dietro una lista vuota: prima
+        // "nessuna serata" voleva dire tanto "non ce ne sono" quanto
+        // "il database si è rifiutato di rispondere".
+        const { data, error: errEv } = await supabase.rpc("pr_eventi");
+        if (errEv) {
+          setErrore(errEv.message);
+          setLoading(false);
+          return;
+        }
         setEventi(data ?? []);
       }
       setLoading(false);

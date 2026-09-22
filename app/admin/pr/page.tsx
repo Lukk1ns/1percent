@@ -150,6 +150,10 @@ export default function AdminPrPage() {
       supabase.rpc("admin_pr_cruscotto", { p_event: id }),
       supabase.rpc("admin_pr_per_fascia", { p_event: id }),
     ]);
+    // Stessa regola del resto: se il database si lamenta, si legge.
+    const primoErrore = [prRes, fRes, bRes, cRes, pfRes].find((r) => r.error)?.error;
+    setErrore(primoErrore ? primoErrore.message : null);
+
     setPr(prRes.data ?? []);
     setFasce(fRes.data ?? []);
     setBiglietti(bRes.data ?? []);
