@@ -74,6 +74,19 @@ girare senza scoprire la locandina. Colonne `events.ticket_key` / `ticket_update
 la vede il cliente. Senza grafica il biglietto esce col solo QR: funziona, ma è anonimo.
 **PENDING Luka: incollare `13_grafica_biglietto.sql`.**
 
+**IL COUNTDOWN DELLE ULTIME PREVENDITE (22 set, `14_countdown.sql`).** Regola voluta da Luka:
+**il PR non deve mai sapere quante prevendite restano** — se sa che ne mancano 9 si organizza.
+Le scorte residue sono sparite dalla sua schermata: `pr_fasce` restituisce i numeri veri (`stock`,
+`rimaste`, `vendute`) **solo a chi è admin**, agli altri `null`. Al loro posto, quando Luka preme
+**"ULTIME 13 · UOMO"** (un tasto per fascia, in cima a `/admin/pr`, il 13 è modificabile), parte
+l'avviso: *"UOMO al 78%"* con la barra, sopra il modulo dei nuovi nominativi. La percentuale la
+calcola `percentuale_countdown(base, rimaste)`: si parte da **75%** e si arriva a **99%** quando ne
+resta una, 100% = finite. Accendere il countdown mette il tetto della fascia a `vendute + base`,
+quindi a zero la fascia è chiusa **per i PR** (Luka continua a vendere, vedi il 10); spegnerlo
+toglie tetto e avviso. Dalla percentuale non si ricava il numero: non sanno da quanti si parte né
+con che passo sale.
+**PENDING Luka: incollare `14_countdown.sql`.**
+
 Restano da fare: **Fase 2** scanner porta offline (oggi `/admin/scan` non legge ancora i token
 delle prevendite) e **Fase 3** tavoli, omaggi, stampe di fine serata.
 Il biglietto mostra la locandina **sfocata** come sfondo: la nitida è riservata ai membri dalle

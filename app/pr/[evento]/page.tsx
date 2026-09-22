@@ -21,7 +21,15 @@ type Riepilogo = {
   senza_limite: boolean;
 };
 
-type Fascia = { id: string; label: string; price: number; stock: number | null; rimaste: number | null };
+type Fascia = {
+  id: string;
+  label: string;
+  price: number;
+  esaurita: boolean;
+  countdown_on: boolean;
+  /** Quanto è piena la fascia, da mostrare al PR. Niente numeri: solo questa. */
+  percentuale: number | null;
+};
 
 type Biglietto = {
   id: string;
@@ -382,6 +390,48 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           </div>
         )}
 
+        {/* L'avviso delle ultime prevendite: lo accende Luka, fascia per
+            fascia. Il PR vede quanto è piena, mai quante ne restano. */}
+        {fasce.some((f) => f.countdown_on) && (
+          <div className="mt-6 flex flex-col gap-3">
+            {fasce
+              .filter((f) => f.countdown_on)
+              .map((f) => {
+                const pct = f.percentuale ?? 0;
+                const finita = f.esaurita || pct >= 100;
+                return (
+                  <div
+                    key={f.id}
+                    className={`border px-4 py-4 ${
+                      finita
+                        ? "border-brand-red/50 bg-brand-red/10"
+                        : "border-amber-400/50 bg-amber-400/5"
+                    }`}
+                  >
+                    <p
+                      className={`font-display text-2xl uppercase leading-none ${
+                        finita ? "text-brand-red" : "text-amber-300"
+                      }`}
+                    >
+                      {finita ? `${f.label}: finite` : `${f.label} al ${pct}%`}
+                    </p>
+                    <div className="mt-3 h-1.5 w-full bg-white/10">
+                      <div
+                        className={finita ? "h-full bg-brand-red" : "h-full bg-amber-400"}
+                        style={{ width: `${Math.min(pct, 100)}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-[11px] leading-relaxed text-white/70">
+                      {finita
+                        ? "Per questa fascia non ci sono più prevendite. Chi vuole entrare paga in cassa."
+                        : "Siamo alle ultime. Chi ce l'ha in mano la chiuda adesso."}
+                    </p>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+
         {/* Nuovo nominativo */}
         <div className="mt-8 border border-white/10 px-4 py-5">
           <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
@@ -460,24 +510,24 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {fasce.map((f) => {
-                    const esaurita = f.rimaste !== null && f.rimaste <= 0 && !r.senza_limite;
+                    const bloccata = f.esaurita && !r.senza_limite;
                     const scelta = fascia === f.id;
                     return (
                       <button
                         key={f.id}
                         type="button"
-                        disabled={esaurita}
+                        disabled={bloccata}
                         onClick={() => setFascia(f.id)}
                         className={`border px-4 py-3 text-left transition-colors ${
                           scelta
                             ? "border-brand-red bg-brand-red/10"
                             : "border-white/15 hover:border-white/40"
-                        } ${esaurita ? "opacity-30" : ""}`}
+                        } ${bloccata ? "opacity-30" : ""}`}
                       >
                         <span className="block text-sm text-white">{f.label}</span>
                         <span className="block font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
                           {Number(f.price).toFixed(0)} €
-                          {f.rimaste !== null ? ` · ne restano ${Math.max(f.rimaste, 0)}` : ""}
+                          {f.esaurita ? " · esaurita" : ""}
                         </span>
                       </button>
                     );

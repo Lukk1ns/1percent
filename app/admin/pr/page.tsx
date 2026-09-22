@@ -38,7 +38,17 @@ type RigaPR = {
   mancante: number;
 };
 
-type Fascia = { id: string; label: string; price: number; stock: number | null; rimaste: number | null };
+type Fascia = {
+  id: string;
+  label: string;
+  price: number;
+  esaurita: boolean;
+  countdown_on: boolean;
+  percentuale: number | null;
+  stock: number | null;
+  rimaste: number | null;
+  vendute: number | null;
+};
 
 type BigliettoAdmin = {
   id: string;
@@ -75,12 +85,16 @@ type Cruscotto = {
 };
 
 type PerFascia = {
+  id: string;
   label: string;
   prezzo: number;
   vendute: number;
   incasso: number;
   stock: number | null;
   rimaste: number | null;
+  countdown_on: boolean;
+  countdown_base: number | null;
+  percentuale: number | null;
 };
 
 const euro = (n: number) => `${Number(n ?? 0).toFixed(0)} €`;
@@ -445,6 +459,60 @@ export default function AdminPrPage() {
     await carica();
   }
 
+  /** "ULTIME 13": da qui in poi i PR vedono una percentuale, non un numero. */
+  async function accendiCountdown(f: PerFascia) {
+    const risposta = window.prompt(
+      `Ultime prevendite ${f.label.toUpperCase()}.\n\n` +
+        `Quante ne restano da adesso? Da questo momento i PR non vedono più\n` +
+        `nessun numero: gli compare solo "${f.label} al 75%", che sale mano a mano.\n` +
+        `Quando finiscono, per loro la fascia è chiusa (tu continui a vendere).`,
+      "13",
+    );
+    if (risposta === null) return;
+    const base = Number(risposta);
+    if (!Number.isInteger(base) || base < 1) {
+      window.alert("Serve un numero intero, almeno 1.");
+      return;
+    }
+
+    setLavorando(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("admin_tier_countdown", {
+      p_tier: f.id,
+      p_base: base,
+    });
+    setLavorando(false);
+    if (error) {
+      window.alert(error.message);
+      return;
+    }
+    const res = data?.[0];
+    if (res?.esito !== "ok") {
+      window.alert("Non è andata. Riprova.");
+      return;
+    }
+    window.alert(
+      `Acceso. I PR adesso leggono "${f.label} al ${res.percentuale}%".\n` +
+        `Il numero vero — ${base} — lo sai solo tu.`,
+    );
+    await caricaEvento(evento);
+  }
+
+  async function spegniCountdown(f: PerFascia) {
+    if (
+      !window.confirm(
+        `Spegnere il countdown su ${f.label}?\n\n` +
+          `L'avviso sparisce dalla schermata dei PR e la fascia torna senza tetto.`,
+      )
+    )
+      return;
+    setLavorando(true);
+    const supabase = createClient();
+    await supabase.rpc("admin_tier_countdown_off", { p_tier: f.id });
+    setLavorando(false);
+    await caricaEvento(evento);
+  }
+
   async function eliminaFascia(id: string) {
     const supabase = createClient();
     const { data } = await supabase.rpc("admin_tier_elimina", { p_id: id });
@@ -648,6 +716,45 @@ export default function AdminPrPage() {
               </div>
             )}
 
+            {/* I tasti delle ultime prevendite: è l'unico modo in cui un PR
+                viene a sapere che si sta chiudendo, e lo sa in percentuale. */}
+            {perFascia.length > 0 && (
+              <div className="mt-3 border border-white/10 px-4 py-4">
+                <p className="font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray">
+                  avviso ai pr
+                </p>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-brand-gray/70">
+                  Finché non premi niente, i PR non sanno quante prevendite restano.
+                  Premendo qui gli compare un avviso in percentuale — mai un numero.
+                </p>
+                <div className="mt-3 flex flex-col gap-2">
+                  {perFascia.map((f) => (
+                    <button
+                      key={f.id}
+                      disabled={lavorando}
+                      onClick={() => (f.countdown_on ? spegniCountdown(f) : accendiCountdown(f))}
+                      className={`border px-4 py-3 text-left transition-colors disabled:opacity-40 ${
+                        f.countdown_on
+                          ? "border-amber-400/60 bg-amber-400/10"
+                          : "border-white/20 hover:border-brand-red"
+                      }`}
+                    >
+                      <span className="block font-display text-lg uppercase leading-none text-white">
+                        {f.countdown_on
+                          ? `${f.label} · acceso al ${f.percentuale}%`
+                          : `ultime 13 · ${f.label}`}
+                      </span>
+                      <span className="mt-1 block font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                        {f.countdown_on
+                          ? `ne restano ${Math.max(f.rimaste ?? 0, 0)} · premi per spegnere`
+                          : "premi per far partire l'avviso"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <p className="mt-3 text-[10px] leading-relaxed text-brand-gray/60">
               {cruscotto.pr_attivi} PR con prevendite in mano
               {cruscotto.pr_in_debito > 0 && `, di cui ${cruscotto.pr_in_debito} devono ancora portare i soldi`}
@@ -816,7 +923,11 @@ export default function AdminPrPage() {
                     <p className="text-sm text-white">{f.label}</p>
                     <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
                       {euro(f.price)}
-                      {f.stock !== null ? ` · tetto ${f.stock}, ne restano ${Math.max(f.rimaste ?? 0, 0)}` : " · senza tetto"}
+                      {f.countdown_on
+                        ? ` · countdown acceso, ne restano ${Math.max(f.rimaste ?? 0, 0)}`
+                        : f.stock !== null
+                          ? ` · tetto ${f.stock}, ne restano ${Math.max(f.rimaste ?? 0, 0)}`
+                          : " · senza tetto"}
                     </p>
                   </div>
                   <button
