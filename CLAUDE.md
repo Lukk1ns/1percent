@@ -23,8 +23,20 @@ alta si sente in mano.
 legge da lontano, e il bottone grande **"cerca per nome"** per il telefono scarico o lo screenshot
 cancellato. In testa il conto "entrati / attesi", in fondo l'avviso di quanti biglietti non sono
 ancora stati pagati dai PR.
-**Manca ancora la parte offline** (PWA + lista precaricata, come faceva Evently): oggi senza rete
-la porta non valida. Se la serata è in un posto senza campo, va fatta prima.
+**E funziona senza rete (`supabase/21_porta_offline.sql`, `lib/porta-offline.ts`, `public/sw-porta.js`).**
+Come Evently, e per lo stesso motivo: in porta il campo va e viene. **Prima** della serata si preme
+"scarica lista" (`porta_lista`, che manda solo nome/cognome/fascia/stato/età — niente telefono né
+prezzo: quel telefono può finire in mano a chiunque); durante la serata, se `navigator.onLine` è
+falso **o se il server non risponde**, si valida contro la lista in `localStorage` e l'ingresso va in
+coda; appena torna la rete la coda parte da sola (`porta_sync`, che scrive **l'orario vero della
+porta**, non quello della sincronizzazione). Un service worker limitato a `/admin/porta` e a
+`_next/static` tiene la pagina apribile offline — **network-first**, perché una porta che mostra una
+versione vecchia è peggio di una lenta — e non tocca il resto del sito.
+**Il limite, da conoscere:** due telefoni offline non si parlano, quindi lo stesso biglietto può
+passare due volte. Non è evitabile; `porta_sync` però **lo dice**, con nome e ora, e la pagina lo
+mostra in un avviso invece di nasconderlo. La lista scade da sé dopo 3 giorni e c'è "fine serata ·
+cancella la lista dal telefono", perché dentro ci sono nomi di persone.
+**PENDING Luka: incollare `20_porta.sql` e `21_porta_offline.sql`.**
 
 **I SOLDI NON SI CANCELLANO (22 set, `supabase/19_soldi_al_sicuro.sql`).** Richiesta di Luka dopo il
 controllo di sicurezza: *"non posso rischiare di perdere traccia dei soldi raccolti e da chi"* —

@@ -6,6 +6,18 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, giornoEData, ora } from "@/lib/eventi";
 import { preparaAudio, suonaAttenzione, suonaNo, suonaOk } from "@/lib/suoni";
+import {
+  type BigliettoLocale,
+  cercaOffline,
+  codaDaMandare,
+  contatoreLocale,
+  daMandare,
+  depositoAttuale,
+  salvaLista,
+  segnaMandati,
+  svuota,
+  validaOffline,
+} from "@/lib/porta-offline";
 
 type Serata = { event_id: string; nome: string; starts_at: string; biglietti: number };
 
@@ -100,11 +112,42 @@ export default function PortaPage() {
   const scannerRef = useRef<Scanner | null>(null);
   const occupato = useRef(false);
 
+  // ── senza rete ──────────────────────────────────────────────
+  const [inRete, setInRete] = useState(true);
+  const [listaPronta, setListaPronta] = useState<{ quanti: number; quando: string } | null>(null);
+  const [inCoda, setInCoda] = useState(0);
+  const [scaricando, setScaricando] = useState(false);
+  const [localeEntrati, setLocaleEntrati] = useState<{ entrati: number; totali: number } | null>(null);
+
   const aggiornaRiepilogo = useCallback(async (ev: string) => {
     if (!ev) return;
     const supabase = createClient();
     const { data } = await supabase.rpc("porta_riepilogo", { p_event: ev });
     setRiepilogo(data?.[0] ?? null);
+  }, []);
+
+  // Il guardiano che tiene la pagina in cassaforte, e l'orecchio sulla rete
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw-porta.js", { scope: "/admin/porta" }).catch(() => {});
+    }
+    const su = () => setInRete(true);
+    const giu = () => setInRete(false);
+    setInRete(navigator.onLine);
+    window.addEventListener("online", su);
+    window.addEventListener("offline", giu);
+
+    const d = depositoAttuale();
+    if (d) {
+      setListaPronta({ quanti: d.biglietti.length, quando: d.scaricata });
+      setLocaleEntrati(contatoreLocale());
+    }
+    setInCoda(daMandare());
+
+    return () => {
+      window.removeEventListener("online", su);
+      window.removeEventListener("offline", giu);
+    };
   }, []);
 
   useEffect(() => {
@@ -143,20 +186,65 @@ export default function PortaPage() {
       if (occupato.current || !serata) return;
       occupato.current = true;
 
-      const supabase = createClient();
-      const { data, error } = await supabase.rpc("porta_checkin", {
-        p_token: token,
-        p_event: serata,
-      });
+      let r: Esito;
 
-      const r: Esito = error
-        ? {
-            esito: "sconosciuto",
-            nome: null, cognome: null, tier_label: null, prezzo: null,
-            minorenne: null, under16: null, pr_alias: null, evento: null,
-            entrata_at: null, presale_id: null,
-          }
-        : (data?.[0] as Esito);
+      // Senza campo si lavora sulla lista scaricata prima
+      if (!navigator.onLine && depositoAttuale()) {
+        const loc = validaOffline(token);
+        r = {
+          esito:
+            loc.esito === "senza_lista"
+              ? "sconosciuto"
+              : (loc.esito as Esito["esito"]),
+          nome: loc.biglietto?.nome ?? null,
+          cognome: loc.biglietto?.cognome ?? null,
+          tier_label: loc.biglietto?.tier_label ?? null,
+          prezzo: null,
+          minorenne: loc.biglietto?.minorenne ?? null,
+          under16: loc.biglietto?.under16 ?? null,
+          pr_alias: loc.biglietto?.pr_alias ?? null,
+          evento: null,
+          entrata_at: null,
+          presale_id: null,
+        };
+        setInCoda(daMandare());
+        setLocaleEntrati(contatoreLocale());
+      } else {
+        const supabase = createClient();
+        const { data, error } = await supabase.rpc("porta_checkin", {
+          p_token: token,
+          p_event: serata,
+        });
+
+        if (error && depositoAttuale()) {
+          // il server non risponde ma la lista ce l'abbiamo: si va avanti
+          const loc = validaOffline(token);
+          r = {
+            esito: loc.esito === "senza_lista" ? "sconosciuto" : (loc.esito as Esito["esito"]),
+            nome: loc.biglietto?.nome ?? null,
+            cognome: loc.biglietto?.cognome ?? null,
+            tier_label: loc.biglietto?.tier_label ?? null,
+            prezzo: null,
+            minorenne: loc.biglietto?.minorenne ?? null,
+            under16: loc.biglietto?.under16 ?? null,
+            pr_alias: loc.biglietto?.pr_alias ?? null,
+            evento: null,
+            entrata_at: null,
+            presale_id: null,
+          };
+          setInCoda(daMandare());
+          setLocaleEntrati(contatoreLocale());
+        } else {
+          r = error
+            ? {
+                esito: "sconosciuto",
+                nome: null, cognome: null, tier_label: null, prezzo: null,
+                minorenne: null, under16: null, pr_alias: null, evento: null,
+                entrata_at: null, presale_id: null,
+              }
+            : (data?.[0] as Esito);
+        }
+      }
 
       if (r.esito === "ok") suonaOk();
       else if (r.esito === "non_pagato") suonaAttenzione();
@@ -168,7 +256,7 @@ export default function PortaPage() {
       }
 
       setEsito(r);
-      await aggiornaRiepilogo(serata);
+      if (navigator.onLine) await aggiornaRiepilogo(serata);
 
       // quanto resta sullo schermo: se passa, poco; se c'è da leggere, di più
       const quanto = r.esito === "ok" ? 2600 : 5200;
@@ -232,6 +320,22 @@ export default function PortaPage() {
       return;
     }
     const t = setTimeout(async () => {
+      if (!navigator.onLine && depositoAttuale()) {
+        setTrovati(
+          cercaOffline(cerca).map((b) => ({
+            id: b.token,
+            nome: b.nome,
+            cognome: b.cognome,
+            tier_label: b.tier_label,
+            stato: b.stato,
+            pr_alias: b.pr_alias,
+            minorenne: b.minorenne,
+            under16: b.under16,
+            token: b.token,
+          })),
+        );
+        return;
+      }
       const supabase = createClient();
       const { data } = await supabase.rpc("porta_cerca", {
         p_event: serata,
@@ -241,6 +345,68 @@ export default function PortaPage() {
     }, 250);
     return () => clearTimeout(t);
   }, [cerca, modoCerca, serata]);
+
+  /** Portarsi dietro la lista: si fa PRIMA, con la rete buona. */
+  async function scaricaLista() {
+    if (!serata) return;
+    setScaricando(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("porta_lista", { p_event: serata });
+    setScaricando(false);
+
+    if (error) {
+      window.alert(
+        "Non riesco a scaricare la lista. Se manca supabase/21_porta_offline.sql, va incollato.\n\n" +
+          error.message,
+      );
+      return;
+    }
+
+    try {
+      salvaLista(serata, ev?.nome ?? "serata", (data ?? []) as BigliettoLocale[]);
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : "Non riesco a salvare la lista.");
+      return;
+    }
+
+    const d = depositoAttuale();
+    if (d) setListaPronta({ quanti: d.biglietti.length, quando: d.scaricata });
+    setLocaleEntrati(contatoreLocale());
+    window.alert(
+      `Lista pronta: ${(data ?? []).length} biglietti sul telefono.\n\n` +
+        `Da adesso la porta funziona anche senza campo.`,
+    );
+  }
+
+  /** Riportare al server gli ingressi fatti senza rete. */
+  const mandaCoda = useCallback(async () => {
+    const coda = codaDaMandare();
+    if (coda.length === 0) return;
+
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("porta_sync", { p_scansioni: coda });
+    if (error) return;
+
+    const esiti = (data ?? []) as { token: string; esito: string; nome: string; cognome: string }[];
+    segnaMandati(esiti.map((e) => e.token));
+    setInCoda(daMandare());
+    if (serata) aggiornaRiepilogo(serata);
+
+    // I doppi ingressi si dicono, non si nascondono
+    const doppi = esiti.filter((e) => e.esito === "gia_entrato");
+    if (doppi.length > 0) {
+      window.alert(
+        `⚠️ ${doppi.length} ${doppi.length === 1 ? "persona era" : "persone erano"} già entrata prima:\n\n` +
+          doppi.map((d) => `· ${d.nome} ${d.cognome}`).join("\n") +
+          `\n\nSuccede quando due telefoni lavorano senza rete e non si parlano.`,
+      );
+    }
+  }, [serata, aggiornaRiepilogo]);
+
+  // Appena torna il campo, la coda parte da sola
+  useEffect(() => {
+    if (inRete && inCoda > 0) mandaCoda();
+  }, [inRete, inCoda, mandaCoda]);
 
   async function faiEntrareLoStesso(id: string) {
     if (
@@ -316,6 +482,49 @@ export default function PortaPage() {
             </p>
           </div>
         </div>
+
+        {/* Com'è messa la porta adesso: rete, lista, cose da mandare */}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span
+            className={`font-tech text-[9px] uppercase tracking-[0.15em] ${
+              inRete ? "text-brand-gray" : "text-amber-300"
+            }`}
+          >
+            {inRete ? "in rete" : "⚠ senza rete"}
+          </span>
+
+          {listaPronta ? (
+            <span className="font-tech text-[9px] uppercase tracking-[0.15em] text-emerald-400">
+              lista pronta · {listaPronta.quanti}
+              {localeEntrati ? ` · ${localeEntrati.entrati} entrati` : ""}
+            </span>
+          ) : (
+            <span className="font-tech text-[9px] uppercase tracking-[0.15em] text-amber-300">
+              nessuna lista sul telefono
+            </span>
+          )}
+
+          {inCoda > 0 && (
+            <span className="font-tech text-[9px] uppercase tracking-[0.15em] text-amber-300">
+              {inCoda} da mandare
+            </span>
+          )}
+
+          <button
+            onClick={scaricaLista}
+            disabled={scaricando || !inRete || !serata}
+            className="ml-auto border border-white/20 px-2.5 py-1.5 font-tech text-[9px] uppercase tracking-[0.15em] text-white disabled:opacity-40"
+          >
+            {scaricando ? "scarico…" : listaPronta ? "aggiorna lista" : "scarica lista"}
+          </button>
+        </div>
+
+        {!listaPronta && inRete && (
+          <p className="mt-2 text-[11px] leading-relaxed text-amber-300">
+            Scarica la lista adesso, finché il campo è buono: se durante la serata cade la
+            rete, senza lista la porta si ferma.
+          </p>
+        )}
 
         {serate.length > 1 && (
           <select
@@ -441,6 +650,27 @@ export default function PortaPage() {
             esci
           </Link>
         </div>
+        {listaPronta && inCoda === 0 && (
+          <button
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Cancellare la lista dal telefono?\n\n" +
+                    "Falla a fine serata: dentro ci sono i nomi delle persone, ed è giusto " +
+                    "che non restino sul telefono di nessuno.",
+                )
+              ) {
+                svuota();
+                setListaPronta(null);
+                setLocaleEntrati(null);
+              }
+            }}
+            className="mt-2 w-full py-2 font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray hover:text-white"
+          >
+            fine serata · cancella la lista dal telefono
+          </button>
+        )}
+
         {(riepilogo?.non_pagati ?? 0) > 0 && (
           <p className="mt-2 text-center text-[11px] text-amber-300">
             {riepilogo?.non_pagati} biglietti non ancora pagati dai PR: se arrivano, chiama Luka.
