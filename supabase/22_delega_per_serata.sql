@@ -1,5 +1,5 @@
 -- ============================================================
--- 22 — OGNI SERATA HA IL SUO MODULO DI DELEGA
+-- 22 — IL MODULO DI DELEGA E LA POSIZIONE DEL QR, PER SERATA
 --
 -- I due locali sono due società diverse — PAPI ON THE BEACH è QFB SRL,
 -- PR1ME CLUB è EXO SRLS — quindi hanno due moduli diversi, con due
@@ -13,6 +13,36 @@
 -- ============================================================
 
 alter table public.events add column if not exists delega_url text;
+
+-- Dove appoggiare il QR sulla grafica del biglietto: la distanza dal
+-- bordo alto, in percentuale. Ogni locandina ha il suo spazio libero —
+-- sotto il titolo, in mezzo, in fondo — e indovinarlo da qui è
+-- impossibile: lo sposta Luka guardando l'anteprima.
+alter table public.events add column if not exists qr_pos int
+  check (qr_pos between 0 and 100);
+
+
+create or replace function public.admin_set_event_qr(p_id uuid, p_pos int)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Non autorizzato';
+  end if;
+
+  update public.events e
+     set qr_pos = greatest(0, least(100, p_pos))
+   where e.id = p_id;
+
+  if not found then return 'non_trovato'; end if;
+  return 'ok';
+end;
+$$;
+
+grant execute on function public.admin_set_event_qr(uuid, int) to authenticated;
 
 
 create or replace function public.admin_set_event_delega(p_id uuid, p_url text)
@@ -44,7 +74,7 @@ grant execute on function public.admin_set_event_delega(uuid, text) to authentic
 drop function if exists public.admin_event_ticket(uuid);
 
 create function public.admin_event_ticket(p_event uuid)
-returns table (ticket_key text, ticket_v bigint, delega_url text)
+returns table (ticket_key text, ticket_v bigint, delega_url text, qr_pos int)
 language plpgsql
 security definer
 set search_path = public
@@ -58,7 +88,8 @@ begin
   return query
     select e.ticket_key,
            coalesce(extract(epoch from e.ticket_updated_at)::bigint, 0),
-           e.delega_url
+           e.delega_url,
+           e.qr_pos
     from public.events e where e.id = p_event;
 end;
 $$;
@@ -86,7 +117,8 @@ returns table (
   starts_at   timestamptz,
   ticket_key  text,
   ticket_v    bigint,
-  delega_url  text
+  delega_url  text,
+  qr_pos      int
 )
 language sql
 security definer
@@ -99,7 +131,8 @@ as $$
          e.name, v.name, v.city, v.address, e.starts_at,
          e.ticket_key,
          coalesce(extract(epoch from e.ticket_updated_at)::bigint, 0),
-         e.delega_url
+         e.delega_url,
+         e.qr_pos
   from public.presales s
   join public.events e on e.id = s.event_id
   left join public.venues v on v.id = e.venue_id
@@ -112,5 +145,6 @@ grant execute on function public.biglietto(text) to anon, authenticated;
 -- ============================================================
 -- Controllo
 -- ============================================================
-select count(*) as "serate con il modulo impostato"
-from public.events where delega_url is not null;
+select
+  (select count(*) from public.events where delega_url is not null) as "serate col modulo",
+  (select count(*) from public.events where qr_pos is not null)     as "serate col QR spostato";

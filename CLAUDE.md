@@ -173,6 +173,13 @@ abbia saldato resta **un fatto interno**, visibile solo nel pannello e nell'area
 **Conseguenza da tenere presente in porta:** un cliente può presentarsi convinto di essere a posto
 mentre il suo PR non ha ancora consegnato i contanti — il controllo va fatto dal pannello, non dalla
 faccia del cliente.
+**Il QR si sposta sulla grafica (22 set, stesso script 22).** Luka: *"se si può mettere il quadrato
+sotto la scritta halloween sarebbe top"*. Dove sta lo spazio libero dipende dalla locandina e non si
+indovina dal codice, quindi `events.qr_pos` (0–100, distanza dal bordo alto) e un **cursore con
+anteprima** nella scheda Grafica: si trascina guardando il risultato. Da 70 in su — e quando non è
+impostato — il QR torna in fondo con la sfumatura nera; più in alto si appoggia su un velo scuro
+sfocato, perché sopra una locandina chiara un QR bianco su bianco non si legge.
+
 **Il modulo per gli under 16 è per serata (22 set, `22_delega_per_serata.sql`).** I due locali sono
 **due società diverse** — PAPI ON THE BEACH è QFB SRL, PR1ME CLUB è EXO SRLS — quindi hanno due
 moduli con due informative privacy diverse: un link unico per tutto il sito darebbe al cliente

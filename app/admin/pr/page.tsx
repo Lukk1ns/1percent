@@ -136,11 +136,17 @@ function SlotGrafica({
   evento,
   chiave,
   versione,
+  pos,
+  onSposta,
+  onSalvaPos,
   onFatto,
 }: {
   evento: string;
   chiave: string | null;
   versione: number | null;
+  pos: number;
+  onSposta: (v: number) => void;
+  onSalvaPos: (v: number) => void;
   onFatto: () => void | Promise<void>;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -234,9 +240,15 @@ function SlotGrafica({
 
       {chiave ? (
         <div className="mt-4">
-          <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
-            come la vede il cliente
-          </p>
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+              come la vede il cliente
+            </p>
+            <p className="font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+              QR al {pos}% dall&apos;alto
+            </p>
+          </div>
+
           <div className="relative mt-2 overflow-hidden border border-white/10 bg-black">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -244,12 +256,44 @@ function SlotGrafica({
               alt="Grafica del biglietto"
               className="block w-full"
             />
-            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center bg-gradient-to-t from-black via-black/90 to-transparent px-4 pb-5 pt-16">
-              <div className="h-24 w-24 bg-white/90" aria-hidden />
-              <p className="mt-3 font-display text-xl uppercase leading-none text-white">
-                nome cognome
-              </p>
-            </div>
+            {pos >= 70 ? (
+              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center bg-gradient-to-t from-black via-black/90 to-transparent px-4 pb-5 pt-16">
+                <div className="h-24 w-24 bg-white/90" aria-hidden />
+                <p className="mt-3 font-display text-xl uppercase leading-none text-white">
+                  nome cognome
+                </p>
+              </div>
+            ) : (
+              <div
+                className="absolute inset-x-0 flex flex-col items-center px-4"
+                style={{ top: `${pos}%` }}
+              >
+                <div className="rounded-sm bg-black/75 px-5 py-4 backdrop-blur-sm">
+                  <div className="mx-auto h-24 w-24 bg-white/90" aria-hidden />
+                  <p className="mt-3 text-center font-display text-xl uppercase leading-none text-white">
+                    nome cognome
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3">
+            <input
+              type="range"
+              min={0}
+              max={85}
+              step={1}
+              value={pos}
+              onChange={(e) => onSposta(Number(e.target.value))}
+              onMouseUp={() => onSalvaPos(pos)}
+              onTouchEnd={() => onSalvaPos(pos)}
+              className="w-full accent-[#e0181f]"
+            />
+            <p className="mt-1.5 text-[11px] leading-relaxed text-brand-gray/70">
+              Trascina per appoggiare il quadrato dove la locandina ha spazio — per esempio
+              sotto il titolo. Tutto a destra torna in fondo, con la sfumatura nera.
+            </p>
           </div>
         </div>
       ) : (
@@ -314,6 +358,7 @@ export default function AdminPrPage() {
     v: null,
   });
   const [delega, setDelega] = useState<string | null>(null);
+  const [qrPos, setQrPos] = useState<number>(80);
   const [perFascia, setPerFascia] = useState<PerFascia[]>([]);
   const [scheda, setScheda] = useState<
     "pr" | "prezzi" | "grafica" | "biglietti" | "registro"
@@ -357,6 +402,7 @@ export default function AdminPrPage() {
       v: gRes.data?.[0]?.ticket_v ?? null,
     });
     setDelega(gRes.data?.[0]?.delega_url ?? null);
+    setQrPos(gRes.data?.[0]?.qr_pos ?? 80);
     setRegistro(regRes.data ?? []);
     setConti(contiRes.data ?? []);
   }, []);
@@ -1166,6 +1212,12 @@ export default function AdminPrPage() {
               evento={evento}
               chiave={grafica.key}
               versione={grafica.v}
+              pos={qrPos}
+              onSposta={setQrPos}
+              onSalvaPos={async (v) => {
+                const supabase = createClient();
+                await supabase.rpc("admin_set_event_qr", { p_id: evento, p_pos: v });
+              }}
               onFatto={() => caricaEvento(evento)}
             />
 

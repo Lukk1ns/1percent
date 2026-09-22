@@ -24,6 +24,8 @@ type Biglietto = {
   ticket_v: number | null;
   /** Il modulo di delega del locale dove si va: i due locali hanno società diverse. */
   delega_url: string | null;
+  /** Dove appoggiare il QR sulla grafica, in percentuale dall'alto. */
+  qr_pos: number | null;
 };
 
 /**
@@ -140,9 +142,23 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
               alt={`Grafica di ${b.evento}`}
               className={`block w-full ${spento ? "opacity-40 grayscale" : ""}`}
             />
-            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center bg-gradient-to-t from-black via-black/90 to-transparent px-4 pb-5 pt-16">
-              {codice}
-            </div>
+            {b.qr_pos === null || b.qr_pos >= 70 ? (
+              // In fondo: la sfumatura nera regge il testo sopra la foto
+              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center bg-gradient-to-t from-black via-black/90 to-transparent px-4 pb-5 pt-16">
+                {codice}
+              </div>
+            ) : (
+              // Appoggiato dove c'è spazio: un velo dietro, così il QR
+              // si legge anche se sotto la grafica è chiara
+              <div
+                className="absolute inset-x-0 flex flex-col items-center px-4"
+                style={{ top: `${b.qr_pos}%` }}
+              >
+                <div className="rounded-sm bg-black/75 px-5 py-4 backdrop-blur-sm">
+                  {codice}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="mt-7 flex flex-col items-center border border-white/10 bg-white/[0.03] px-5 py-7">
