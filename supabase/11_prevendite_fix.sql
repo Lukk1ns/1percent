@@ -365,7 +365,13 @@ grant execute on function public.admin_pr_per_fascia(uuid) to authenticated;
 
 
 -- ============================================================
--- Controllo: adesso queste devono rispondere senza errori
+-- Controllo
+--
+-- ⚠️ Qui NON si possono chiamare le funzioni admin: il SQL Editor
+-- lavora come padrone del database, non come un utente del sito, e
+-- `is_admin()` risponde di no. Una sola riga che fallisce annulla
+-- tutto il blocco, funzioni comprese: i controlli finali leggono
+-- le tabelle, mai le RPC protette.
 -- ============================================================
-select count(*) as "PR che il pannello vede"
-from public.admin_pr_lista((select e.id from public.events e order by e.starts_at desc limit 1));
+select count(*) as "PR approvati"
+from public.profiles where role = 'crew' and deleted_at is null;

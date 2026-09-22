@@ -42,6 +42,12 @@ Il cruscotto della serata (`admin_pr_cruscotto` + `admin_pr_per_fascia`) rifà q
 guardava su Evently: consegnate, vendute, in attesa, valide, entrate, incasso, già in cassa,
 da ritirare, e la divisione per fascia. Tavoli e omaggi restano Fase 3.
 **PENDING Luka: incollare `11_prevendite_fix.sql` dopo il 10.**
+**Secondo gotcha, stessa giornata:** in coda a uno script da incollare **non si chiama mai una RPC
+protetta da `is_admin()`** per verificare che funzioni — il SQL Editor esegue come padrone del
+database, non come utente del sito, quindi `is_admin()` è false e la riga solleva "Non autorizzato".
+Il SQL Editor esegue tutto in **una transazione sola**: quella riga fa **annullare l'intero script**,
+funzioni comprese, e sembra che non sia stato incollato niente. I controlli in fondo leggono le
+tabelle (`select count(*) from public.profiles ...`), mai le funzioni.
 
 Restano da fare: **Fase 2** scanner porta offline (oggi `/admin/scan` non legge ancora i token
 delle prevendite) e **Fase 3** tavoli, omaggi, stampe di fine serata.
