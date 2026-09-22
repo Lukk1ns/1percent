@@ -333,7 +333,7 @@ begin
 end;
 $$;
 
-grant execute on function public.admin_album_salva(uuid, text, uuid, date, text) to authenticated;
+grant execute on function public.admin_album_salva(uuid, text, text, uuid, date, text) to authenticated;
 
 
 -- Pubblica o nascondi un album.

@@ -34,6 +34,11 @@ i PR) impedivano a chiunque di iscriversi come cliente, il che avrebbe reso la g
 Nuova costante **`FOTO_APRONO_LA_PORTA`** in `lib/event.ts`: chi arriva su `/unisciti?next=/foto/...`
 entra come cliente senza link d'invito; **per tutti gli altri ingressi non cambia niente**.
 Il `next` viaggia nella bozza in sessionStorage fino a `/benvenuto`, che rimanda alle foto.
+**⚠️ GOTCHA — la firma nei `grant` deve combaciare alla virgola** con quella della funzione, tipi
+e ordine: `grant execute on function f(uuid, text, uuid)` su una funzione `f(uuid, text, text, uuid)`
+fa fallire lo script con *"function ... does not exist"*, e siccome il SQL Editor esegue tutto in
+una transazione **annulla l'intero blocco**. Prima di consegnare uno script, controllare ogni grant
+contro la sua funzione (si fa in venti righe di script, cercando le due forme con una regex).
 **PENDING Luka: incollare `17_galleria.sql`** e **creare l'account Cloudflare R2** — servono
 `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (bucket `1percent-foto`, EU) nelle
 variabili d'ambiente di Vercel. Finché mancano, le API rispondono `r2-non-configurato` e il resto
