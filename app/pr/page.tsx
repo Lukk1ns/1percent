@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { dataLunga } from "@/lib/eventi";
+import { accentoSerata, dataLunga, giornoEData } from "@/lib/eventi";
 
 type EventoPR = {
   event_id: string;
@@ -164,13 +164,28 @@ export default function PrPage() {
           </div>
         ) : (
           <div className="mt-6 flex flex-col gap-3">
+            {eventi.length > 1 && (
+              <p className="mb-1 text-[11px] leading-relaxed text-brand-gray">
+                Hai prevendite per più serate: guarda il giorno prima di entrare, i biglietti
+                non si spostano da una all&apos;altra.
+              </p>
+            )}
             {eventi.map((e) => (
               <Link
                 key={e.event_id}
                 href={`/pr/${e.event_id}`}
-                className="block border border-white/10 px-4 py-4 transition-colors hover:border-brand-red/50"
+                className="block border border-l-4 border-white/10 px-4 py-4 transition-colors hover:border-brand-red/50"
+                style={{ borderLeftColor: accentoSerata(e.event_id) }}
               >
-                <p className="font-display text-xl uppercase leading-none text-white">{e.nome}</p>
+                <p
+                  className="font-tech text-[10px] uppercase tracking-[0.3em]"
+                  style={{ color: accentoSerata(e.event_id) }}
+                >
+                  {giornoEData(e.starts_at)}
+                </p>
+                <p className="mt-1 font-display text-xl uppercase leading-none text-white">
+                  {e.nome}
+                </p>
                 <p className="mt-1.5 text-[11px] text-brand-gray">
                   {dataLunga(e.starts_at)}
                   {e.locale ? ` · ${e.locale}` : ""}

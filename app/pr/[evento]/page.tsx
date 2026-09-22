@@ -4,7 +4,7 @@ import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { dataLunga, ora } from "@/lib/eventi";
+import { accentoSerata, dataLunga, giornoEData, ora } from "@/lib/eventi";
 
 type Riepilogo = {
   assegnate: number;
@@ -241,6 +241,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   }
 
   const quando = ev ? `${dataLunga(ev.starts_at)} ore ${ora(ev.starts_at)}` : "";
+  const accento = accentoSerata(evento);
 
   // Appena venduto: la cosa da fare adesso è una sola, mandarlo su WhatsApp.
   if (appenaFatto) {
@@ -251,6 +252,12 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
         <div className="mx-auto w-full max-w-sm">
           <p className="font-tech text-[10px] uppercase tracking-[0.35em] text-emerald-400">
             fatto
+          </p>
+          <p
+            className="mt-2 font-tech text-[10px] uppercase tracking-[0.25em]"
+            style={{ color: accento }}
+          >
+            {ev ? `${giornoEData(ev.starts_at)} · ${ev.nome}` : ""}
           </p>
           <h1 className="mt-2 font-display text-3xl uppercase leading-none text-white">
             {appenaFatto.nome} {appenaFatto.cognome}
@@ -332,10 +339,25 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           ← le tue serate
         </Link>
 
-        <h1 className="mt-4 font-display text-3xl uppercase leading-none text-white">
-          {ev?.nome ?? "Serata"}
-        </h1>
-        {ev && <p className="mt-2 text-xs text-brand-gray">{quando}</p>}
+        {/* Con due serate aperte insieme — il sabato notte e la domenica
+            pomeriggio — questa fascia resta in alto mentre si scrive, così
+            non si sbaglia serata di fretta. */}
+        <div
+          className="sticky top-0 z-30 -mx-5 mt-4 border-b border-l-4 bg-black/95 px-5 py-3 backdrop-blur"
+          style={{ borderLeftColor: accento, borderBottomColor: `${accento}44` }}
+        >
+          <p
+            className="font-tech text-[10px] uppercase tracking-[0.3em]"
+            style={{ color: accento }}
+          >
+            {ev ? giornoEData(ev.starts_at) : "serata"} · stai lavorando qui
+          </p>
+          <p className="mt-1 font-display text-2xl uppercase leading-none text-white">
+            {ev?.nome ?? "Serata"}
+          </p>
+        </div>
+
+        {ev && <p className="mt-3 text-xs text-brand-gray">{quando}</p>}
 
         {/* Chi vende come direzione non ha blocchetti da consumare */}
         {r.senza_limite ? (
@@ -573,7 +595,11 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                   disabled={salvando || !fascia}
                   className="mt-1 bg-brand-red py-4 text-sm font-semibold uppercase tracking-widest text-white disabled:opacity-40"
                 >
-                  {salvando ? "Salvo…" : "Fai il biglietto"}
+                  {salvando
+                    ? "Salvo…"
+                    : ev
+                      ? `Fai il biglietto · ${giornoEData(ev.starts_at)}`
+                      : "Fai il biglietto"}
                 </button>
               )}
               {fasce.length > 0 && !fascia && (

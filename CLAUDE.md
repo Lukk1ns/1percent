@@ -184,6 +184,17 @@ maiuscole e spazi doppi, e i biglietti annullati non contano — quel nome torna
 Luka. `pr_vendi` ha un parametro in più, quindi la vecchia firma va eliminata (lo script lo fa).
 **PENDING Luka: incollare `16_niente_doppioni.sql`.**
 
+**Due serate insieme (22 set).** Luka: con la domenica pomeriggio in arrivo servono due serate in
+parallelo. **Funzionava già**: prezzi, blocchetti, biglietti e incassi hanno tutti `event_id`, quindi
+due serate sono due mondi separati e non serve un secondo sito. L'unico rischio vero era **umano** —
+un PR di fretta che scrive il nominativo sulla serata sbagliata. Aggiunto: `giornoEData()` ("SAB 31
+OTT", il giorno della settimana è ciò che distingue due serate vicine) e `accentoSerata(id)`, un
+colore stabile per serata da una tavolozza che resta dentro il marchio (il rosso è sempre il primo).
+Su `/pr/<serata>` c'è una **fascia sticky** che resta in alto mentre si scrive, il bottone dice
+"Fai il biglietto · SAB 31 OTT" e la conferma ripete la serata; su `/pr` ogni serata ha la sua
+striscia colorata; nel pannello il selettore è marcato con lo stesso colore e avvisa quando ci sono
+più serate aperte. Nessuna modifica al database.
+
 Restano da fare: **Fase 2** scanner porta offline (oggi `/admin/scan` non legge ancora i token
 delle prevendite) e **Fase 3** tavoli, omaggi, stampe di fine serata.
 Il biglietto mostra la locandina **sfocata** come sfondo: la nitida è riservata ai membri dalle

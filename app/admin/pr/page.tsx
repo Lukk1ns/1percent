@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { dataLunga } from "@/lib/eventi";
+import { accentoSerata, dataLunga, giornoEData } from "@/lib/eventi";
 import { graficaBigliettoUrl } from "@/lib/biglietto";
 
 type EventoAdmin = {
@@ -726,9 +726,24 @@ export default function AdminPrPage() {
           </div>
         </div>
 
-        {/* Quale serata */}
-        <div className="mt-6">
-          <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">serata</p>
+        {/* Quale serata. Con due serate aperte insieme — sabato notte e
+            domenica pomeriggio — il colore e il giorno evitano di segnare
+            un incasso sulla serata sbagliata. */}
+        <div
+          className="mt-6 border-l-4 pl-3"
+          style={{ borderLeftColor: evento ? accentoSerata(evento) : "transparent" }}
+        >
+          <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+            serata
+            {ev && (
+              <span
+                className="ml-2"
+                style={{ color: accentoSerata(evento) }}
+              >
+                {giornoEData(ev.starts_at)}
+              </span>
+            )}
+          </p>
           <select
             value={evento}
             onChange={(e) => {
@@ -739,11 +754,17 @@ export default function AdminPrPage() {
           >
             {eventi.map((e) => (
               <option key={e.event_id} value={e.event_id}>
-                {e.nome} — {dataLunga(e.starts_at)}
+                {giornoEData(e.starts_at)} — {e.nome} — {dataLunga(e.starts_at)}
                 {e.passato ? " (passata)" : ""}
               </option>
             ))}
           </select>
+          {eventi.filter((e) => !e.passato).length > 1 && (
+            <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
+              Ci sono più serate aperte: conti, prevendite e incassi sono separati. Un incasso
+              segnato qui vale solo per questa.
+            </p>
+          )}
         </div>
 
         {ev && fasce.length === 0 && (

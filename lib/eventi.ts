@@ -54,3 +54,34 @@ export function dataCorta(iso: string): string {
 export function ora(iso: string): string {
   return new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
 }
+
+/** Es. "SAB 31 OTT" — il giorno della settimana è quello che distingue due serate vicine. */
+export function giornoEData(iso: string): string {
+  const d = new Date(iso);
+  const g = d.toLocaleDateString("it-IT", { weekday: "short" }).replace(".", "");
+  const resto = d.toLocaleDateString("it-IT", { day: "numeric", month: "short" }).replace(".", "");
+  return `${g} ${resto}`.toUpperCase();
+}
+
+/**
+ * Un accento di colore per serata.
+ *
+ * Serve solo a distinguere a colpo d'occhio due serate aperte insieme —
+ * il sabato notte e la domenica pomeriggio — quando un PR di fretta
+ * rischia di scrivere il nominativo su quella sbagliata. Resta dentro
+ * la tavolozza del marchio: il rosso è sempre il primo, gli altri sono
+ * tinte spente che non se lo mangiano.
+ */
+const ACCENTI = [
+  "#e0181f", // il rosso di casa
+  "#e0a018", // ambra
+  "#18a0e0", // ciano spento
+  "#8f18e0", // viola
+  "#18e08f", // verde acqua
+];
+
+export function accentoSerata(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return ACCENTI[h % ACCENTI.length];
+}
