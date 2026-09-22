@@ -4,6 +4,28 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**LA PORTA — Fase 2 delle prevendite, 22 settembre 2026 (`supabase/20_porta.sql`, `/admin/porta`).**
+Il QR del biglietto adesso lo legge qualcuno. **Non è `/admin/scan`**: quello è lo scanner dello
+STAND (i regali dentro il locale) ed è un altro mestiere — mescolarli avrebbe fatto estrarre un
+regalo a chi entra. Pagina nuova, separata.
+**Chi la usa:** admin **e operatori** (`is_staff()`), perché in porta ci stanno i collaboratori.
+Una cosa sola resta di Luka: **far entrare un biglietto non pagato** (`porta_forza`, solo
+`is_admin()`), e resta scritto in `entrata_da` che è passato così.
+**La regola dura:** un biglietto entra **una volta sola**. L'`update ... where stato = 'attiva'`
+è anche la difesa contro il doppio scan simultaneo: se due telefoni leggono lo stesso QR insieme,
+il secondo trova zero righe aggiornate e riceve "già entrato".
+Sei esiti, ognuno col suo colore a tutto schermo e **il suo suono** (`lib/suoni.ts`, generati dal
+browser con Web Audio — nessun file da scaricare, funzionano con la linea a singhiozzo): passa /
+già entrato / non pagato / annullato / **altra serata** (con due serate in parallelo è l'errore
+più facile) / non è un biglietto. In più la **vibrazione** diversa per esito: in porta con la musica
+alta si sente in mano.
+**Pensata per chi ci sta davvero:** in piedi, al freddo, una mano sola. Esito a tutto schermo che si
+legge da lontano, e il bottone grande **"cerca per nome"** per il telefono scarico o lo screenshot
+cancellato. In testa il conto "entrati / attesi", in fondo l'avviso di quanti biglietti non sono
+ancora stati pagati dai PR.
+**Manca ancora la parte offline** (PWA + lista precaricata, come faceva Evently): oggi senza rete
+la porta non valida. Se la serata è in un posto senza campo, va fatta prima.
+
 **I SOLDI NON SI CANCELLANO (22 set, `supabase/19_soldi_al_sicuro.sql`).** Richiesta di Luka dopo il
 controllo di sicurezza: *"non posso rischiare di perdere traccia dei soldi raccolti e da chi"* —
 gli sforamenti di una prevendita e i link condivisi li accetta, la contabilità no.

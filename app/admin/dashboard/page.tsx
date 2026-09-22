@@ -368,6 +368,13 @@ export default function AdminDashboardPage() {
               cosa: "Album delle serate: carica e pubblica",
               acceso: false,
             },
+            {
+              href: "/admin/porta",
+              emoji: "🚪",
+              titolo: "Porta",
+              cosa: "Valida i biglietti all'ingresso",
+              acceso: false,
+            },
           ].map((p) => (
             <button
               key={p.href}
