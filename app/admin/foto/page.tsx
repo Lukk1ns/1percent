@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { caricaFoto as spedisciFoto } from "@/lib/foto-upload";
 
 type AlbumAdmin = {
   id: string;
@@ -120,21 +121,15 @@ export default function AdminFotoPage() {
     setCaricamento({ fatte: 0, totali: files.length });
     setFalliti([]);
 
-    for (let i = 0; i < files.length; i++) {
-      const fd = new FormData();
-      fd.append("file", files[i]);
-      fd.append("album_id", album.id);
-      try {
-        const res = await fetch("/api/foto/upload", { method: "POST", body: fd });
-        if (!res.ok) {
-          const j = await res.json().catch(() => null);
-          setFalliti((f) => [...f, `${files[i].name}: ${j?.error ?? res.status}`]);
-        }
-      } catch {
-        setFalliti((f) => [...f, `${files[i].name}: connessione persa`]);
-      }
-      setCaricamento({ fatte: i + 1, totali: files.length });
-    }
+    // Le foto vengono rimpicciolite nel browser e spedite quattro alla
+    // volta: trecento scatti da reflex passano da ore a qualche minuto.
+    const esiti = await spedisciFoto(files, album.id, (fatte, totali) =>
+      setCaricamento({ fatte, totali }),
+    );
+
+    setFalliti(
+      esiti.filter((e) => !e.ok).map((e) => `${e.nome}: ${e.errore ?? "non caricata"}`),
+    );
 
     if (fileRef.current) fileRef.current.value = "";
     await caricaAlbums();
@@ -270,6 +265,12 @@ export default function AdminFotoPage() {
                     }}
                   />
 
+                  <p className="mb-3 text-[11px] leading-relaxed text-brand-gray/70">
+                    Selezionale tutte insieme: vengono rimpicciolite qui sul computer e
+                    spedite quattro alla volta. Una foto da reflex parte da 10 MB e arriva
+                    a mezzo, quindi ci mette un attimo invece di un minuto.
+                  </p>
+
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => fileRef.current?.click()}
@@ -311,7 +312,8 @@ export default function AdminFotoPage() {
                         />
                       </div>
                       <p className="mt-2 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
-                        {caricamento.fatte} di {caricamento.totali} · non chiudere la pagina
+                        {caricamento.fatte} di {caricamento.totali} · quattro alla volta ·
+                        non chiudere la pagina
                       </p>
                     </div>
                   )}

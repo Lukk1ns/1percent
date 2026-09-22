@@ -19,8 +19,12 @@ un URL firmato **con scadenza arrotondata all'ora**, così due persone che guard
 ricevono lo stesso indirizzo e la CDN può tenerlo in cache.
 Tre formati generati all'upload (sharp, EXIF via — dentro c'è anche il luogo dello scatto):
 thumb 500px per la griglia, medium 1400px per lo schermo pieno, 2400px per il download.
-**L'upload va una foto per volta**, non tutte insieme: 300 foto in una richiesta sola cadrebbero a
-metà senza far sapere quali sono arrivate; così si vede la barra e i falliti sono elencati per nome.
+**L'upload** (`lib/foto-upload.ts`): le foto vengono **rimpicciolite nel browser a 2400px** prima di
+partire — una reflex fa 10 MB, ne arriva mezzo, e 300 scatti passano da 3 GB a 150 MB; è anche la
+misura del file scaricabile, quindi non si butta niente. Poi vanno **quattro alla volta**, con
+quattro "corsie" che pescano dalla stessa fila: non tutte insieme (la rete di casa non regge 300
+richieste e Vercel taglia sopra ~4,5 MB), non una per volta (troppo lento). La barra avanza a ogni
+foto finita e i falliti sono elencati per nome, così si sa cosa rimandare.
 Rotte: **`/foto`** (vetrina, aperta a tutti: nomi e numeri, non le immagini) · **`/foto/[album]`**
 (la porta per chi non è iscritto, griglia + schermo pieno + download per chi lo è) ·
 **`/admin/foto`**. C'è anche `chiedi_rimozione()`: "in questa foto ci sono io e non mi va" —
