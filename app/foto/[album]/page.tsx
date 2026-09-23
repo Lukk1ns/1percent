@@ -252,8 +252,13 @@ export default function AlbumPage({ params }: { params: Promise<{ album: string 
             </button>
           </div>
 
+          {/* min-h-0: senza, questa fascia si allarga fino a contenere
+              la foto intera invece di stringerla, e su uno schermo
+              grande la foto esce sotto ai bordi (Luka, 23 set). Con
+              min-h-0 la fascia prende lo spazio che resta e
+              max-h-full dell'immagine misura quello. */}
           <div
-            className="relative flex flex-1 items-center justify-center px-2"
+            className="relative flex min-h-0 flex-1 items-center justify-center px-2"
             onClick={(e) => e.stopPropagation()}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}

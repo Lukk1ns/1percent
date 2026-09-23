@@ -19,7 +19,16 @@ type AlbumAdmin = {
   rimozioni: number;
 };
 
-type FotoAdmin = { id: string; thumb: string; width: number | null; height: number | null; rimozioni: number };
+type FotoAdmin = {
+  id: string;
+  thumb: string;
+  width: number | null;
+  height: number | null;
+  rimozioni: number;
+  // vera per la foto che fa da copertina all'album (arriva con
+  // supabase/23_copertina.sql; prima di incollarlo è sempre falsa)
+  copertina?: boolean;
+};
 
 /** Da "SUMMER END 2026" a "summer-end-2026". */
 function inIndirizzo(testo: string): string {
@@ -54,6 +63,8 @@ export default function AdminFotoPage() {
 
   const [caricamento, setCaricamento] = useState<{ fatte: number; totali: number } | null>(null);
   const [falliti, setFalliti] = useState<string[]>([]);
+  // La foto aperta nella scheda: da lì si sceglie cosa farne.
+  const [inMano, setInMano] = useState<FotoAdmin | null>(null);
 
   const caricaAlbums = useCallback(async () => {
     const supabase = createClient();
@@ -157,8 +168,30 @@ export default function AdminFotoPage() {
     if (motivo === null) return;
     const supabase = createClient();
     await supabase.rpc("admin_foto_togli", { p_id: f.id, p_motivo: motivo });
+    setInMano(null);
     if (album) await caricaFoto(album.slug);
     await caricaAlbums();
+  }
+
+  // La copertina è la faccia dell'album nella vetrina: la prima foto
+  // arrivata non è quasi mai quella giusta.
+  async function mettiInCopertina(f: FotoAdmin) {
+    if (!album) return;
+    const supabase = createClient();
+    const { error } = await supabase.rpc("admin_album_copertina", {
+      p_album: album.id,
+      p_foto: f.id,
+    });
+    if (error) {
+      window.alert(
+        error.message.includes("admin_album_copertina")
+          ? "Manca un pezzo sul database: incolla supabase/23_copertina.sql nel SQL Editor."
+          : error.message,
+      );
+      return;
+    }
+    setInMano(null);
+    await caricaFoto(album.slug);
   }
 
   if (autorizzato === null) {
@@ -338,10 +371,14 @@ export default function AdminFotoPage() {
                       {foto.map((f) => (
                         <button
                           key={f.id}
-                          onClick={() => togliFoto(f)}
-                          title="Togli questa foto"
+                          onClick={() => setInMano(f)}
+                          title="Aprila: copertina o togli"
                           className={`group relative aspect-square overflow-hidden bg-white/[0.03] ${
-                            f.rimozioni > 0 ? "ring-2 ring-brand-red" : ""
+                            f.copertina
+                              ? "ring-2 ring-white"
+                              : f.rimozioni > 0
+                                ? "ring-2 ring-brand-red"
+                                : ""
                           }`}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -352,8 +389,13 @@ export default function AdminFotoPage() {
                             className="h-full w-full object-cover"
                           />
                           <span className="absolute inset-0 flex items-center justify-center bg-black/70 font-tech text-[9px] uppercase tracking-[0.15em] text-white opacity-0 transition-opacity group-hover:opacity-100">
-                            togli
+                            apri
                           </span>
+                          {f.copertina && (
+                            <span className="absolute bottom-1 left-1 bg-white px-1.5 py-0.5 font-tech text-[8px] uppercase tracking-[0.1em] text-black">
+                              copertina
+                            </span>
+                          )}
                           {f.rimozioni > 0 && (
                             <span className="absolute left-1 top-1 bg-brand-red px-1.5 py-0.5 font-tech text-[8px] uppercase text-white">
                               segnalata
@@ -375,6 +417,61 @@ export default function AdminFotoPage() {
           )}
         </div>
       </div>
+
+      {/* La foto aperta: si guarda grande e si decide cosa farne.
+          Prima il colpo sulla miniatura la toglieva e basta, con 119
+          foto in griglia è un attimo sbagliare. */}
+      {inMano && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/95"
+          onClick={() => setInMano(null)}
+        >
+          <div className="flex items-center justify-end px-4 py-3">
+            <button
+              onClick={() => setInMano(null)}
+              className="px-3 py-2 font-tech text-[11px] uppercase tracking-[0.2em] text-white"
+            >
+              chiudi ✕
+            </button>
+          </div>
+
+          <div
+            className="flex min-h-0 flex-1 items-center justify-center px-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/api/foto/${inMano.id}?f=medium`}
+              alt=""
+              className="max-h-full max-w-full object-contain"
+            />
+          </div>
+
+          <div
+            className="flex flex-wrap items-center justify-center gap-2 px-4 py-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {inMano.copertina ? (
+              <span className="border border-white/15 px-5 py-3.5 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+                è la copertina
+              </span>
+            ) : (
+              <button
+                onClick={() => mettiInCopertina(inMano)}
+                className="bg-brand-red px-6 py-3.5 text-[11px] font-semibold uppercase tracking-widest text-white"
+              >
+                metti in copertina
+              </button>
+            )}
+            <button
+              onClick={() => togliFoto(inMano)}
+              className="border border-white/15 px-4 py-3.5 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray hover:text-white"
+            >
+              togli dall&apos;album
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

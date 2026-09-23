@@ -129,6 +129,18 @@ contro la sua funzione (si fa in venti righe di script, cercando le due forme co
 accenderlo renderebbe le foto visibili senza iscrizione) e le quattro `R2_*` sono su Vercel in
 All Environments. Verificato dal vivo: scrittura/lettura/cancellazione su R2 funzionano, e
 `/api/foto/<id>` risponde **403** a chi non è iscritto.
+**La copertina si sceglie (23 set, `supabase/23_copertina.sql`).** Era la prima foto arrivata:
+con 119 foto spedite quattro alla volta, quale sia la prima è un sorteggio. Ora in `/admin/foto` la
+miniatura si **apre** invece di togliere subito la foto (con 119 in griglia il colpo sbagliato era
+troppo facile) e dalla scheda si sceglie *metti in copertina* o *togli dall'album*; la copertina ha
+il bordo bianco. `admin_album_copertina` accetta solo una foto **di quell'album** e ancora al suo
+posto, e `admin_foto_togli` ne prende un'altra se si toglie proprio quella in copertina.
+**PENDING Luka: incollare `23_copertina.sql`** — finché non lo fa, il bottone dice cosa manca.
+**Anche: la foto a schermo pieno non esce più dallo schermo.** `/foto/[album]` aveva la fascia
+centrale senza `min-h-0`: in un flex verticale un figlio non si stringe sotto il proprio contenuto,
+quindi la fascia cresceva fino alla foto intera (medium = lato lungo 1400px) e `max-h-full`
+dell'immagine misurava quella, non la finestra. Su Mac la foto usciva dai bordi, sul telefono no
+perché a limitare era la larghezza. Da ricordare per ogni visore a schermo pieno.
 **Come si controlla senza fidarsi:** le RPC si interrogano dal terminale con la chiave anon —
 `curl -X POST "$URL/rest/v1/rpc/<nome>" -H "apikey: $KEY" -d '<parametri veri>'`. Attenzione:
 va passato il **parametro giusto**, con `{}` una funzione esistente risponde comunque
