@@ -4,6 +4,20 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**LE FOTO NON SI CARICAVANO — sharp senza binario (23 settembre 2026, `next.config.ts`).** Primo
+caricamento vero della galleria: 119 foto su 119 respinte con **500**. Non erano le foto. Una
+chiamata a `/api/foto/upload` **senza nessuna sessione** rispondeva 500 invece di 401: la route
+moriva alla prima riga, prima ancora di guardare chi fosse. L'unica differenza fra le route rotte
+(`/api/foto/upload`, `/api/volto`, `/api/locandina`) e quelle sane era `import sharp`.
+**sharp non è JavaScript**: è un binario compilato per il sistema che lo ospita
+(`@img/sharp-linux-x64` su Vercel, `darwin-arm64` sul Mac), e lo sceglie a runtime — quindi chi
+prepara il pacchetto della funzione non lo vede e non se lo porta dietro. In locale il Mac trovava
+il suo, su Vercel la funzione partiva senza. Fix: `serverExternalPackages: ["sharp"]` (fuori dal
+bundler) + `outputFileTracingIncludes` con `./node_modules/@img/**` per le quattro route che lo
+usano. **Come si controlla in mezzo minuto, senza log e senza essere admin:** `curl -X POST` sulla
+route da fuori — se torna **401/403 in JSON** il modulo si carica, se torna **500 con una pagina
+HTML** è morta all'avvio. Stesso trucco per ogni route che importa qualcosa di nativo.
+
 **LA PORTA — Fase 2 delle prevendite, 22 settembre 2026 (`supabase/20_porta.sql`, `/admin/porta`).**
 Il QR del biglietto adesso lo legge qualcuno. **Non è `/admin/scan`**: quello è lo scanner dello
 STAND (i regali dentro il locale) ed è un altro mestiere — mescolarli avrebbe fatto estrarre un
