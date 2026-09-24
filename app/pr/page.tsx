@@ -190,9 +190,6 @@ export default function PrPage() {
                   {dataLunga(e.starts_at)}
                   {e.locale ? ` · ${e.locale}` : ""}
                 </p>
-                <p className="mt-2 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-red">
-                  tocca per vendere →
-                </p>
                 <div className="mt-3 flex items-end gap-5">
                   {stato.sono_admin ? (
                     <div>
@@ -228,6 +225,14 @@ export default function PrPage() {
                     </>
                   )}
                 </div>
+
+                {/* Il pulsante che cercavano. La scritta piccola
+                    "tocca per vendere" non la vedeva nessuno: un PR
+                    l'ha detto esplicitamente, e ha ragione — su un
+                    telefono, al buio, si cerca un rettangolo rosso. */}
+                <span className="mt-4 block bg-brand-red py-3.5 text-center text-[12px] font-semibold uppercase tracking-widest text-white">
+                  vendi prevendita
+                </span>
               </Link>
             ))}
           </div>
