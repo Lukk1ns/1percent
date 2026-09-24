@@ -79,6 +79,7 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+#variable_conflict use_column
 declare
   r      record;
   v_chi  text := (auth.jwt() ->> 'email');
@@ -128,7 +129,7 @@ grant execute on function public.admin_pr_ritira_tutti(uuid, uuid[]) to authenti
 -- — il resto è identico a 09_prevendite.
 drop function if exists public.admin_pr_lista(uuid);
 
-create or replace function public.admin_pr_lista(p_event uuid)
+create function public.admin_pr_lista(p_event uuid)
 returns table (
   pr_id       uuid,
   alias       text,
@@ -150,6 +151,7 @@ security definer
 set search_path = public
 stable
 as $$
+#variable_conflict use_column
 begin
   if not public.is_admin() then
     raise exception 'Non autorizzato';
@@ -168,20 +170,23 @@ begin
            coalesce(s.dovuto, 0) - coalesce(t.raccolto, 0)
     from public.profiles p
     left join lateral (
-      select sum(delta)::int as tot from public.pr_allocations
-      where event_id = p_event and pr_id = p.id
+      select sum(al.delta)::int as tot
+      from public.pr_allocations al
+      where al.event_id = p_event and al.pr_id = p.id
     ) a on true
     left join lateral (
-      select count(*) filter (where stato <> 'annullata')  as vendute,
-             count(*) filter (where stato = 'in_attesa')   as in_attesa,
-             count(*) filter (where stato = 'attiva')      as attive,
-             count(*) filter (where stato = 'usata')       as entrate,
-             sum(prezzo) filter (where stato <> 'annullata') as dovuto
-      from public.presales where event_id = p_event and pr_id = p.id
+      select count(*) filter (where ps.stato <> 'annullata')    as vendute,
+             count(*) filter (where ps.stato = 'in_attesa')     as in_attesa,
+             count(*) filter (where ps.stato = 'attiva')        as attive,
+             count(*) filter (where ps.stato = 'usata')         as entrate,
+             sum(ps.prezzo) filter (where ps.stato <> 'annullata') as dovuto
+      from public.presales ps
+      where ps.event_id = p_event and ps.pr_id = p.id
     ) s on true
     left join lateral (
-      select sum(importo) as raccolto from public.pr_settlements
-      where event_id = p_event and pr_id = p.id
+      select sum(st.importo) as raccolto
+      from public.pr_settlements st
+      where st.event_id = p_event and st.pr_id = p.id
     ) t on true
     where p.role = 'crew' and p.deleted_at is null
     order by coalesce(a.tot, 0) desc, p.alias;

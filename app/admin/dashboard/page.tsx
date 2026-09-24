@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
@@ -393,6 +394,35 @@ export default function AdminDashboardPage() {
               </span>
               <span className="text-[11px] leading-snug text-brand-gray/70">{p.cosa}</span>
             </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Le altre parti del pannello. Prima da qui non si andava da
+          nessuna parte e gli indirizzi andavano scritti a mano: è il
+          motivo per cui "il PR non si trovava". */}
+      <div className="mb-8 border border-white/10 px-4 py-4">
+        <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+          il resto del pannello
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            ["/admin/pr", "Prevendite e PR"],
+            ["/admin/porta", "Porta"],
+            ["/admin/scan", "Scanner regali"],
+            ["/admin/eventi", "Eventi"],
+            ["/admin/foto", "Foto"],
+            ["/admin/crew", "Candidature"],
+            ["/admin/regali", "Regali"],
+            ["/", "Home del sito"],
+          ].map(([href, testo]) => (
+            <Link
+              key={href}
+              href={href}
+              className="border border-white/15 px-3 py-2 font-tech text-[10px] uppercase tracking-[0.15em] text-white transition-colors hover:border-brand-red"
+            >
+              {testo}
+            </Link>
           ))}
         </div>
       </div>

@@ -342,8 +342,13 @@ export default function Home() {
                 <div className="mt-6 border-t border-white/10 pt-5">
                   <p className="led-label">pannello</p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <Link href="/admin/pr" className="btn btn-outline">Prevendite e PR</Link>
+                    <Link href="/admin/porta" className="btn btn-outline">Porta</Link>
                     <Link href="/admin/scan" className="btn btn-outline">🎁 Scanner</Link>
                     <Link href="/admin/eventi" className="btn btn-ghost">Eventi</Link>
+                    <Link href="/admin/foto" className="btn btn-ghost">Foto</Link>
+                    <Link href="/admin/crew" className="btn btn-ghost">Candidature</Link>
+                    <Link href="/admin/regali" className="btn btn-ghost">Regali</Link>
                     <Link href="/admin/dashboard" className="btn btn-ghost">Dashboard</Link>
                   </div>
                 </div>
@@ -362,9 +367,12 @@ export default function Home() {
                 anche il tuo QR dello stand, iscriviti con un&apos;altra email.
               </p>
               <div className="mt-6 grid gap-2 sm:grid-cols-3">
-                <Link href="/admin/scan" className="btn btn-primary">🎁 Scanner</Link>
+                <Link href="/admin/pr" className="btn btn-primary">Prevendite e PR</Link>
+                <Link href="/admin/porta" className="btn btn-outline">Porta</Link>
+                <Link href="/admin/scan" className="btn btn-outline">🎁 Scanner</Link>
                 <Link href="/admin/eventi" className="btn btn-outline">Eventi</Link>
-                <Link href="/admin/crew" className="btn btn-outline">Candidature</Link>
+                <Link href="/admin/foto" className="btn btn-ghost">Foto</Link>
+                <Link href="/admin/crew" className="btn btn-ghost">Candidature</Link>
                 <Link href="/admin/regali" className="btn btn-ghost">Regali</Link>
                 <Link href="/admin/dashboard" className="btn btn-ghost">Dashboard</Link>
                 <Link href="/eventi" className="btn btn-ghost">Gli eventi</Link>
