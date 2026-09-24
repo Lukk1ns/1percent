@@ -413,6 +413,19 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           </div>
         )}
 
+        {/* Il tasto che serve davvero, in cima e grosso. Il modulo per
+            fare i nominativi sta in fondo alla pagina, sotto conti e
+            avvisi: da telefono non lo trovava nessuno — un PR ha
+            scritto "non trovo dove vendere le prevendite". */}
+        {!(r.residue <= 0 && !r.senza_limite) && r.vendite_on !== false && (
+          <a
+            href="#nuovo"
+            className="mt-6 block bg-brand-red py-4 text-center text-sm font-semibold uppercase tracking-widest text-white"
+          >
+            + fai un biglietto
+          </a>
+        )}
+
         {/* Il conto della serata, scritto grande: è la cosa che un PR
             deve sapere sempre, senza doverla ricavare da tre numeri.
             Sta qui sopra il modulo, così la vede ogni volta che scrive
@@ -529,9 +542,12 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
         )}
 
         {/* Nuovo nominativo */}
-        <div className="mt-8 border border-white/10 px-4 py-5">
+        <div id="nuovo" className="mt-8 scroll-mt-4 border border-brand-red/40 px-4 py-5">
           <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
-            nuovo nominativo
+            qui si vende
+          </p>
+          <p className="mt-1 font-display text-2xl uppercase leading-none text-white">
+            Nuovo nominativo
           </p>
 
           {r.residue <= 0 && !r.senza_limite ? (
