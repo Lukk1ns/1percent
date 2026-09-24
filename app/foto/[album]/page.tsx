@@ -78,20 +78,84 @@ export default function AlbumPage({ params }: { params: Promise<{ album: string 
     return () => window.removeEventListener("keydown", tasto);
   }, [aperta, foto.length]);
 
+  /**
+   * Salvare una foto dal telefono non è come salvarla dal computer.
+   *
+   * Sul computer basta un collegamento con "download" e il file finisce
+   * nella cartella. **Su iPhone quel meccanismo non salva niente**: apre
+   * l'immagine in un'altra scheda, e chi guarda pensa che sia rotto. In
+   * più le nostre foto sono in formato webp, che l'app Foto di iPhone
+   * non prende volentieri.
+   *
+   * Quindi: la foto viene riportata in JPEG qui nel telefono, e poi
+   * passata al foglio di condivisione del sistema — quello con "Salva
+   * immagine", il gesto che la gente conosce. Dove quel foglio non
+   * esiste (i computer) si torna al salvataggio di sempre.
+   */
   const scarica = useCallback(
     async (f: Foto) => {
       setScaricando(true);
       try {
         const res = await fetch(`/api/foto/${f.id}?f=hd`);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
+        if (!res.ok) throw new Error("foto non disponibile");
+        const originale = await res.blob();
+        const nome = `1percento-${slug}-${f.id.slice(0, 8)}.jpg`;
+
+        // webp → jpeg, il formato che tutti i telefoni mettono in galleria
+        const jpeg = await new Promise<Blob>((risolvi, rifiuta) => {
+          const img = new Image();
+          const src = URL.createObjectURL(originale);
+          img.onload = () => {
+            const tela = document.createElement("canvas");
+            tela.width = img.naturalWidth;
+            tela.height = img.naturalHeight;
+            const ctx = tela.getContext("2d");
+            if (!ctx) return rifiuta(new Error("niente canvas"));
+            ctx.drawImage(img, 0, 0);
+            tela.toBlob(
+              (b) => {
+                URL.revokeObjectURL(src);
+                b ? risolvi(b) : rifiuta(new Error("conversione fallita"));
+              },
+              "image/jpeg",
+              0.92,
+            );
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(src);
+            rifiuta(new Error("immagine illeggibile"));
+          };
+          img.src = src;
+        }).catch(() => originale); // se qualcosa va storto, si salva il webp
+
+        const file = new File([jpeg], nome, { type: jpeg.type || "image/jpeg" });
+
+        // Il foglio di condivisione del telefono: lì dentro c'è "Salva immagine"
+        const nav = navigator as Navigator & {
+          canShare?: (d: { files: File[] }) => boolean;
+        };
+        if (nav.canShare?.({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file] });
+            return;
+          } catch (e) {
+            // "Annulla" non è un errore: non si insiste con altri modi
+            if ((e as Error)?.name === "AbortError") return;
+          }
+        }
+
+        const url = URL.createObjectURL(file);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${slug}-${f.id.slice(0, 8)}.webp`;
+        a.download = nome;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      } catch {
+        window.alert(
+          "Non sono riuscito a salvarla.\n\nProva così: tieni premuto sulla foto qui sopra e scegli \"Salva immagine\".",
+        );
       } finally {
         setScaricando(false);
       }
@@ -289,6 +353,11 @@ export default function AlbumPage({ params }: { params: Promise<{ album: string 
             )}
           </div>
 
+          <p className="px-6 pt-2 text-center text-[10px] leading-relaxed text-white/40">
+            Dal telefono puoi anche tenere premuto sulla foto e scegliere
+            &quot;Salva immagine&quot;.
+          </p>
+
           <div
             className="flex flex-wrap items-center justify-center gap-2 px-4 py-5"
             onClick={(e) => e.stopPropagation()}
@@ -298,7 +367,7 @@ export default function AlbumPage({ params }: { params: Promise<{ album: string 
               disabled={scaricando}
               className="bg-brand-red px-6 py-3.5 text-[11px] font-semibold uppercase tracking-widest text-white disabled:opacity-50"
             >
-              {scaricando ? "scarico…" : "scarica in alta qualità"}
+              {scaricando ? "preparo la foto…" : "salva la foto"}
             </button>
             <button
               onClick={() => segnala(corrente)}
