@@ -426,6 +426,21 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           </a>
         )}
 
+        {/* Il secondo tasto, più piccolo e spento: porta alla lista di
+            chi hai messo dentro e a quanto vale. Chiesto dai PR — da
+            lì si rimanda il link a chi l'ha perso, che era la domanda
+            che arrivava ogni sera su WhatsApp. */}
+        <a
+          href="#tuoi"
+          className="mt-2 block border border-white/20 bg-white/[0.03] py-3 text-center font-tech text-[11px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:border-white/40 hover:text-white"
+        >
+          vedi dettagli
+          {biglietti.length > 0 ? ` · ${biglietti.length}` : ""}
+          {!r.senza_limite && Number(r.dovuto) > 0
+            ? ` · ${Number(r.dovuto).toFixed(0)}€`
+            : ""}
+        </a>
+
         {/* Il conto della serata, scritto grande: è la cosa che un PR
             deve sapere sempre, senza doverla ricavare da tre numeri.
             Sta qui sopra il modulo, così la vede ogni volta che scrive
@@ -710,9 +725,16 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
         </div>
 
         {/* I suoi clienti */}
-        <div className="mt-8">
+        <div id="tuoi" className="mt-8 scroll-mt-4">
           <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
-            i tuoi ({biglietti.length})
+            chi hai messo in lista
+          </p>
+          <p className="mt-1 font-display text-2xl uppercase leading-none text-white">
+            {biglietti.length}{" "}
+            {biglietti.length === 1 ? "nominativo" : "nominativi"}
+            {!r.senza_limite && Number(r.dovuto) > 0 && (
+              <span className="text-brand-gray"> · {Number(r.dovuto).toFixed(0)}€</span>
+            )}
           </p>
 
           <div className="mt-3 flex flex-col gap-2">
