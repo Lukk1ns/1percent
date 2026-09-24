@@ -639,7 +639,20 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                 </div>
               )}
 
-              {esito && <p className="text-sm text-brand-red">{esito}</p>}
+              {/* L'errore deve saltare agli occhi: prima era una riga
+                  rossa piccola sotto il modulo e chi vendeva di fretta
+                  non la vedeva, concludendo "non funziona". */}
+              {esito && (
+                <div className="border border-brand-red bg-brand-red/10 px-4 py-3">
+                  <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-red">
+                    non è andata
+                  </p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-white">{esito}</p>
+                  <p className="mt-2 text-[11px] leading-relaxed text-brand-gray">
+                    Se non si sblocca, manda questa schermata a Luka: c&apos;è scritto il motivo.
+                  </p>
+                </div>
+              )}
               {omonimo && r.senza_limite && (
                 <button
                   type="button"
