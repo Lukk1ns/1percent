@@ -55,16 +55,19 @@ export const SIGNUPS_OPEN = true;
  *         non mostra il bottone d'iscrizione ma "si entra su invito".
  * false = porta aperta a chiunque (com'era prima).
  *
- * Serve per le prime ore: Luka manda il suo link nel gruppo e tutti
- * entrano sotto di lui, poi si apre a tutti quando si svela l'ospite.
- *
  * ⚠️ È una porta, non una cassaforte: il controllo sta nel browser,
  * quindi uno che sa cosa fa può inventarsi un `?ref=` qualunque ed
  * entrare lo stesso (finirebbe senza chi l'ha portato). Per bloccarlo
- * davvero servirebbe la regola dentro `join_public` sul server. Per
- * tenere in riga un gruppo di promoter va benissimo così.
+ * davvero servirebbe la regola dentro `join_public` sul server.
+ *
+ * SPENTA il 24 settembre 2026, deciso da Luka: "il sito adesso può
+ * essere aperto a chiunque, non serve più la storia dell'invito, più
+ * utenti facciamo meglio è". L'invito era nato per reclutare i PR a
+ * agosto; adesso la galleria porta gente da fuori e fermarla sulla
+ * soglia era un iscritto buttato via. I link con `?ref=` continuano a
+ * funzionare e a segnare chi ha portato chi: quello non si tocca.
  */
-export const SOLO_SU_INVITO = true;
+export const SOLO_SU_INVITO = false;
 
 /**
  * Per adesso si entra solo come staff.
@@ -73,9 +76,14 @@ export const SOLO_SU_INVITO = true;
  *         cliente?" e non può proseguire. Serve nei giorni in cui si sta
  *         reclutando la crew e un PR che si iscrive come cliente è un
  *         PR perso.
- * false = tutti e due i percorsi aperti, com'era.
+ * false = tutti e due i percorsi aperti.
+ *
+ * SPENTA il 24 settembre 2026 insieme all'invito. Attenzione a cosa NON
+ * cambia: chi sceglie "iscrizione come staff" fa le sue 6 domande e
+ * resta `in_attesa` finché Luka non lo approva da /admin/crew. Nessuno
+ * diventa PR da solo — quella è una regola del database, non di qui.
  */
-export const SOLO_STAFF = true;
+export const SOLO_STAFF = false;
 
 /**
  * La chiave che deve esserci nel link d'invito, oltre al `?ref=`.

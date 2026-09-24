@@ -4,6 +4,25 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**LA PORTA SI APRE A TUTTI, E CHI È DENTRO RIENTRA (24 settembre 2026, `lib/event.ts`,
+`supabase/24_rientro.sql`).** Deciso da Luka: *"il sito adesso può essere aperto a chiunque, non
+serve più la storia dell'invito, più utenti facciamo ora meglio è — e i PR devono essere
+approvati"*. Quindi **`SOLO_SU_INVITO = false`** e **`SOLO_STAFF = false`**: da `/unisciti` entra
+chiunque, i due percorsi (cliente / staff) sono tutti e due aperti. **Non cambia niente per i PR:**
+chi sceglie "iscrizione come staff" fa le 6 domande e resta `in_attesa` finché non lo approvi da
+`/admin/crew` — quella è una regola del database. I link `?ref=` continuano a segnare chi porta chi.
+**E il bug sotto:** un PR scriveva *"mi ha fatto uscire e non riesco a rientrare"* e finiva sulla
+schermata dell'invito. Il muro era solo dove cadeva. Chi si iscrive entra con una sessione anonima e
+il profilo porta quell'id; al rientro dalla mail l'accesso è un altro e `link_email_account()` deve
+riattaccare il profilo cambiandogli l'id — ma **nessuna delle 22 chiavi che puntano a `profiles`
+aveva `on update cascade`**, quindi Postgres rifiutava, la funzione andava in errore e il sito
+concludeva "non ti conosco". **Più uno aveva fatto sul sito, meno riusciva a rientrare: un PR con
+biglietti assegnati non ce la faceva mai.** `24_rientro.sql` insegna a tutte le chiavi a seguire il
+cambio di id (con un ciclo, così vale anche per le tabelle che nasceranno) e riscrive
+`link_email_account()`: confronto della mail senza maiuscole né spazi, "sì" anche quando non c'è
+niente da spostare, e i cancellati restano cancellati. **PENDING Luka: incollare `24_rientro.sql`.**
+In fondo allo script c'è il controllo: deve stampare **0**.
+
 **LE FOTO NON SI CARICAVANO — sharp senza binario (23 settembre 2026, `next.config.ts`).** Primo
 caricamento vero della galleria: 119 foto su 119 respinte con **500**. Non erano le foto. Una
 chiamata a `/api/foto/upload` **senza nessuna sessione** rispondeva 500 invece di 401: la route
