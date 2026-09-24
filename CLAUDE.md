@@ -20,7 +20,16 @@ concludeva "non ti conosco". **Più uno aveva fatto sul sito, meno riusciva a ri
 biglietti assegnati non ce la faceva mai.** `24_rientro.sql` insegna a tutte le chiavi a seguire il
 cambio di id (con un ciclo, così vale anche per le tabelle che nasceranno) e riscrive
 `link_email_account()`: confronto della mail senza maiuscole né spazi, "sì" anche quando non c'è
-niente da spostare, e i cancellati restano cancellati. **PENDING Luka: incollare `24_rientro.sql`.**
+niente da spostare, e i cancellati restano cancellati. **PENDING Luka: incollare `24_rientro.sql`.** **E non bastava: il secondo muro era il trigger dei soldi**
+(`supabase/25_rientro_e_registro.sql`). `proteggi_consegne`/`proteggi_incassi` (19) rifiutano *ogni*
+update su `pr_allocations` e `pr_settlements`; quando il rientro cambia l'id del profilo, la cascata
+tocca quelle righe per aggiornare `pr_id` e il trigger la ferma. **Chi ha biglietti o soldi a suo
+nome non rientrava mai** — trovato su Leonardo (`ceo`, crew approvata, 5 biglietti, profilo vivo e
+mail giusta: la diagnosi "sarà la mail sbagliata" era falsa). Ora il trigger lascia passare **solo**
+la riga in cui `to_jsonb(new) - 'pr_id' = to_jsonb(old) - 'pr_id'`: cambia la persona nominata, non
+un centesimo della contabilità. Tutto il resto resta vietato, e lo script se lo verifica da solo
+provando a cambiare un importo. **Lezione:** quando si blinda una tabella con un trigger, ricordarsi
+che gli update non arrivano solo dalle mani di qualcuno — arrivano anche dalle cascate.
 In fondo allo script c'è il controllo: deve stampare **0**.
 
 **LE FOTO NON SI CARICAVANO — sharp senza binario (23 settembre 2026, `next.config.ts`).** Primo
