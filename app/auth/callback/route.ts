@@ -58,6 +58,13 @@ export async function GET(request: Request) {
     if (linked) {
       return NextResponse.redirect(new URL("/card", url.origin));
     }
+
+    // È entrato davvero, ma di lui non sappiamo niente: quasi sempre
+    // perché si era iscritto con un'altra mail. Mandarlo a "Chi sei?"
+    // senza dirglielo lo porta a rifarsi l'account e a perdere quello
+    // che aveva — il `rientro=1` fa comparire l'avviso con l'indirizzo
+    // con cui è entrato.
+    return NextResponse.redirect(new URL("/unisciti?rientro=1", url.origin));
   }
 
   return NextResponse.redirect(new URL("/unisciti", url.origin));

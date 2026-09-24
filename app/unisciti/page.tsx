@@ -82,10 +82,36 @@ function JoinForm() {
   const next = grezzo && grezzo.startsWith("/") && !grezzo.startsWith("//") ? grezzo : null;
   const dalleFoto = FOTO_APRONO_LA_PORTA && Boolean(next?.startsWith("/foto"));
 
+  // Ci arriva chi ha appena aperto il link della mail e non è stato
+  // riconosciuto. Senza questo, si ritrova davanti a "Chi sei?" e
+  // rifà l'account da capo — perdendo profilo, biglietti e punti.
+  const rientroFallito = params.get("rientro") === "1";
+  const [emailAccesso, setEmailAccesso] = useState<string | null>(null);
+
   // null = sto controllando, true/false = risposta del server
   const [signupsOpen, setSignupsOpen] = useState<boolean | null>(
     SIGNUPS_OPEN ? null : false,
   );
+
+  // Ultima rete: se chi è arrivato qui ha già un profilo (anche legato
+  // a un accesso vecchio), lo si riporta dentro invece di fargli fare
+  // un doppione. Se non c'è, almeno gli si dice con che indirizzo è
+  // entrato: quasi sempre è una mail diversa da quella dell'iscrizione.
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: ritrovato } = await supabase.rpc("link_email_account");
+      if (ritrovato) {
+        router.replace("/card");
+        return;
+      }
+      setEmailAccesso(user.email ?? null);
+    })();
+  }, [router]);
   // Registra il click sul link invito. Serve a distinguere chi l'ha
   // visto da chi si è iscritto davvero: solo il secondo numero conta.
   useEffect(() => {
@@ -194,6 +220,30 @@ function JoinForm() {
 
   return (
     <main className="flex-1 flex flex-col items-center px-6 py-12 max-w-md mx-auto w-full">
+      {rientroFallito && emailAccesso && (
+        <div className="mb-8 w-full border border-brand-red/40 bg-brand-red/[0.06] px-4 py-5">
+          <p className="font-display text-xl uppercase leading-tight text-white">
+            Non ti abbiamo riconosciuto
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-brand-gray">
+            Sei entrato con{" "}
+            <span className="break-all text-white">{emailAccesso}</span>, e con questo
+            indirizzo non risulta nessun profilo.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-brand-gray">
+            Se ti eri iscritto con <span className="text-white">un&apos;altra mail</span>,
+            rientra con quella: profilo, biglietti e punti sono lì e li ritrovi tutti.
+            Iscriviti qui sotto solo se è la prima volta.
+          </p>
+          <Link
+            href="/login"
+            className="mt-5 inline-block border border-white/20 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-white hover:border-brand-red"
+          >
+            rientra con un&apos;altra mail →
+          </Link>
+        </div>
+      )}
+
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">
         passo 1 di 2
       </p>
