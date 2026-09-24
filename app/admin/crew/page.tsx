@@ -139,7 +139,7 @@ export default function AdminCrewPage() {
     if (!confirm(`${verbo} ${c.nome ?? c.alias} (${c.alias})?`)) return;
 
     setLavorando(c.id);
-    const { error } = await createClient().rpc(
+    const { data, error } = await createClient().rpc(
       approva ? "admin_approve_crew" : "admin_reject_crew",
       { p_profile: c.id },
     );
@@ -147,6 +147,20 @@ export default function AdminCrewPage() {
     if (error) {
       setErrore(error.message);
       return;
+    }
+
+    // Chi entra parte già con i suoi blocchetti sulla prossima serata:
+    // la risposta dice quanti e su quale, così si sa subito se ha
+    // qualcosa da vendere o se bisogna ancora creare la serata.
+    // Formato: "ok:<quanti>:<serata>".
+    if (approva && typeof data === "string") {
+      const [, quanti, serata] = data.split(":");
+      const n = Number(quanti ?? 0);
+      alert(
+        n > 0
+          ? `${c.nome ?? c.alias} è dentro, e gli ho già consegnato ${n} prevendite per ${serata}.`
+          : `${c.nome ?? c.alias} è dentro.\n\nBlocchetti non consegnati: o non c'è nessuna serata in programma, o ne aveva già per la prossima. Glieli dai tu da /admin/pr.`,
+      );
     }
     carica();
   }

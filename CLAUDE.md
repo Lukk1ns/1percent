@@ -4,6 +4,34 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**CHI DIVENTA PR PARTE CON I SUOI BLOCCHETTI (24 set, `supabase/28_dotazione_iniziale.sql`).**
+Luka: *"ogni volta che attivo un PR mettigli le prime 5 prevendite di default"*. Prima un approvato
+restava a zero, apriva `/pr`, non vedeva niente e scriveva "non funziona" — successo davvero.
+`_pr_dotazione_iniziale()` consegna `prevendite_config.blocchetti_iniziali` (5 di serie, si cambia
+dal pannello, 0 = spento) sulla **prossima serata in programma**; niente serate future = niente
+consegna, e la funzione lo dice invece di far finta. **Non raddoppia**: se quel PR ha già movimenti
+su quella serata non tocca nulla, quindi riapprovare qualcuno non gli regala blocchetti ogni volta.
+Aggangiata alle due porte per diventare PR: `admin_approve_crew` (che ora torna `ok:<quanti>:<serata>`
+e il pannello lo dice a schermo) e `admin_set_role(.., 'crew')`. Con più serate in parallelo va solo
+sulla prima. **PENDING Luka: incollare `28_dotazione_iniziale.sql`.**
+
+**RIPARAZIONE del 24 set (`supabase/27_fix_lista_pr.sql`) — E LA LEZIONE.** `/admin/pr` si apriva su
+*"column reference pr_id is ambiguous"*: per aggiungere il numero di tessera avevo riscritto
+`admin_pr_lista` copiandola da `09_prevendite.sql` invece che dalla sua correzione in
+`11_prevendite_fix.sql`. **Regola: prima di rifare una funzione, cercarla in TUTTI gli script, non
+solo in quello che la crea** — l'ultima definizione vince, e in questo progetto le correzioni stanno
+in file separati e numerati più avanti. Le funzioni con `returns table` che dichiarano `pr_id` o
+`alias` ora hanno `#variable_conflict use_column`, così l'equivoco non può più nascere.
+**Nello stesso giro: il pannello non aveva i collegamenti** a Prevendite, Porta e Foto — né in home
+né nella dashboard, dove non c'era nessun link. Ecco perché "il PR non si trovava": l'indirizzo
+andava scritto a mano. Ora ci sono in tutte e due.
+**Controllo fatto sulle 122 RPC chiamate dal sito: 118 esistono.** Mancano solo quelle di due script
+mai incollati — `22_delega_per_serata.sql` (`admin_set_event_delega`, `admin_set_event_qr`: nella
+scheda Grafica il modulo under-16 e la posizione del QR non si salvano) e `iscrizioni.sql`
+(`signups_open`, `admin_set_signups`: l'interruttore iscrizioni non esiste, e il sito tira dritto).
+Il controllo si rifà con lo script in `~/.../scratchpad` o riestraendo i nomi con una regex da
+`app/` e `lib/`: vale la pena rifarlo dopo ogni tornata di script.
+
 **SEI CORREZIONI ALL'AREA PR (24 settembre 2026, `supabase/26_ritiri_in_blocco.sql`).** Chieste da
 Luka mentre provava il modulo con un PR vero.
 1. **Consegna parziale**: accanto a "ho ricevuto i soldi" c'è il quadratino della cifra. Vuoto =

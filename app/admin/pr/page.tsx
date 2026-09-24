@@ -378,6 +378,9 @@ export default function AdminPrPage() {
   // Le serate passate restano visibili ma non si scelgono, per non
   // segnare un incasso sulla serata sbagliata. Questa le sblocca.
   const [mostraPassate, setMostraPassate] = useState(false);
+  // Quante prevendite riceve un PR appena approvato, senza doverci
+  // pensare. Sta nel database, qui si legge e si cambia.
+  const [iniziali, setIniziali] = useState<string>("");
 
   // Nuova fascia
   const [nuovaLabel, setNuovaLabel] = useState("");
@@ -442,6 +445,12 @@ export default function AdminPrPage() {
       return;
     }
 
+    createClient()
+      .rpc("admin_blocchetti_iniziali")
+      .then(({ data }) => {
+        if (typeof data === "number") setIniziali(String(data));
+      });
+
     setConfig({
       aperta: Boolean(cfgRes.data?.[0]?.aperta),
       vendite_on: Boolean(cfgRes.data?.[0]?.vendite_on),
@@ -489,6 +498,24 @@ export default function AdminPrPage() {
     await supabase.rpc("admin_set_soglia_countdown", { p_soglia: n });
     await carica();
     await caricaEvento(evento);
+  }
+
+  async function salvaIniziali() {
+    const n = Number(iniziali);
+    if (!Number.isInteger(n) || n < 0) {
+      window.alert("Serve un numero intero, anche zero.");
+      return;
+    }
+    const { error } = await createClient().rpc("admin_set_blocchetti_iniziali", { p_n: n });
+    window.alert(
+      error
+        ? error.message.includes("admin_set_blocchetti_iniziali")
+          ? "Manca un pezzo sul database: incolla supabase/28_dotazione_iniziale.sql nel SQL Editor."
+          : error.message
+        : n === 0
+          ? "Fatto: i nuovi PR non riceveranno niente in automatico."
+          : `Fatto: chi approvi adesso parte con ${n} prevendite.`,
+    );
   }
 
   async function assegna(prId: string, delta: number) {
@@ -855,6 +882,34 @@ export default function AdminPrPage() {
           I PR sono la crew approvata. Un biglietto diventa valido solo quando segni
           che i contanti sono arrivati.
         </p>
+
+        {/* Quanto riceve chi entra adesso */}
+        <div className="mt-6 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+              chi approvi adesso parte con
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-brand-gray/80">
+              Appena fai entrare un PR da /admin/crew, gli finiscono in mano queste
+              prevendite sulla <span className="text-white">prossima serata</span>, senza
+              che tu debba tornare qui. Zero = niente in automatico.
+            </p>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <input
+              inputMode="numeric"
+              value={iniziali}
+              onChange={(e) => setIniziali(e.target.value.replace(/[^0-9]/g, ""))}
+              className="w-20 border border-white/20 bg-black px-3 py-2.5 text-center text-sm text-white outline-none focus:border-brand-red"
+            />
+            <button
+              onClick={salvaIniziali}
+              className="border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red"
+            >
+              salva
+            </button>
+          </div>
+        </div>
 
         {/* L'interruttore */}
         <div className="mt-6 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
