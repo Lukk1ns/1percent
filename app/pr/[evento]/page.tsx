@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import QRCode from "qrcode";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, dataLunga, giornoEData, ora } from "@/lib/eventi";
@@ -44,6 +45,16 @@ type Biglietto = {
   minorenne: boolean;
   under16: boolean;
   created_at: string;
+};
+
+type Ingresso = {
+  token: string;
+  attivo: boolean;
+  vendute: number;
+  soglia: number;
+  mancano: number;
+  forzato: boolean;
+  usato_at: string | null;
 };
 
 type EventoPR = {
@@ -112,6 +123,9 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   const [omonimo, setOmonimo] = useState(false);
   const [appenaFatto, setAppenaFatto] = useState<Biglietto | null>(null);
   const [copiato, setCopiato] = useState(false);
+  // Il pass del PR: esiste per serata e si accende con le vendite.
+  const [ingresso, setIngresso] = useState<Ingresso | null>(null);
+  const qrRef = useRef<HTMLCanvasElement>(null);
 
   const carica = useCallback(async () => {
     const supabase = createClient();
@@ -136,6 +150,11 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
       return;
     }
 
+    // Il pass non fa parte del blocco di sopra: se manca lo script
+    // non deve portarsi dietro il resto della pagina.
+    const { data: ing } = await supabase.rpc("pr_ingresso", { p_event: evento });
+    setIngresso((ing?.[0] as Ingresso) ?? null);
+
     const mio = (evRes.data ?? []).find((x: EventoPR) => x.event_id === evento) ?? null;
     setEv(mio);
     setR(rRes.data?.[0] ?? null);
@@ -148,6 +167,17 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   useEffect(() => {
     carica();
   }, [carica]);
+
+  // Il QR contiene il token nudo, come quello dei biglietti: è quello
+  // che lo scanner della porta si aspetta di leggere.
+  useEffect(() => {
+    if (!ingresso?.token || !qrRef.current) return;
+    QRCode.toCanvas(qrRef.current, ingresso.token, {
+      width: 200,
+      margin: 2,
+      color: { dark: "#000000", light: "#ffffff" },
+    });
+  }, [ingresso?.token]);
 
   async function vendi(e: React.FormEvent, forza = false) {
     e.preventDefault();
@@ -498,6 +528,85 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
               <span className="text-white">non vengono convalidate</span>: chi le ha comprate,
               in porta, non entra.
             </p>
+          </div>
+        )}
+
+        {/* Il suo ingresso alla festa. Sta qui, sotto i conti: è la
+            cosa che un PR guarda più spesso dopo quanto deve portare. */}
+        {ingresso && !r.senza_limite && (
+          <div
+            className={`mt-4 border px-4 py-5 ${
+              ingresso.usato_at
+                ? "border-white/15 bg-white/[0.02]"
+                : ingresso.attivo
+                  ? "border-emerald-400/50 bg-emerald-400/[0.07]"
+                  : "border-white/15 bg-white/[0.02]"
+            }`}
+          >
+            <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
+              il tuo ingresso
+            </p>
+            <p
+              className={`mt-1 font-display text-2xl uppercase leading-none ${
+                ingresso.usato_at
+                  ? "text-brand-gray"
+                  : ingresso.attivo
+                    ? "text-emerald-400"
+                    : "text-white"
+              }`}
+            >
+              {ingresso.usato_at
+                ? "Già usato"
+                : ingresso.attivo
+                  ? "Attivo"
+                  : "Non ancora attivo"}
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-5">
+              <div
+                className={`bg-white p-2 transition-opacity ${
+                  ingresso.attivo && !ingresso.usato_at ? "" : "opacity-25"
+                }`}
+              >
+                <canvas ref={qrRef} />
+              </div>
+
+              <div className="min-w-[12rem] flex-1">
+                {ingresso.usato_at ? (
+                  <p className="text-[12px] leading-relaxed text-brand-gray">
+                    Sei già entrato con questo pass: vale una volta sola.
+                  </p>
+                ) : ingresso.attivo ? (
+                  <>
+                    <p className="text-[12px] leading-relaxed text-white">
+                      {ingresso.forzato
+                        ? "Te l'ha acceso Luka."
+                        : `Hai fatto ${ingresso.vendute} prevendite: l'ingresso è tuo.`}
+                    </p>
+                    <p className="mt-2 text-[11px] leading-relaxed text-brand-gray">
+                      Fallo scansionare in porta. Vale una volta sola e solo per questa
+                      serata.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-display text-3xl leading-none text-white">
+                      {ingresso.vendute}
+                      <span className="text-brand-gray">/{ingresso.soglia}</span>
+                    </p>
+                    <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                      prevendite fatte
+                    </p>
+                    <p className="mt-3 text-[12px] leading-relaxed text-white">
+                      Ti {ingresso.mancano === 1 ? "manca" : "mancano"}{" "}
+                      <span className="text-brand-red">{ingresso.mancano}</span>{" "}
+                      {ingresso.mancano === 1 ? "prevendita" : "prevendite"} e il tuo
+                      ingresso si accende da solo.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

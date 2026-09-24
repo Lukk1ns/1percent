@@ -40,6 +40,15 @@ type RigaPR = {
   mancante: number;
 };
 
+type RigaIngresso = {
+  pr_id: string;
+  alias: string;
+  vendute: number;
+  attivo: boolean;
+  forzato: boolean;
+  usato_at: string | null;
+};
+
 type Fascia = {
   id: string;
   label: string;
@@ -381,6 +390,9 @@ export default function AdminPrPage() {
   // Quante prevendite riceve un PR appena approvato, senza doverci
   // pensare. Sta nel database, qui si legge e si cambia.
   const [iniziali, setIniziali] = useState<string>("");
+  // L'ingresso omaggio dei PR: quante prevendite servono, e chi ce l'ha.
+  const [sogliaIngresso, setSogliaIngresso] = useState<string>("");
+  const [ingressi, setIngressi] = useState<RigaIngresso[]>([]);
 
   // Nuova fascia
   const [nuovaLabel, setNuovaLabel] = useState("");
@@ -405,6 +417,12 @@ export default function AdminPrPage() {
       (r) => r.error,
     )?.error;
     setErrore(primoErrore ? primoErrore.message : null);
+
+    // A parte, e senza far fallire il resto: finché 30_ingresso_pr.sql
+    // non è incollato questa semplicemente non c'è.
+    supabase
+      .rpc("admin_pr_ingressi", { p_event: id })
+      .then(({ data }) => setIngressi((data as RigaIngresso[]) ?? []));
 
     setPr(prRes.data ?? []);
     setFasce(fRes.data ?? []);
@@ -444,6 +462,12 @@ export default function AdminPrPage() {
       );
       return;
     }
+
+    createClient()
+      .rpc("admin_ingresso_soglia")
+      .then(({ data }) => {
+        if (typeof data === "number") setSogliaIngresso(String(data));
+      });
 
     createClient()
       .rpc("admin_blocchetti_iniziali")
@@ -497,6 +521,50 @@ export default function AdminPrPage() {
     const supabase = createClient();
     await supabase.rpc("admin_set_soglia_countdown", { p_soglia: n });
     await carica();
+    await caricaEvento(evento);
+  }
+
+  async function salvaSogliaIngresso() {
+    const n = Number(sogliaIngresso);
+    if (!Number.isInteger(n) || n < 0) {
+      window.alert("Serve un numero intero, anche zero.");
+      return;
+    }
+    const { error } = await createClient().rpc("admin_set_ingresso_soglia", { p_n: n });
+    window.alert(
+      error
+        ? error.message.includes("admin_set_ingresso_soglia")
+          ? "Manca un pezzo sul database: incolla supabase/30_ingresso_pr.sql nel SQL Editor."
+          : error.message
+        : `Fatto: l'ingresso si accende a ${n} prevendite vendute.`,
+    );
+    await caricaEvento(evento);
+  }
+
+  // L'eccezione: glielo accendi tu anche se non ci è arrivato.
+  async function forzaIngresso(riga: RigaIngresso) {
+    const spegni = riga.forzato;
+    if (
+      !window.confirm(
+        spegni
+          ? `Togliere l'ingresso acceso a mano a ${riga.alias}?\n\nSe ha fatto i numeri resta attivo lo stesso.`
+          : `Accendere l'ingresso di ${riga.alias} adesso?\n\nHa fatto ${riga.vendute} prevendite. Resta scritto che l'hai deciso tu.`,
+      )
+    )
+      return;
+    const { error } = await createClient().rpc("admin_pr_ingresso_forza", {
+      p_event: evento,
+      p_pr: riga.pr_id,
+      p_on: !spegni,
+    });
+    if (error) {
+      window.alert(
+        error.message.includes("admin_pr_ingresso_forza")
+          ? "Manca un pezzo sul database: incolla supabase/30_ingresso_pr.sql nel SQL Editor."
+          : error.message,
+      );
+      return;
+    }
     await caricaEvento(evento);
   }
 
@@ -960,6 +1028,33 @@ export default function AdminPrPage() {
           </div>
         </div>
 
+        {/* L'ingresso dei PR */}
+        <div className="mt-3 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+              ingresso omaggio del PR
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-brand-gray/80">
+              Il suo QR si accende da solo a questo numero di prevendite vendute, e lui
+              vede a che punto è. Le eccezioni le fai qui sotto, PR per PR.
+            </p>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <input
+              inputMode="numeric"
+              value={sogliaIngresso}
+              onChange={(e) => setSogliaIngresso(e.target.value.replace(/[^0-9]/g, ""))}
+              className="w-20 border border-white/20 bg-black px-3 py-2.5 text-center text-sm text-white outline-none focus:border-brand-red"
+            />
+            <button
+              onClick={salvaSogliaIngresso}
+              className="border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red"
+            >
+              salva
+            </button>
+          </div>
+        </div>
+
         {/* L'interruttore */}
         <div className="mt-6 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -1414,6 +1509,44 @@ export default function AdminPrPage() {
                         </button>
                       )}
                     </div>
+
+                    {(() => {
+                      const ing = ingressi.find((i) => i.pr_id === x.pr_id);
+                      if (!ing) return null;
+                      return (
+                        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/5 pt-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                              suo ingresso
+                            </p>
+                            <p
+                              className={`mt-0.5 text-sm ${
+                                ing.usato_at
+                                  ? "text-brand-gray"
+                                  : ing.attivo
+                                    ? "text-emerald-400"
+                                    : "text-white"
+                              }`}
+                            >
+                              {ing.usato_at
+                                ? "già entrato"
+                                : ing.attivo
+                                  ? ing.forzato
+                                    ? "attivo (acceso da te)"
+                                    : "attivo"
+                                  : "non ancora attivo"}
+                            </p>
+                          </div>
+                          <button
+                            disabled={lavorando}
+                            onClick={() => forzaIngresso(ing)}
+                            className="border border-white/20 px-3 py-2 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red disabled:opacity-40"
+                          >
+                            {ing.forzato ? "togli l'eccezione" : "accendi lo stesso"}
+                          </button>
+                        </div>
+                      );
+                    })()}
 
                     <p className="mt-3 text-[11px] leading-relaxed text-brand-gray/70">
                       Il quadratino vuoto vale tutto quello che deve ({euro(Math.max(x.mancante, 0))}).

@@ -4,6 +4,24 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**L'INGRESSO DEL PR SE LO GUADAGNA (24 set, `supabase/30_ingresso_pr.sql`).** Luka: *"un QR che si
+attiva solo quando il PR vende il numero richiesto, fissato a 10; poi io posso fare eccezione e
+attivarglielo anche a 8, ma decido io; lui vede ATTIVO o NON ANCORA ATTIVO e lo sa"*. È il patto
+scritto invece che a voce: niente più discussioni in porta.
+Tabella **`pr_ingressi`** (un pass **per PR e per serata** — quello di sabato non apre venerdì), il
+token nasce alla prima occhiata e non cambia più, così chi se l'è salvato in galleria lo ritrova.
+**Attivo** a `prevendite_config.ingresso_soglia` (10 di serie, si cambia dal pannello) **oppure**
+acceso a mano con `admin_pr_ingresso_forza` — e resta scritto chi l'ha deciso. Vale **una volta
+sola**: in porta si brucia come un biglietto.
+⚠️ **Si conta il VENDUTO, non il saldato** (`stato <> 'annullata'`): chi ha fatto i nominativi ha
+fatto il suo lavoro anche se i contanti arrivano domani. Per legarlo ai soldi incassati basta
+aggiungere `and ps.stato in ('attiva','usata')` — la riga è segnata nello script.
+`porta_checkin` ora, se il codice non è di un biglietto, guarda fra i pass PR: **`pr_ok`** (verde
+"PASSA · PR"), **`pr_non_attivo`** (ambra, con scritto a quanto sta) e `gia_usato`. Nel pannello ogni
+PR mostra lo stato del suo ingresso col tasto per l'eccezione; nella sua pagina il PR vede il QR
+(spento finché non è attivo) e **quante gliene mancano**.
+**PENDING Luka: incollare `30_ingresso_pr.sql`.**
+
 **ALL'AREA PR NON CI ARRIVAVA NESSUN LINK (24 set, `app/page.tsx`, `components/NavBasso.tsx`).**
 Il PR: *"non c'è proprio il pulsante, non so dove accedere al portale delle prevendite — zero, c'è
 eventi foto il muro privacy il tuo profilo qr code la tua tessera crew e basta"*. Aveva ragione:

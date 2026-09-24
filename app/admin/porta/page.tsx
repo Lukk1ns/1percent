@@ -28,7 +28,10 @@ type Esito = {
     | "non_pagato"
     | "annullato"
     | "altra_serata"
-    | "sconosciuto";
+    | "sconosciuto"
+    // il pass del PR: passa solo se ha fatto i suoi numeri
+    | "pr_ok"
+    | "pr_non_attivo";
   nome: string | null;
   cognome: string | null;
   tier_label: string | null;
@@ -246,13 +249,19 @@ export default function PortaPage() {
         }
       }
 
-      if (r.esito === "ok") suonaOk();
-      else if (r.esito === "non_pagato") suonaAttenzione();
+      if (r.esito === "ok" || r.esito === "pr_ok") suonaOk();
+      else if (r.esito === "non_pagato" || r.esito === "pr_non_attivo") suonaAttenzione();
       else suonaNo();
 
       // vibrazione diversa: si sente anche in tasca
       if (navigator.vibrate) {
-        navigator.vibrate(r.esito === "ok" ? 60 : r.esito === "non_pagato" ? [80, 60, 80] : [250]);
+        navigator.vibrate(
+          r.esito === "ok" || r.esito === "pr_ok"
+            ? 60
+            : r.esito === "non_pagato" || r.esito === "pr_non_attivo"
+              ? [80, 60, 80]
+              : [250],
+        );
       }
 
       setEsito(r);
@@ -702,6 +711,15 @@ function Risposta({
     annullato: { sfondo: "bg-brand-red", testo: "ANNULLATO", colore: "text-white" },
     altra_serata: { sfondo: "bg-amber-400", testo: "ALTRA SERATA", colore: "text-black" },
     sconosciuto: { sfondo: "bg-neutral-700", testo: "NON È UN BIGLIETTO", colore: "text-white" },
+    // Verde come un biglietto valido, ma la scritta dice che è uno
+    // della crew: in porta si capisce chi sta entrando e con che
+    // diritto, senza chiedere niente a nessuno.
+    pr_ok: { sfondo: "bg-emerald-500", testo: "PASSA · PR", colore: "text-black" },
+    pr_non_attivo: {
+      sfondo: "bg-amber-400",
+      testo: "PR SENZA INGRESSO",
+      colore: "text-black",
+    },
   }[esito.esito];
 
   return (
@@ -737,6 +755,19 @@ function Risposta({
       {esito.esito === "sconosciuto" && (
         <p className="mt-4 max-w-xs text-sm opacity-80">
           Questo QR non è una prevendita. Se è il pass di un membro, si entra normalmente.
+        </p>
+      )}
+
+      {esito.esito === "pr_non_attivo" && (
+        <p className="mt-4 max-w-[24ch] text-sm leading-relaxed">
+          Non ha ancora fatto le prevendite che servono ({esito.tier_label}). Paga
+          l&apos;ingresso o lo sblocca Luka dal pannello.
+        </p>
+      )}
+
+      {esito.esito === "pr_ok" && (
+        <p className="mt-4 max-w-[24ch] text-sm leading-relaxed">
+          È della crew e ha fatto i suoi numeri. Il pass vale una volta sola.
         </p>
       )}
 
