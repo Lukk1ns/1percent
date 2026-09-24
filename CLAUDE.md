@@ -4,6 +4,16 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**ALL'AREA PR NON CI ARRIVAVA NESSUN LINK (24 set, `app/page.tsx`, `components/NavBasso.tsx`).**
+Il PR: *"non c'è proprio il pulsante, non so dove accedere al portale delle prevendite — zero, c'è
+eventi foto il muro privacy il tuo profilo qr code la tua tessera crew e basta"*. Aveva ragione:
+`/pr` era nata **volutamente invisibile** a settembre ("nessun link porta qui finché non è provata")
+e quando l'area è stata aperta nessuno ha rimesso la porta. Si entrava solo scrivendo l'indirizzo.
+Ora: bottone **"Le tue prevendite"** in home per chi è `crew` (solo se l'area è aperta, se no
+sbatterebbe su "Non ancora") e voce **PR** nella barra in fondo, che `prevendite_stato` accende solo
+per chi è PR. **Lezione: quando una cosa nasce nascosta, il giorno che la si accende va rimesso il
+link — l'interruttore nel database non crea la strada per arrivarci.**
+
 **CHI DIVENTA PR PARTE CON I SUOI BLOCCHETTI (24 set, `supabase/28_dotazione_iniziale.sql`).**
 Luka: *"ogni volta che attivo un PR mettigli le prime 5 prevendite di default"*. Prima un approvato
 restava a zero, apriva `/pr`, non vedeva niente e scriveva "non funziona" — successo davvero.

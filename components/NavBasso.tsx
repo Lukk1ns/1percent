@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 /**
  * La barra in fondo, quella che si usa davvero.
@@ -26,6 +28,23 @@ const VOCI = [
 
 export function NavBasso() {
   const pathname = usePathname();
+  // I PR hanno una voce in più. Non è un vezzo: fino a ieri all'area
+  // prevendite non portava nessun link, e chi ci lavora doveva
+  // scriversi /pr a mano — infatti nessuno la trovava.
+  const [sonoPr, setSonoPr] = useState(false);
+
+  useEffect(() => {
+    createClient()
+      .rpc("prevendite_stato")
+      .then(({ data }) => {
+        const s = data?.[0];
+        setSonoPr(Boolean(s?.sono_pr) && Boolean(s?.aperta || s?.sono_admin));
+      });
+  }, []);
+
+  const voci = sonoPr
+    ? [...VOCI.slice(0, 1), { href: "/pr", label: "PR" }, ...VOCI.slice(1)]
+    : VOCI;
 
   return (
     <>
@@ -38,7 +57,7 @@ export function NavBasso() {
         aria-label="Navigazione principale"
       >
         <div className="mx-auto flex w-full max-w-lg justify-around">
-          {VOCI.map((v) => {
+          {voci.map((v) => {
             const attiva = v.href === "/" ? pathname === "/" : pathname.startsWith(v.href);
             return (
               <Link

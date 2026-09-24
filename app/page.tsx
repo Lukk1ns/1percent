@@ -83,6 +83,7 @@ export default function Home() {
   const [io, setIo] = useState<{ alias: string; crew: boolean } | null>(null);
   const [sonoMembro, setSonoMembro] = useState<boolean | null>(null);
   const [staff, setStaff] = useState(false);
+  const [prevenditeAperte, setPrevenditeAperte] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -101,6 +102,14 @@ export default function Home() {
       setSonoMembro(Boolean(data));
       if (data) setIo({ alias: data.alias as string, crew: data.role === "crew" });
       setStaff(Boolean(staffRes.data));
+
+      // I PR devono poter arrivare al loro modulo: l'area era nata
+      // senza nessun link che la raggiungesse (si entrava scrivendo
+      // /pr a mano) e chi lavora non poteva saperlo.
+      if (data?.role === "crew") {
+        const { data: st } = await supabase.rpc("prevendite_stato");
+        setPrevenditeAperte(Boolean(st?.[0]?.aperta));
+      }
     })();
   }, []);
 
@@ -332,6 +341,9 @@ export default function Home() {
               <div className="mt-6 grid gap-2 sm:grid-cols-2">
                 <Link href="/pass" className="btn btn-primary">Il tuo QR code</Link>
                 <Link href="/invita" className="btn btn-outline">Invita qualcuno</Link>
+                {io?.crew && prevenditeAperte && (
+                  <Link href="/pr" className="btn btn-primary">Le tue prevendite</Link>
+                )}
                 {io?.crew && (
                   <Link href="/tessera" className="btn btn-outline">La tua tessera crew</Link>
                 )}
