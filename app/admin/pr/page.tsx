@@ -615,6 +615,55 @@ export default function AdminPrPage() {
     await carica();
   }
 
+  // L'opposto del ritiro: fa partire tutta la squadra. Di default
+  // serve solo chi è a zero, così chi ne ha già non si ritrova il
+  // doppio senza motivo.
+  async function consegnaATutti() {
+    const aZero = pr.filter((x) => x.assegnate === 0).length;
+    const risposta = window.prompt(
+      `Quante prevendite a testa?\n\n` +
+        `PR approvati: ${pr.length} · senza niente in mano per questa serata: ${aZero}.`,
+      "5",
+    );
+    if (risposta === null) return;
+    const n = Number(risposta);
+    if (!Number.isInteger(n) || n <= 0) {
+      window.alert("Serve un numero intero maggiore di zero.");
+      return;
+    }
+    const soloAZero =
+      aZero === pr.length ||
+      window.confirm(
+        `Darle SOLO a chi è a zero (${aZero} PR)?\n\n` +
+          `OK = solo a loro · Annulla = a tutti e ${pr.length}, anche a chi ne ha già.`,
+      );
+
+    setLavorando(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("admin_pr_consegna_tutti", {
+      p_event: evento,
+      p_quante: n,
+      p_solo_a_zero: soloAZero,
+    });
+    setLavorando(false);
+    if (error) {
+      window.alert(
+        error.message.includes("admin_pr_consegna_tutti")
+          ? "Manca un pezzo sul database: incolla supabase/29_consegna_a_tutti.sql nel SQL Editor."
+          : error.message,
+      );
+      return;
+    }
+    const righe: { alias: string; consegnate: number }[] = data ?? [];
+    window.alert(
+      righe.length === 0
+        ? "Nessuno da servire: hanno già tutti qualcosa in mano."
+        : `Consegnate ${n} a testa:\n${righe.map((x) => `· ${x.alias}`).join("\n")}`,
+    );
+    await caricaEvento(evento);
+    await carica();
+  }
+
   // Il ritiro generale: toglie i blocchetti a tutti in un colpo. Serve
   // per chiudere le vendite lasciando lavorare due o tre persone, senza
   // spegnere l'interruttore (che fermerebbe anche loro).
@@ -1225,6 +1274,13 @@ export default function AdminPrPage() {
                   pulisci
                 </button>
               )}
+              <button
+                disabled={lavorando || !evento}
+                onClick={consegnaATutti}
+                className="border border-emerald-400/50 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-emerald-300 transition-colors hover:bg-emerald-400/10 disabled:opacity-30"
+              >
+                consegna a tutti
+              </button>
               <button
                 disabled={lavorando || pr.every((x) => x.residue <= 0)}
                 onClick={ritiraATutti}

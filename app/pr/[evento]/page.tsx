@@ -536,7 +536,9 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
 
           {r.residue <= 0 && !r.senza_limite ? (
             <p className="mt-3 text-sm leading-relaxed text-white">
-              Hai usato tutte le prevendite che ti sono state date. Chiedine altre a Luka.
+              {r.assegnate === 0
+                ? "Per questa serata non ti hanno ancora dato prevendite: chiedile a Luka e qui sotto comparirà il modulo per fare i nominativi."
+                : "Hai usato tutte le prevendite che ti sono state date. Chiedine altre a Luka."}
             </p>
           ) : !r.vendite_on && !r.senza_limite ? (
             <p className="mt-3 text-sm leading-relaxed text-white">
