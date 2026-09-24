@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { TornaA } from "@/components/Torna";
 import QRCode from "qrcode";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -263,9 +264,11 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
         <p className="max-w-sm text-sm leading-relaxed text-brand-gray">
           {errore ?? "Non riesco a leggere questa serata."}
         </p>
-        <Link href="/pr" className="mt-8 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white">
-          ← le tue serate
-        </Link>
+        <TornaA
+          a="/pr"
+          etichetta="← le tue serate"
+          className="mt-8 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white"
+        />
       </main>
     );
   }
@@ -365,9 +368,11 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   return (
     <main className="flex-1 px-5 py-10">
       <div className="mx-auto w-full max-w-lg">
-        <Link href="/pr" className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white">
-          ← le tue serate
-        </Link>
+        <TornaA
+          a="/pr"
+          etichetta="← le tue serate"
+          className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white"
+        />
 
         {/* Con due serate aperte insieme — il sabato notte e la domenica
             pomeriggio — questa fascia resta in alto mentre si scrive, così

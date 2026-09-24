@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { TornaA } from "@/components/Torna";
 import { createClient } from "@/lib/supabase/client";
 
 type Foto = {
@@ -122,9 +123,11 @@ export default function AlbumPage({ params }: { params: Promise<{ album: string 
       <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <div className="mb-6 font-display text-6xl text-brand-red">%</div>
         <h1 className="mb-3 text-xl font-semibold text-white">Album non trovato</h1>
-        <Link href="/foto" className="mt-6 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white">
-          ← tutte le serate
-        </Link>
+        <TornaA
+          a="/foto"
+          etichetta="← tutte le serate"
+          className="mt-6 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white"
+        />
       </main>
     );
   }
@@ -174,9 +177,11 @@ export default function AlbumPage({ params }: { params: Promise<{ album: string 
             </Link>
           </div>
 
-          <Link href="/foto" className="mt-8 inline-block font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white">
-            ← le altre serate
-          </Link>
+          <TornaA
+            a="/foto"
+            etichetta="← le altre serate"
+            className="mt-8 inline-block font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white"
+          />
         </div>
       </main>
     );
@@ -187,10 +192,6 @@ export default function AlbumPage({ params }: { params: Promise<{ album: string 
   return (
     <main className="flex-1 px-4 py-8">
       <div className="mx-auto w-full max-w-5xl">
-        <Link href="/foto" className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white">
-          ← le serate
-        </Link>
-
         <h1 className="mt-4 font-display text-4xl uppercase leading-none text-white">
           {album.nome}
         </h1>

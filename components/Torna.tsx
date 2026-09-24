@@ -28,9 +28,7 @@ const HANNO_GIA_IL_LORO = [
   "/card",
   "/domande",
   "/eventi",
-  "/foto/", // le pagine di un album; la vetrina /foto no
   "/login",
-  "/pr",
   "/privacy",
   "/profilo",
   "/tessera",
@@ -73,5 +71,39 @@ export function Torna() {
         ← indietro
       </button>
     </div>
+  );
+}
+
+/**
+ * Lo stesso ritorno, ma scritto dentro il contenuto di una pagina.
+ *
+ * Esiste per un motivo preciso: un `<Link>` che riporta "indietro"
+ * **aggiunge** una tappa alla cronologia invece di toglierne una. Chi
+ * entrava in un album di foto e poi tornava alla vetrina si costruiva
+ * una catena vetrina → album → vetrina → album…, e il tasto indietro
+ * del telefono non lo faceva più uscire: è il giro senza fine che ci
+ * hanno segnalato il 24 settembre.
+ */
+export function TornaA({
+  a,
+  etichetta,
+  className = "",
+}: {
+  a: string;
+  etichetta: string;
+  className?: string;
+}) {
+  const router = useRouter();
+
+  return (
+    <button
+      onClick={() => {
+        if (typeof window !== "undefined" && window.history.length > 1) router.back();
+        else router.push(a);
+      }}
+      className={className}
+    >
+      {etichetta}
+    </button>
   );
 }

@@ -171,10 +171,9 @@ export default function PrPage() {
               </p>
             )}
             {eventi.map((e) => (
-              <Link
+              <div
                 key={e.event_id}
-                href={`/pr/${e.event_id}`}
-                className="block border border-l-4 border-white/10 px-4 py-4 transition-colors hover:border-brand-red/50"
+                className="border border-l-4 border-white/10 px-4 py-4"
                 style={{ borderLeftColor: accentoSerata(e.event_id) }}
               >
                 <p
@@ -230,10 +229,23 @@ export default function PrPage() {
                     "tocca per vendere" non la vedeva nessuno: un PR
                     l'ha detto esplicitamente, e ha ragione — su un
                     telefono, al buio, si cerca un rettangolo rosso. */}
-                <span className="mt-4 block bg-brand-red py-3.5 text-center text-[12px] font-semibold uppercase tracking-widest text-white">
+                <Link
+                  href={`/pr/${e.event_id}#nuovo`}
+                  className="mt-4 block bg-brand-red py-3.5 text-center text-[12px] font-semibold uppercase tracking-widest text-white"
+                >
                   vendi prevendita
-                </span>
-              </Link>
+                </Link>
+                {/* Sotto, spento: la stessa serata ma aperta in fondo,
+                    dove c'è chi ha messo in lista. Sopra si vende,
+                    sotto si controlla. */}
+                <Link
+                  href={`/pr/${e.event_id}#tuoi`}
+                  className="mt-2 block border border-white/20 bg-white/[0.03] py-2.5 text-center font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:border-white/40 hover:text-white"
+                >
+                  vedi dettagli
+                  {e.vendute > 0 ? ` · ${e.vendute}` : ""}
+                </Link>
+              </div>
             ))}
           </div>
         )}
