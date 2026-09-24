@@ -413,6 +413,66 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           </div>
         )}
 
+        {/* Il conto della serata, scritto grande: è la cosa che un PR
+            deve sapere sempre, senza doverla ricavare da tre numeri.
+            Sta qui sopra il modulo, così la vede ogni volta che scrive
+            un nominativo. */}
+        {!r.senza_limite && (
+          <div
+            className={`mt-4 border px-4 py-5 ${
+              Number(r.da_portare) > 0
+                ? "border-brand-red/50 bg-brand-red/[0.07]"
+                : "border-emerald-400/40 bg-emerald-400/5"
+            }`}
+          >
+            <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
+              i tuoi conti per questa serata
+            </p>
+
+            <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3">
+              <div>
+                <p className="font-display text-4xl leading-none text-white">{r.vendute}</p>
+                <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                  prevendite fatte
+                </p>
+              </div>
+              <div>
+                <p
+                  className={`font-display text-4xl leading-none ${
+                    Number(r.da_portare) > 0 ? "text-brand-red" : "text-emerald-400"
+                  }`}
+                >
+                  {Number(r.da_portare).toFixed(0)}€
+                </p>
+                <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                  da consegnare
+                </p>
+              </div>
+              <div>
+                <p className="font-display text-4xl leading-none text-white">{r.residue}</p>
+                <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                  ancora in mano
+                </p>
+              </div>
+            </div>
+
+            {Number(r.consegnato) > 0 && (
+              <p className="mt-3 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                già consegnati {Number(r.consegnato).toFixed(0)}€ su{" "}
+                {Number(r.dovuto).toFixed(0)}€
+              </p>
+            )}
+
+            <p className="mt-4 border-t border-white/10 pt-3 text-[12px] leading-relaxed text-white/80">
+              <span className="text-white">Quando si consegna:</span> il giorno preciso te lo
+              comunichiamo noi, ma comunque <span className="text-white">prima della serata</span>.
+              Le prevendite che hai venduto e non hai ancora saldato{" "}
+              <span className="text-white">non vengono convalidate</span>: chi le ha comprate,
+              in porta, non entra.
+            </p>
+          </div>
+        )}
+
         {/* L'avviso che evita la gente bloccata in porta */}
         {r.in_attesa > 0 && !r.senza_limite && (
           <div className="mt-4 border border-amber-400/40 bg-amber-400/5 px-4 py-4">

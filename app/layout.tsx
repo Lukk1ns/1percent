@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Backdrop } from "@/components/Backdrop";
 import { Notifiche } from "@/components/Notifiche";
 import { StatoCrew } from "@/components/StatoCrew";
+import { Torna } from "@/components/Torna";
 import "./globals.css";
 
 const anton = Anton({
@@ -54,6 +55,7 @@ export default function RootLayout({
         <Backdrop />
         <Notifiche />
         <StatoCrew />
+        <Torna />
         {children}
         <Analytics />
       </body>

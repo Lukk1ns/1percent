@@ -4,6 +4,31 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**SEI CORREZIONI ALL'AREA PR (24 settembre 2026, `supabase/26_ritiri_in_blocco.sql`).** Chieste da
+Luka mentre provava il modulo con un PR vero.
+1. **Consegna parziale**: accanto a "ho ricevuto i soldi" c'è il quadratino della cifra. Vuoto =
+   tutto il dovuto; con un numero dentro si segna quello e diventano validi solo i biglietti che
+   copre (`admin_pr_incassa` lo sapeva già fare, mancava il campo). Il tasto "attiva al volo" ora
+   si chiama **"attiva lo stesso · resta a debito"**, che è quello che fa.
+2. **Ritiri in blocco**: `admin_pr_ritira_tutto` (un PR) e `admin_pr_ritira_tutti(event, tranne[])`
+   (tutti, con la lista di chi resta acceso). Serve a chiudere le vendite lasciando lavorare due o
+   tre persone **senza spegnere l'interruttore generale**, che fermerebbe anche loro. Si ritira solo
+   ciò che è **in mano**: le prevendite già vendute non si toccano, e ogni ritiro resta una riga nel
+   registro. Il conto delle residue lo rifà il server, non lo schermo.
+3. **Tasto "← indietro" ovunque** (`components/Torna.tsx`, montato nel layout): sta nel flusso e non
+   sopra la pagina, e si nasconde da solo dove il ritorno c'è già (l'elenco è nel file). Se la pagina
+   è stata aperta da un link di WhatsApp non c'è storia dietro, quindi va in home.
+4. **La pagina del PR dice i suoi conti**, grande e sopra il modulo: prevendite fatte, **da
+   consegnare**, ancora in mano, quanto ha già portato — più la riga sul **giorno della consegna**
+   ("te lo comunichiamo noi, comunque prima della serata; quelle non saldate non vengono
+   convalidate").
+5. **Ricerca PR per nome o numero** nel pannello. `admin_pr_lista` ha la colonna `numero`
+   (member_number) — cambia forma, quindi lo script la butta e la rifà.
+6. **Le serate passate non si scelgono per sbaglio**: restano nell'elenco marcate "GIÀ FATTA" ma
+   disabilitate, con una spunta che le sblocca per rivedere i conti.
+**PENDING Luka: incollare `26_ritiri_in_blocco.sql`** — finché non lo fa, ricerca e ritiri in blocco
+dicono cosa manca; il resto (cifra parziale, tasto indietro, conti del PR) funziona già.
+
 **LA PORTA SI APRE A TUTTI, E CHI È DENTRO RIENTRA (24 settembre 2026, `lib/event.ts`,
 `supabase/24_rientro.sql`).** Deciso da Luka: *"il sito adesso può essere aperto a chiunque, non
 serve più la storia dell'invito, più utenti facciamo ora meglio è — e i PR devono essere

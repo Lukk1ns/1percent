@@ -27,6 +27,8 @@ type RigaPR = {
   alias: string;
   nome: string | null;
   email: string | null;
+  /** numero di tessera (#0055): arriva con supabase/26_ritiri_in_blocco.sql */
+  numero?: number | null;
   assegnate: number;
   vendute: number;
   residue: number;
@@ -367,6 +369,15 @@ export default function AdminPrPage() {
   const [conti, setConti] = useState<Conto[]>([]);
   const [aperto, setAperto] = useState<string | null>(null);
   const [lavorando, setLavorando] = useState(false);
+  // Cercare un PR per nome o per numero di tessera: con venti PR,
+  // scorrere la lista mentre uno ti aspetta davanti non si fa.
+  const [cerca, setCerca] = useState("");
+  // Quanto ha portato, scritto qui dentro invece che in una finestrella
+  // di sistema: una per PR, così due schede aperte non si pestano.
+  const [importi, setImporti] = useState<Record<string, string>>({});
+  // Le serate passate restano visibili ma non si scelgono, per non
+  // segnare un incasso sulla serata sbagliata. Questa le sblocca.
+  const [mostraPassate, setMostraPassate] = useState(false);
 
   // Nuova fascia
   const [nuovaLabel, setNuovaLabel] = useState("");
@@ -498,17 +509,30 @@ export default function AdminPrPage() {
     await carica();
   }
 
+  // Quanto ha portato: se il quadratino è vuoto vale "tutto quello che
+  // deve", che è il caso normale. Se ci scrive 50 su 120, si segnano 50
+  // e diventano validi solo i biglietti che quei 50 coprono — il resto
+  // resta scritto come debito suo.
   async function incassa(riga: RigaPR) {
-    const suggerito = Math.max(riga.mancante, 0).toFixed(0);
-    const risposta = window.prompt(
-      `Quanti euro ti ha portato ${riga.alias}?\n\n` +
-        `Deve ancora: ${euro(riga.mancante)} · in attesa: ${riga.in_attesa} biglietti.\n` +
-        `Con l'incasso i biglietti diventano validi, dal più vecchio.`,
-      suggerito,
-    );
-    if (risposta === null) return;
-    const importo = Number(risposta.replace(",", "."));
-    if (!Number.isFinite(importo) || importo === 0) return;
+    const scritto = (importi[riga.pr_id] ?? "").trim();
+    const importo =
+      scritto === ""
+        ? Math.max(riga.mancante, 0)
+        : Number(scritto.replace(",", "."));
+
+    if (!Number.isFinite(importo) || importo === 0) {
+      window.alert("Scrivi quanti euro ti ha portato, o lascia vuoto per l'intero.");
+      return;
+    }
+    if (importo > riga.mancante + 0.01) {
+      if (
+        !window.confirm(
+          `${riga.alias} deve ${euro(riga.mancante)}, tu stai segnando ${euro(importo)}.\n\n` +
+            `Vuoi segnarlo lo stesso? Resterà a credito suo.`,
+        )
+      )
+        return;
+    }
 
     setLavorando(true);
     const supabase = createClient();
@@ -524,9 +548,85 @@ export default function AdminPrPage() {
       return;
     }
     const res = data?.[0];
+    setImporti((v) => ({ ...v, [riga.pr_id]: "" }));
     window.alert(
-      `Segnato. Biglietti diventati validi adesso: ${res?.attivati ?? 0}.\n` +
+      `Segnati ${euro(importo)}. Biglietti diventati validi adesso: ${res?.attivati ?? 0}.\n` +
         `Ancora in attesa: ${res?.ancora_in_attesa ?? 0} · deve ancora ${euro(res?.mancante ?? 0)}.`,
+    );
+    await caricaEvento(evento);
+    await carica();
+  }
+
+  // Ritira tutti i blocchetti che ha ancora in mano. Quanti siano lo
+  // conta il server: se nel frattempo ne ha venduta un'altra, il numero
+  // sullo schermo è già vecchio.
+  async function ritiraTutto(riga: RigaPR) {
+    if (
+      !window.confirm(
+        `Ritirare a ${riga.alias} tutti i blocchetti che ha in mano (${riga.residue})?\n\n` +
+          `Le prevendite già fatte non si toccano.`,
+      )
+    )
+      return;
+    setLavorando(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("admin_pr_ritira_tutto", {
+      p_event: evento,
+      p_pr: riga.pr_id,
+    });
+    setLavorando(false);
+    if (error) {
+      window.alert(
+        error.message.includes("admin_pr_ritira_tutto")
+          ? "Manca un pezzo sul database: incolla supabase/26_ritiri_in_blocco.sql nel SQL Editor."
+          : error.message,
+      );
+      return;
+    }
+    window.alert(`Ritirati ${data ?? 0} blocchetti a ${riga.alias}.`);
+    await caricaEvento(evento);
+    await carica();
+  }
+
+  // Il ritiro generale: toglie i blocchetti a tutti in un colpo. Serve
+  // per chiudere le vendite lasciando lavorare due o tre persone, senza
+  // spegnere l'interruttore (che fermerebbe anche loro).
+  async function ritiraATutti() {
+    const conBlocchetti = pr.filter((x) => x.residue > 0);
+    if (conBlocchetti.length === 0) {
+      window.alert("Nessuno ha blocchetti in mano per questa serata.");
+      return;
+    }
+    const totale = conBlocchetti.reduce((s, x) => s + x.residue, 0);
+    if (
+      !window.confirm(
+        `Ritirare i blocchetti a TUTTI i PR di questa serata?\n\n` +
+          `${conBlocchetti.length} PR, ${totale} prevendite ancora in mano.\n` +
+          `Le prevendite già fatte non si toccano. Dopo potrai riconsegnarne a chi vuoi tenere acceso.`,
+      )
+    )
+      return;
+
+    setLavorando(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("admin_pr_ritira_tutti", {
+      p_event: evento,
+      p_tranne: [],
+    });
+    setLavorando(false);
+    if (error) {
+      window.alert(
+        error.message.includes("admin_pr_ritira_tutti")
+          ? "Manca un pezzo sul database: incolla supabase/26_ritiri_in_blocco.sql nel SQL Editor."
+          : error.message,
+      );
+      return;
+    }
+    const righe: { alias: string; ritirate: number }[] = data ?? [];
+    window.alert(
+      righe.length === 0
+        ? "Non c'era niente da ritirare."
+        : `Ritirati:\n${righe.map((r) => `· ${r.alias}: ${r.ritirate}`).join("\n")}`,
     );
     await caricaEvento(evento);
     await carica();
@@ -722,6 +822,22 @@ export default function AdminPrPage() {
   }
 
   const ev = eventi.find((e) => e.event_id === evento);
+
+  // La ricerca guarda alias, nome vero e numero di tessera. Il numero
+  // si può scrivere come viene: 55, #55 o 0055.
+  const cercato = cerca.trim().toLowerCase().replace(/^#/, "");
+  const prVisibili = cercato
+    ? pr.filter((x) => {
+        const numero = x.numero ?? null;
+        return (
+          x.alias.toLowerCase().includes(cercato) ||
+          (x.nome ?? "").toLowerCase().includes(cercato) ||
+          (numero !== null &&
+            (String(numero) === String(Number(cercato)) ||
+              String(numero).padStart(4, "0").includes(cercato)))
+        );
+      })
+    : pr;
   const attesaTotale = pr.reduce((s, x) => s + x.in_attesa, 0);
 
   return (
@@ -801,12 +917,31 @@ export default function AdminPrPage() {
             className="mt-2 w-full border border-white/15 bg-black px-3 py-3 text-sm text-white outline-none focus:border-brand-red"
           >
             {eventi.map((e) => (
-              <option key={e.event_id} value={e.event_id}>
+              <option
+                key={e.event_id}
+                value={e.event_id}
+                // Le serate finite restano scritte — servono a ritrovare i
+                // conti — ma non si scelgono per sbaglio mentre si segna
+                // un incasso di stasera. La spunta qui sotto le sblocca.
+                disabled={e.passato && !mostraPassate && e.event_id !== evento}
+              >
                 {giornoEData(e.starts_at)} — {e.nome} — {dataLunga(e.starts_at)}
-                {e.passato ? " (passata)" : ""}
+                {e.passato ? " — GIÀ FATTA" : ""}
               </option>
             ))}
           </select>
+
+          {eventi.some((e) => e.passato) && (
+            <label className="mt-2 flex items-center gap-2 text-[11px] text-brand-gray">
+              <input
+                type="checkbox"
+                checked={mostraPassate}
+                onChange={(e) => setMostraPassate(e.target.checked)}
+                className="accent-brand-red"
+              />
+              sblocca anche le serate già fatte (per rivedere i conti)
+            </label>
+          )}
           {eventi.filter((e) => !e.passato).length > 1 && (
             <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
               Ci sono più serate aperte: conti, prevendite e incassi sono separati. Un incasso
@@ -1020,7 +1155,31 @@ export default function AdminPrPage() {
 
         {scheda === "pr" && (
           <div className="mt-5 flex flex-col gap-2">
-            {pr.map((x) => (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={cerca}
+                onChange={(e) => setCerca(e.target.value)}
+                placeholder="cerca per nome o numero…"
+                className="min-w-[10rem] flex-1 border border-white/15 bg-black px-3 py-3 text-sm text-white placeholder-brand-gray/50 outline-none focus:border-brand-red"
+              />
+              {cerca && (
+                <button
+                  onClick={() => setCerca("")}
+                  className="border border-white/10 px-3 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray hover:text-white"
+                >
+                  pulisci
+                </button>
+              )}
+              <button
+                disabled={lavorando || pr.every((x) => x.residue <= 0)}
+                onClick={ritiraATutti}
+                className="border border-brand-red/50 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-red transition-colors hover:bg-brand-red/10 disabled:opacity-30"
+              >
+                ritira a tutti
+              </button>
+            </div>
+
+            {prVisibili.map((x) => (
               <div key={x.pr_id} className="border border-white/10">
                 <button
                   onClick={() => setAperto(aperto === x.pr_id ? null : x.pr_id)}
@@ -1030,6 +1189,11 @@ export default function AdminPrPage() {
                     <p className="truncate text-sm text-white">
                       {x.alias}
                       {x.nome && <span className="ml-2 text-brand-gray">{x.nome}</span>}
+                      {x.numero != null && (
+                        <span className="ml-2 font-tech text-[10px] text-brand-gray/50">
+                          #{String(x.numero).padStart(4, "0")}
+                        </span>
+                      )}
                     </p>
                     <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
                       {x.vendute}/{x.assegnate} vendute
@@ -1075,6 +1239,13 @@ export default function AdminPrPage() {
                       >
                         ritira 5
                       </button>
+                      <button
+                        disabled={lavorando || x.residue <= 0}
+                        onClick={() => ritiraTutto(x)}
+                        className="border border-white/10 px-3 py-2 font-tech text-[10px] text-brand-gray transition-colors hover:border-brand-red hover:text-white disabled:opacity-30"
+                      >
+                        ritira tutte
+                      </button>
                     </div>
 
                     <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/5 pt-4">
@@ -1102,7 +1273,19 @@ export default function AdminPrPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <div className="flex items-center border border-white/20 focus-within:border-brand-red">
+                        <input
+                          inputMode="decimal"
+                          value={importi[x.pr_id] ?? ""}
+                          onChange={(e) =>
+                            setImporti((v) => ({ ...v, [x.pr_id]: e.target.value }))
+                          }
+                          placeholder={Math.max(x.mancante, 0).toFixed(0)}
+                          className="w-24 bg-transparent px-3 py-3 text-sm text-white placeholder-brand-gray/40 outline-none"
+                        />
+                        <span className="pr-3 font-tech text-[11px] text-brand-gray">€</span>
+                      </div>
                       <button
                         disabled={lavorando}
                         onClick={() => incassa(x)}
@@ -1116,10 +1299,19 @@ export default function AdminPrPage() {
                           onClick={() => attivaTutto(x)}
                           className="border border-white/20 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red disabled:opacity-40"
                         >
-                          attiva al volo
+                          attiva lo stesso · resta a debito
                         </button>
                       )}
                     </div>
+
+                    <p className="mt-3 text-[11px] leading-relaxed text-brand-gray/70">
+                      Il quadratino vuoto vale tutto quello che deve ({euro(Math.max(x.mancante, 0))}).
+                      Scrivici dentro una cifra se ti porta solo una parte: diventano validi i
+                      biglietti che quella cifra copre, dal più vecchio, e il resto gli resta
+                      segnato come debito.
+                      {x.in_attesa > 0 &&
+                        " Se ti fidi e vuoi farli valere subito senza aver preso niente, usa il tasto accanto: il debito resta scritto lo stesso."}
+                    </p>
                   </div>
                 )}
               </div>
