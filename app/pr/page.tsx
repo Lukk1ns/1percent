@@ -36,6 +36,9 @@ type Stato = {
 export default function PrPage() {
   const router = useRouter();
   const [stato, setStato] = useState<Stato | null>(null);
+  // I tre di fiducia: hanno una porta in più, e non deve essere nascosta
+  // (la lezione dell'area PR senza link, 24 set).
+  const [sonoManager, setSonoManager] = useState(false);
   const [eventi, setEventi] = useState<EventoPR[]>([]);
   const [loading, setLoading] = useState(true);
   const [errore, setErrore] = useState<string | null>(null);
@@ -50,6 +53,12 @@ export default function PrPage() {
         router.replace("/login?next=/pr");
         return;
       }
+
+      // Se lo script del ruolo non è incollato la chiamata fallisce:
+      // non deve portarsi dietro il resto della pagina.
+      supabase
+        .rpc("is_account_manager")
+        .then(({ data }) => setSonoManager(Boolean(data)));
 
       const { data: st, error: errSt } = await supabase.rpc("prevendite_stato");
       if (errSt) {
@@ -144,6 +153,20 @@ export default function PrPage() {
               {!stato.aperta && " L'area per i PR è ancora chiusa: loro non entrano."}
             </p>
           </div>
+        )}
+
+        {sonoManager && (
+          <Link
+            href="/manager"
+            className="mb-6 block border border-brand-red/50 bg-brand-red/5 px-4 py-4 transition-colors hover:border-brand-red"
+          >
+            <span className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-red">
+              account manager
+            </span>
+            <span className="mt-1 block text-sm text-white">
+              Ritira i soldi dai PR, consegna prevendite, apri la porta →
+            </span>
+          </Link>
         )}
 
         <p className="font-tech text-[10px] uppercase tracking-[0.35em] text-brand-gray">

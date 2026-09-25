@@ -369,6 +369,29 @@ function Riquadro({
  * arrivano (è quello che rende validi i biglietti) e si tiene il conto
  * di chi deve ancora portare quanto.
  */
+type RigaManager = {
+  profile_id: string;
+  alias: string;
+  nome: string | null;
+  numero: number | null;
+  attivo: boolean;
+  dal: string;
+  in_mano: number;
+  raccolto: number;
+  consegnato: number;
+};
+
+type MovimentoAm = {
+  id: string;
+  quando: string;
+  manager: string;
+  tipo: string;
+  da: string;
+  importo: number;
+  nota: string | null;
+  segnato_da: string | null;
+};
+
 export default function AdminPrPage() {
   const router = useRouter();
   const [autorizzato, setAutorizzato] = useState<boolean | null>(null);
@@ -389,8 +412,12 @@ export default function AdminPrPage() {
   const [qrPos, setQrPos] = useState<number>(80);
   const [perFascia, setPerFascia] = useState<PerFascia[]>([]);
   const [scheda, setScheda] = useState<
-    "pr" | "prezzi" | "grafica" | "biglietti" | "registro"
+    "pr" | "prezzi" | "grafica" | "biglietti" | "registro" | "manager"
   >("pr");
+  // Gli account manager: chi sono e quanti soldi hanno addosso adesso.
+  const [managers, setManagers] = useState<RigaManager[]>([]);
+  const [movAm, setMovAm] = useState<MovimentoAm[]>([]);
+  const [ricevo, setRicevo] = useState<Record<string, string>>({});
   const [registro, setRegistro] = useState<Movimento[]>([]);
   const [conti, setConti] = useState<Conto[]>([]);
   const [aperto, setAperto] = useState<string | null>(null);
@@ -440,6 +467,15 @@ export default function AdminPrPage() {
     supabase
       .rpc("admin_pr_ingressi", { p_event: id })
       .then(({ data }) => setIngressi((data as RigaIngresso[]) ?? []));
+
+    // Idem per i manager: finché 32_account_manager.sql non è incollato
+    // queste due non esistono e la scheda lo dice.
+    supabase
+      .rpc("admin_am_lista", { p_event: id })
+      .then(({ data }) => setManagers((data as RigaManager[]) ?? []));
+    supabase
+      .rpc("admin_am_registro", { p_event: id })
+      .then(({ data }) => setMovAm((data as MovimentoAm[]) ?? []));
 
     setPr(prRes.data ?? []);
     setFasce(fRes.data ?? []);
@@ -922,6 +958,82 @@ export default function AdminPrPage() {
     await carica();
   }
 
+  // ---- Account manager ----
+
+  /** "Leonardo mi ha portato 450 €": glieli scarico di dosso. */
+  async function ricevoDa(m: RigaManager) {
+    const grezzo = (ricevo[m.profile_id] ?? "").replace(",", ".");
+    const importo = grezzo ? Number(grezzo) : Number(m.in_mano);
+    if (!importo || importo <= 0) {
+      window.alert("Quanto ti ha portato?");
+      return;
+    }
+    if (
+      !window.confirm(
+        `Hai ricevuto ${euro(importo)} da ${m.alias}?\n\n` +
+          "Gli resta addosso solo la differenza. La riga non si cancella più.",
+      )
+    )
+      return;
+
+    setLavorando(true);
+    const supabase = createClient();
+    const { error } = await supabase.rpc("admin_am_ricevi", {
+      p_am: m.profile_id,
+      p_event: evento,
+      p_importo: importo,
+    });
+    setLavorando(false);
+    if (error) {
+      window.alert(error.message);
+      return;
+    }
+    setRicevo((r) => ({ ...r, [m.profile_id]: "" }));
+    await caricaEvento(evento);
+  }
+
+  async function nominaManager(prId: string, on: boolean, come: string) {
+    if (
+      !window.confirm(
+        on
+          ? `Nominare ${come} account manager?\n\nPotrà stare in porta, dare prevendite a ` +
+              "chiunque (anche a sé) e ritirare i contanti dagli altri PR."
+          : `Togliere il ruolo a ${come}?\n\nI movimenti che ha già fatto restano scritti.`,
+      )
+    )
+      return;
+    setLavorando(true);
+    const supabase = createClient();
+    const { error } = await supabase.rpc("admin_am_nomina", { p_profile: prId, p_on: on });
+    setLavorando(false);
+    if (error) {
+      window.alert(error.message);
+      return;
+    }
+    await caricaEvento(evento);
+  }
+
+  async function stornaAm(m: MovimentoAm) {
+    const motivo = window.prompt(
+      `Stornare ${euro(m.importo)} di ${m.manager}?\n\n` +
+        "La riga non si cancella: ne viene scritta una uguale e contraria.\n\nPerché?",
+      "",
+    );
+    if (motivo === null) return;
+    setLavorando(true);
+    const supabase = createClient();
+    const { error } = await supabase.rpc("admin_am_storna", {
+      p_movimento: m.id,
+      p_nota: motivo,
+    });
+    setLavorando(false);
+    if (error) {
+      window.alert(error.message);
+      return;
+    }
+    await caricaEvento(evento);
+  }
+
   /** Il registro su un file, da tenere fuori dal sito. */
   function scaricaRegistro() {
     const righe = [
@@ -1353,6 +1465,7 @@ export default function AdminPrPage() {
               ["grafica", "Grafica"],
               ["biglietti", `Biglietti (${biglietti.length})`],
               ["registro", "Soldi"],
+              ["manager", "Manager"],
             ] as const
           ).map(([k, etichetta]) => (
             <button
@@ -1744,6 +1857,171 @@ export default function AdminPrPage() {
               )}
             </div>
           </>
+        )}
+
+        {scheda === "manager" && (
+          <div className="mt-5">
+            <div className="border border-white/10 px-4 py-4">
+              <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+                account manager
+              </p>
+              <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
+                Le persone che lavorano al posto tuo: stanno in porta, consegnano prevendite ai
+                PR (anche a sé stessi) e ritirano i contanti. Quello che ritirano resta scritto
+                a loro nome finché non te lo portano, e tu lo segni qui. Non possono fare
+                omaggi, annullare biglietti, né vedere il cruscotto o le scorte.
+              </p>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2">
+              {managers.map((m) => (
+                <div
+                  key={m.profile_id}
+                  className={`border px-4 py-3 ${
+                    m.attivo ? "border-white/15" : "border-white/5 opacity-50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-white">
+                        {m.alias}
+                        {m.numero ? (
+                          <span className="ml-2 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                            #{m.numero}
+                          </span>
+                        ) : null}
+                        {!m.attivo && (
+                          <span className="ml-2 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                            revocato
+                          </span>
+                        )}
+                      </p>
+                      {m.nome && <p className="truncate text-[11px] text-brand-gray">{m.nome}</p>}
+                      <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                        ritirati {euro(m.raccolto ?? 0)} · portati {euro(m.consegnato ?? 0)}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p
+                        className={`font-display text-2xl leading-none ${
+                          Number(m.in_mano) > 0 ? "text-amber-300" : "text-emerald-400"
+                        }`}
+                      >
+                        {euro(m.in_mano ?? 0)}
+                      </p>
+                      <p className="font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                        ha in mano
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <input
+                      inputMode="decimal"
+                      value={ricevo[m.profile_id] ?? ""}
+                      onChange={(e) =>
+                        setRicevo((r) => ({ ...r, [m.profile_id]: e.target.value }))
+                      }
+                      placeholder={`tutto (${Number(m.in_mano ?? 0).toFixed(0)})`}
+                      className="w-32 border border-white/20 bg-transparent px-3 py-2.5 text-sm text-white placeholder:text-brand-gray/50"
+                    />
+                    <button
+                      onClick={() => ricevoDa(m)}
+                      disabled={lavorando || Number(m.in_mano ?? 0) <= 0}
+                      className="bg-brand-red px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-white disabled:opacity-40"
+                    >
+                      me li ha portati
+                    </button>
+                    <button
+                      onClick={() => nominaManager(m.profile_id, !m.attivo, m.alias)}
+                      disabled={lavorando}
+                      className="border border-white/10 px-3 py-2.5 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray transition-colors hover:border-brand-red/40 hover:text-brand-red"
+                    >
+                      {m.attivo ? "togli il ruolo" : "rimettilo"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {managers.length === 0 && (
+                <p className="border border-white/10 px-4 py-6 text-center text-[12px] leading-relaxed text-brand-gray">
+                  Nessun manager. Se hai appena incollato{" "}
+                  <strong className="text-white">32_account_manager.sql</strong> e qui è vuoto,
+                  vuol dire che i tre nomi non combaciavano con quelli scritti sul sito:
+                  nominali qui sotto.
+                </p>
+              )}
+            </div>
+
+            {/* Nominarne uno: si sceglie fra i PR approvati */}
+            <div className="mt-6 border border-white/10 px-4 py-4">
+              <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+                nomina un manager
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    const scelto = pr.find((x) => x.pr_id === e.target.value);
+                    e.target.value = "";
+                    if (scelto) nominaManager(scelto.pr_id, true, scelto.alias);
+                  }}
+                  className="flex-1 border border-white/20 bg-black px-3 py-2.5 text-sm text-white"
+                >
+                  <option value="">scegli un PR…</option>
+                  {pr
+                    .filter((x) => !managers.some((m) => m.profile_id === x.pr_id && m.attivo))
+                    .map((x) => (
+                      <option key={x.pr_id} value={x.pr_id}>
+                        {x.alias}
+                        {x.nome ? ` · ${x.nome}` : ""}
+                        {x.numero ? ` · #${x.numero}` : ""}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Il registro dei loro movimenti */}
+            {movAm.length > 0 && (
+              <div className="mt-6">
+                <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+                  movimenti dei manager
+                </p>
+                <div className="mt-3 flex flex-col gap-1.5">
+                  {movAm.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-baseline justify-between gap-3 border border-white/10 px-3 py-2"
+                    >
+                      <span className="min-w-0 truncate text-[12px] text-white">
+                        {m.manager}
+                        <span className="text-brand-gray">
+                          {" "}
+                          {m.tipo === "consegna" ? "→ direzione" : `← ${m.da}`}
+                        </span>
+                      </span>
+                      <span
+                        className={`flex-shrink-0 text-sm ${
+                          Number(m.importo) > 0 ? "text-emerald-400" : "text-brand-gray"
+                        }`}
+                      >
+                        {Number(m.importo) > 0 ? "+" : ""}
+                        {euro(m.importo)}
+                      </span>
+                      <button
+                        onClick={() => stornaAm(m)}
+                        disabled={lavorando}
+                        className="flex-shrink-0 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray hover:text-brand-red"
+                      >
+                        storna
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {scheda === "registro" && (

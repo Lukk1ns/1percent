@@ -4,6 +4,28 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**GLI ACCOUNT MANAGER (25 set, `supabase/32_account_manager.sql`, `/manager`).** Luka ha nominato
+**Leonardo Ceolin, Samuele Chezzi e Marco Florean**: PR come gli altri, con tre poteri in più e
+**nient'altro**. (1) Stanno in **porta** — le funzioni `porta_*` ora accettano `is_staff()` **oppure**
+`is_account_manager()`, `porta_forza` resta solo di Luka. (2) **Consegnano prevendite** a chiunque,
+anche a se stessi, **senza tetto** (deciso da lui: "nessun limite"). (3) **Ritirano i contanti** dai
+PR, tutti o in parte.
+**Il ritiro è un giroconto, ed è il cuore della cosa.** `am_incassa` scrive due righe: una in
+`pr_settlements` (il PR risulta saldato e i suoi biglietti **si attivano subito**, scelta di Luka) e
+una in **`am_movimenti`**, il registro nuovo, dove quei soldi restano **a carico del manager** finché
+non li porta alla direzione. Luka li scarica dalla scheda **Manager** del pannello ("me li ha
+portati"), che scrive il movimento negativo. Come `pr_settlements` (19), `am_movimenti` **rifiuta
+UPDATE e DELETE**: si corregge solo con `admin_am_storna`, che scrive la riga contraria.
+**Cosa NON vedono, per decisione esplicita di Luka:** omaggi, tavoli, annullamenti, cruscotto,
+percentuali, scorte rimaste, classifica. `am_pr_lista` dà solo alias/nome/tessera/telefono, vendute,
+ancora in mano e **quanto c'è da ritirare**. Torna tutta la crew (anche chi è a zero, se no non lo
+si potrebbe rifornire) e la pagina tiene quelli fermi dietro un interruttore.
+**Un manager può segnare anche i propri soldi** (in `am_incassa` non è vietato): è coerente — i
+contanti sono in mano sua e il debito resta suo — ma va saputo.
+Il ruolo sta nella tabella `account_managers`; lo script prova a nominare i tre cercandoli per nome
+fra la crew e, se un nome non combacia, lo dice nel controllo finale: si nomina dal pannello.
+**PENDING Luka: incollare `32_account_manager.sql`.**
+
 **LA DELEGA PARTE DA SOLA (25 set, `supabase/31_delega_automatica.sql`, `lib/event.ts`).**
 Luka: *"quando il PR vende a uno del 2010 in su, il link della delega dev'essere mandato in
 automatico — così non ci devono pensare loro"*. Adesso il messaggio WhatsApp che il PR manda

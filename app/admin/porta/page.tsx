@@ -156,11 +156,14 @@ export default function PortaPage() {
   useEffect(() => {
     (async () => {
       const supabase = createClient();
-      const [{ data: staff }, { data: admin }] = await Promise.all([
+      // In porta ci stanno anche gli account manager: il permesso è
+      // lo stesso delle funzioni porta_* (is_staff OPPURE manager).
+      const [{ data: staff }, { data: admin }, { data: manager }] = await Promise.all([
         supabase.rpc("is_staff"),
         supabase.rpc("is_admin"),
+        supabase.rpc("is_account_manager"),
       ]);
-      if (!staff) {
+      if (!staff && !manager) {
         router.replace("/admin/login");
         return;
       }
