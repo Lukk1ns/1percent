@@ -99,6 +99,10 @@ export default function PortaPage() {
   const router = useRouter();
 
   const [serate, setSerate] = useState<Serata[]>([]);
+  // Letta la lista delle serate (anche vuota): serve a spiegare perché
+  // la porta è ferma invece di lasciare uno schermo nero.
+  const [serateLette, setSerateLette] = useState(false);
+  const [prossima, setProssima] = useState<{ nome: string; starts_at: string } | null>(null);
   const [serata, setSerata] = useState<string>("");
   const [riepilogo, setRiepilogo] = useState<Riepilogo | null>(null);
   const [esito, setEsito] = useState<Esito | null>(null);
@@ -184,6 +188,11 @@ export default function PortaPage() {
       }
       const lista: Serata[] = data ?? [];
       setSerate(lista);
+      setSerateLette(true);
+      if (lista.length === 0) {
+        const { data: pr } = await supabase.rpc("next_event");
+        if (pr?.starts_at) setProssima({ nome: pr.nome ?? "prossima serata", starts_at: pr.starts_at });
+      }
       const scelta = lista[0]?.event_id ?? "";
       setSerata(scelta);
       if (scelta) aggiornaRiepilogo(scelta);
@@ -543,7 +552,7 @@ export default function PortaPage() {
           </button>
         </div>
 
-        {!listaPronta && inRete && (
+        {!listaPronta && inRete && serata && (
           <p className="mt-2 text-[11px] leading-relaxed text-amber-300">
             Scarica la lista adesso, finché il campo è buono: se durante la serata cade la
             rete, senza lista la porta si ferma.
@@ -634,6 +643,27 @@ export default function PortaPage() {
                 </p>
               )}
             </div>
+          </div>
+        ) : serateLette && serate.length === 0 ? (
+          // Nessuna serata vicina: la porta non ha niente da controllare
+          <div className="flex h-full flex-col items-center justify-center px-8 py-16 text-center">
+            <p className="font-display text-2xl uppercase leading-tight text-white">
+              Stasera la porta è chiusa
+            </p>
+            <p className="mt-4 max-w-[34ch] text-sm leading-relaxed text-brand-gray">
+              La porta si accende da sola quando mancano 10 giorni alla serata: da lì si
+              scarica la lista e si leggono i biglietti.
+            </p>
+            {prossima && (
+              <p className="mt-5 max-w-[34ch] text-sm leading-relaxed text-white">
+                Prossima: <strong>{prossima.nome}</strong>
+                <br />
+                <span className="text-brand-gray">
+                  {giornoEData(prossima.starts_at)} · si apre dal{" "}
+                  {giornoEData(new Date(new Date(prossima.starts_at).getTime() - 10 * 86400000).toISOString())}
+                </span>
+              </p>
+            )}
           </div>
         ) : (
           <>
