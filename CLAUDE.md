@@ -4,6 +4,41 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**PENDING Luka: incollare `supabase/36_omaggi.sql`** — senza, il riquadro "Regala un ingresso"
+su `/admin/pr` risponde *"manca lo script sul database"* e tutto il resto della pagina funziona
+comunque.
+
+**`/admin/pr` RIFATTA NELL'ORDINE IN CUI SI USA (25 set).** Luka: *"in alto a destra dev'esserci
+la selezione dell'evento ben visibile... poi la schermata con i numeri bella grande... dopo io
+che posso vendere prevendita... poi io che posso vendere omaggi... e solo dopo tutto il resto, in
+fondo le cose da impostare manualmente"*. Prima la pagina si apriva con **tre riquadri di
+impostazioni** (dotazione iniziale, soglia ingresso PR, interruttori) e il **selettore della
+serata a metà pagina**: la cosa che si guarda venti volte a sera stava sotto quella che si tocca
+una volta al mese, e con due serate aperte insieme era facile segnare un incasso su quella
+sbagliata. Ordine nuovo: testa con il selettore in alto a destra (bordo del colore della serata,
+nome e data scritti) → **i numeri** (incasso in grande + barra di quanto è davvero in cassa +
+quattro tessere) → **vendi una prevendita** → **regala un ingresso** → porta → avviso ai PR →
+schede → impostazioni in fondo. Schede: aggiunta **Classifica** (tutti i PR, anche i fermi a zero,
+con barra proporzionale, entrate, generato, da portare) e la barra delle schede ora scorre dentro
+di sé (`overflow-x-auto`), che con sette voci su un telefono serviva.
+
+**GLI OMAGGI (25 set, `supabase/36_omaggi.sql` + `admin_omaggio`).** Un omaggio è un biglietto
+vero — stesso QR, stessa porta, stesso controllo dei doppioni — ma **a prezzo zero**, intestato
+alla direzione (`pr_id null`, `da_admin true`, `tier_label 'OMAGGIO'`), già valido. Non passa da
+`pr_vendi` perché quella toglie un pezzo dal blocchetto di un PR e gli mette addosso il debito.
+**Si riconosce dal prezzo: `prezzo = 0`** — regola valida ovunque, frontend compreso. I conti
+della serata lo ignorano da soli (sommano i prezzi); il pannello lo conta a parte nella tessera
+"omaggi" e lo toglie da "prevendite vendute". Sul biglietto e nell'elenco non compare "0 €".
+Solo admin: nemmeno i manager, perché sarebbe un ingresso gratis senza traccia in cassa.
+
+**IL MIDDLEWARE CREDEVA ANCORA CHE UNA MAIL BASTASSE (25 set, `middleware.ts`).** Ultimo pezzo
+del guaio del pannello: `isStaffLoggedIn = Boolean(user?.email)`. Da solo non apriva più niente
+(GuardiaAdmin + RPC), ma era la stessa idea sbagliata lasciata accesa. Ora il permesso si chiede
+al database **sul server**, prima che la pagina parta: porta e scanner → staff/operatori/manager,
+tutto il resto → solo admin; chi non ha diritti torna al sito senza passare dall'accesso staff.
+Se il database non risponde **si lascia passare** e decide la guardia nel browser: mai chiudere
+fuori Luka in mezzo a una serata.
+
 **CONTROLLO DI SICUREZZA COMPLETO — 25 settembre 2026 (dopo la falla del pannello).** Fatto da
 fuori con la sola chiave anon, su tutto quello che è nato dopo il controllo di settembre.
 **Tabelle:** 24 provate in lettura diretta, **nessuna restituisce una riga** (RLS attiva ovunque,

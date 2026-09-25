@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, dataLunga, giornoEData } from "@/lib/eventi";
+import { delegaPerLocale } from "@/lib/event";
 import { graficaBigliettoUrl } from "@/lib/biglietto";
 
 type EventoAdmin = {
@@ -134,6 +135,12 @@ type PerFascia = {
 };
 
 const euro = (n: number) => `${Number(n ?? 0).toFixed(0)} €`;
+
+/** Il link che finisce su WhatsApp: assoluto, perché esce dal sito. */
+function linkBiglietto(token: string): string {
+  if (typeof window === "undefined") return `/biglietto/${token}`;
+  return `${window.location.origin}/biglietto/${token}`;
+}
 
 /**
  * La grafica che il cliente vede sul biglietto.
@@ -363,6 +370,37 @@ function Riquadro({
 }
 
 /**
+ * La tessera dei numeri grossi.
+ *
+ * Luka guarda questa pagina col telefono in mano in mezzo alla gente:
+ * quello che decide la serata deve leggersi da lontano. Il `Riquadro`
+ * qui sopra resta per i numeri di contorno.
+ */
+function Tessera({
+  n,
+  etichetta,
+  nota,
+  colore,
+  bordo,
+}: {
+  n: number | string;
+  etichetta: string;
+  nota?: string;
+  colore?: string;
+  bordo?: string;
+}) {
+  return (
+    <div className={`border px-4 py-4 ${bordo ?? "border-white/10"}`}>
+      <p className={`font-display text-4xl leading-none ${colore ?? "text-white"}`}>{n}</p>
+      <p className="mt-2 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+        {etichetta}
+      </p>
+      {nota && <p className="mt-1 text-[10px] leading-tight text-brand-gray/60">{nota}</p>}
+    </div>
+  );
+}
+
+/**
  * Prevendite: il pannello di Luka.
  *
  * Qui si consegnano i blocchetti ai PR, si segnano i contanti che
@@ -412,7 +450,7 @@ export default function AdminPrPage() {
   const [qrPos, setQrPos] = useState<number>(80);
   const [perFascia, setPerFascia] = useState<PerFascia[]>([]);
   const [scheda, setScheda] = useState<
-    "pr" | "prezzi" | "grafica" | "biglietti" | "registro" | "manager"
+    "pr" | "classifica" | "biglietti" | "registro" | "manager" | "prezzi" | "grafica"
   >("pr");
   // Gli account manager: chi sono e quanti soldi hanno addosso adesso.
   const [managers, setManagers] = useState<RigaManager[]>([]);
@@ -436,6 +474,17 @@ export default function AdminPrPage() {
   // Quanto ha portato, scritto qui dentro invece che in una finestrella
   // di sistema: una per PR, così due schede aperte non si pestano.
   const [importi, setImporti] = useState<Record<string, string>>({});
+
+  // L'omaggio della direzione: un biglietto vero a zero euro.
+  const [om, setOm] = useState({ nome: "", cognome: "", anno: "", telefono: "" });
+  const [omErrore, setOmErrore] = useState<string | null>(null);
+  const [omFatto, setOmFatto] = useState<{
+    nome: string;
+    cognome: string;
+    token: string;
+    under16: boolean;
+  } | null>(null);
+  const [omDoppio, setOmDoppio] = useState(false);
   // Le serate passate restano visibili ma non si scelgono, per non
   // segnare un incasso sulla serata sbagliata. Questa le sblocca.
   const [mostraPassate, setMostraPassate] = useState(false);
@@ -1075,6 +1124,99 @@ export default function AdminPrPage() {
     URL.revokeObjectURL(url);
   }
 
+  /**
+   * Regala un ingresso.
+   *
+   * Non passa da `pr_vendi`: quella toglie un pezzo dal blocchetto di un
+   * PR e gli mette addosso il debito. Qui non deve restare niente da
+   * ritirare a nessuno, quindi il biglietto nasce a zero euro, intestato
+   * alla direzione e già valido (`supabase/36_omaggi.sql`).
+   */
+  async function creaOmaggio(forza = false) {
+    if (!evento) return;
+    const anno = Number(om.anno);
+    if (!om.nome.trim() || !om.cognome.trim()) {
+      setOmErrore("Servono nome e cognome: in porta si controlla il documento.");
+      return;
+    }
+    if (!anno || anno < 1900 || anno > 2100) {
+      setOmErrore("Scrivi l'anno di nascita per intero, tipo 2004.");
+      return;
+    }
+    setLavorando(true);
+    setOmErrore(null);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("admin_omaggio", {
+      p_event: evento,
+      p_nome: om.nome,
+      p_cognome: om.cognome,
+      p_anno: anno,
+      p_telefono: om.telefono || null,
+      p_forza: forza,
+    });
+    setLavorando(false);
+
+    if (error) {
+      const code = (error as { code?: string }).code;
+      setOmErrore(
+        code === "PGRST202"
+          ? "Manca ancora lo script sul database: incolla supabase/36_omaggi.sql su Supabase e riprova."
+          : error.message,
+      );
+      return;
+    }
+
+    const r = Array.isArray(data) ? data[0] : data;
+    if (!r || r.esito !== "ok") {
+      if (r?.esito === "gia_presente") {
+        setOmDoppio(true);
+        setOmErrore(
+          `${om.nome} ${om.cognome} ha già un biglietto per questa serata. ` +
+            "Se sono due persone diverse, insisti qui sotto.",
+        );
+        return;
+      }
+      setOmErrore(
+        r?.esito === "anno_sbagliato"
+          ? "L'anno di nascita non torna."
+          : r?.esito === "dati_mancanti"
+            ? "Servono nome e cognome."
+            : "Non è andata. Riprova.",
+      );
+      return;
+    }
+
+    setOmFatto({
+      nome: om.nome.trim(),
+      cognome: om.cognome.trim(),
+      token: r.token,
+      under16: Boolean(r.under16),
+    });
+    setOm({ nome: "", cognome: "", anno: "", telefono: "" });
+    setOmDoppio(false);
+    caricaEvento(evento);
+  }
+
+  /** Il messaggio pronto da mandare a chi riceve l'omaggio. */
+  function testoOmaggio(o: { nome: string; token: string; under16: boolean }): string {
+    const quando = ev ? `${giornoEData(ev.starts_at)} ${dataLunga(ev.starts_at)}` : "";
+    const base =
+      `Ciao ${o.nome}! Ecco il tuo ingresso omaggio per ${ev?.nome ?? "la serata"}` +
+      `${quando ? ` — ${quando}` : ""}.\n\n` +
+      `${linkBiglietto(o.token)}\n\n` +
+      `Fallo scansionare all'ingresso, non serve stamparlo. ` +
+      `Ricordati il documento fisico, non la foto sul telefono.`;
+    if (!o.under16) return base;
+    const modulo = delega ?? delegaPerLocale(ev?.locale);
+    const linkModulo =
+      typeof window === "undefined" ? modulo : `${window.location.origin}${modulo}`;
+    return (
+      base +
+      `\n\n⚠️ SE HAI MENO DI 16 ANNI ti serve anche la delega firmata da un genitore. ` +
+      `Scaricala qui, compilala e portala con te: senza quella non si entra.\n${linkModulo}`
+    );
+  }
+
   async function annulla(b: BigliettoAdmin) {
     const motivo = window.prompt(
       `Annullare il biglietto di ${b.nome} ${b.cognome} (${b.pr_alias})?\n\nMotivo:`,
@@ -1145,180 +1287,130 @@ export default function AdminPrPage() {
     : pr;
   const attesaTotale = pr.reduce((s, x) => s + x.in_attesa, 0);
 
+  // Un omaggio si riconosce dal prezzo: zero euro vuol dire che non c'è
+  // nessun soldo da ritirare a nessuno. Il cruscotto li conta dentro
+  // "vendute" — sono biglietti a tutti gli effetti — ma nel pannello
+  // vanno separati, altrimenti sembra che qualcuno debba dei contanti.
+  const omaggiVivi = biglietti.filter(
+    (b) => Number(b.prezzo) === 0 && b.stato !== "annullata",
+  ).length;
+  const vendutePagate = Math.max((cruscotto?.vendute ?? 0) - omaggiVivi, 0);
+  const percRaccolto =
+    cruscotto && Number(cruscotto.incasso) > 0
+      ? Math.min(100, Math.round((Number(cruscotto.raccolto) / Number(cruscotto.incasso)) * 100))
+      : 0;
+
+  // La classifica: **tutti** i PR della serata, anche quelli fermi a zero.
+  const classifica = [...pr].sort(
+    (a, b) => b.vendute - a.vendute || a.alias.localeCompare(b.alias),
+  );
+  const migliore = classifica[0]?.vendute ?? 0;
+  const vendutePr = pr.reduce((s, x) => s + x.vendute, 0);
+  const prFermi = pr.filter((x) => x.vendute === 0).length;
+
   return (
     <main className="flex-1 px-5 py-10">
       <div className="mx-auto w-full max-w-3xl">
-        <Link
-          href="/admin/dashboard"
-          className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white"
-        >
-          ← pannello
-        </Link>
-
-        <h1 className="mt-4 font-display text-4xl uppercase leading-none text-white">Prevendite</h1>
-        <p className="mt-2 text-xs leading-relaxed text-brand-gray">
-          I PR sono la crew approvata. Un biglietto diventa valido solo quando segni
-          che i contanti sono arrivati.
-        </p>
-
-        {/* Quanto riceve chi entra adesso */}
-        <div className="mt-6 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* In cima: dove torni, cosa stai guardando e — soprattutto — SU
+            QUALE SERATA stai lavorando. Il selettore stava a metà pagina,
+            sotto tre riquadri di impostazioni: con due serate aperte
+            insieme era il modo più facile per segnare un incasso su
+            quella sbagliata. */}
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
-              chi approvi adesso parte con
-            </p>
-            <p className="mt-1 text-[12px] leading-relaxed text-brand-gray/80">
-              Appena fai entrare un PR da /admin/crew, gli finiscono in mano queste
-              prevendite sulla <span className="text-white">prossima serata</span>, senza
-              che tu debba tornare qui. Zero = niente in automatico.
-            </p>
-          </div>
-          <div className="flex flex-shrink-0 items-center gap-2">
-            <input
-              inputMode="numeric"
-              value={iniziali}
-              onChange={(e) => setIniziali(e.target.value.replace(/[^0-9]/g, ""))}
-              className="w-20 border border-white/20 bg-black px-3 py-2.5 text-center text-sm text-white outline-none focus:border-brand-red"
-            />
-            <button
-              onClick={salvaIniziali}
-              className="border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red"
+            <Link
+              href="/admin/dashboard"
+              className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray hover:text-white"
             >
-              salva
-            </button>
+              ← pannello
+            </Link>
+            <h1 className="mt-3 font-display text-4xl uppercase leading-none text-white">
+              Prevendite
+            </h1>
+            <p className="mt-2 text-xs leading-relaxed text-brand-gray">
+              Un biglietto diventa valido quando segni che i contanti sono arrivati.
+            </p>
           </div>
-        </div>
 
-        {/* L'ingresso dei PR */}
-        <div className="mt-3 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
-              ingresso omaggio del PR
+          <div className="w-full flex-shrink-0 sm:w-[19rem]">
+            <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
+              serata
             </p>
-            <p className="mt-1 text-[12px] leading-relaxed text-brand-gray/80">
-              Il suo QR si accende da solo a questo numero di prevendite vendute, e lui
-              vede a che punto è. Le eccezioni le fai qui sotto, PR per PR.
-            </p>
-          </div>
-          <div className="flex flex-shrink-0 items-center gap-2">
-            <input
-              inputMode="numeric"
-              value={sogliaIngresso}
-              onChange={(e) => setSogliaIngresso(e.target.value.replace(/[^0-9]/g, ""))}
-              className="w-20 border border-white/20 bg-black px-3 py-2.5 text-center text-sm text-white outline-none focus:border-brand-red"
-            />
-            <button
-              onClick={salvaSogliaIngresso}
-              className="border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red"
+            <div
+              className="mt-2 border-2 px-4 py-3"
+              style={{ borderColor: evento ? accentoSerata(evento) : "rgba(255,255,255,0.15)" }}
             >
-              salva
-            </button>
-          </div>
-        </div>
-
-        {/* L'interruttore */}
-        <div className="mt-6 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
-              area PR su /pr
-            </p>
-            <p className="mt-1 text-sm text-white">
-              {config?.aperta ? "Aperta: i PR entrano" : "Chiusa: la vedi solo tu"}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => cambiaConfig({ aperta: !config?.aperta })}
-              className={`border px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] transition-colors ${
-                config?.aperta
-                  ? "border-emerald-400/50 text-emerald-300"
-                  : "border-white/20 text-white hover:border-brand-red"
-              }`}
-            >
-              {config?.aperta ? "chiudi l'area" : "apri l'area"}
-            </button>
-            <button
-              onClick={() => cambiaConfig({ vendite_on: !config?.vendite_on })}
-              className={`border px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] transition-colors ${
-                config?.vendite_on
-                  ? "border-white/20 text-white hover:border-brand-red"
-                  : "border-brand-red/60 text-brand-red"
-              }`}
-            >
-              {config?.vendite_on ? "ferma le vendite" : "riapri le vendite"}
-            </button>
-          </div>
-        </div>
-
-        {/* Quale serata. Con due serate aperte insieme — sabato notte e
-            domenica pomeriggio — il colore e il giorno evitano di segnare
-            un incasso sulla serata sbagliata. */}
-        <div
-          className="mt-6 border-l-4 pl-3"
-          style={{ borderLeftColor: evento ? accentoSerata(evento) : "transparent" }}
-        >
-          <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
-            serata
-            {ev && (
-              <span
-                className="ml-2"
-                style={{ color: accentoSerata(evento) }}
+              {ev ? (
+                <>
+                  <p className="truncate font-display text-xl uppercase leading-none text-white">
+                    {ev.nome}
+                  </p>
+                  <p
+                    className="mt-1.5 font-tech text-[10px] uppercase tracking-[0.15em]"
+                    style={{ color: accentoSerata(evento) }}
+                  >
+                    {giornoEData(ev.starts_at)} · {dataLunga(ev.starts_at)}
+                    {ev.passato ? " · già fatta" : ""}
+                  </p>
+                </>
+              ) : (
+                <p className="font-display text-xl uppercase leading-none text-brand-gray">
+                  nessuna serata
+                </p>
+              )}
+              <select
+                value={evento}
+                onChange={(e) => {
+                  setEvento(e.target.value);
+                  caricaEvento(e.target.value);
+                }}
+                className="mt-3 w-full border border-white/15 bg-black px-2 py-2.5 text-xs text-white outline-none focus:border-brand-red"
               >
-                {giornoEData(ev.starts_at)}
-              </span>
+                {eventi.map((e) => (
+                  <option
+                    key={e.event_id}
+                    value={e.event_id}
+                    // Le serate finite restano scritte — servono a ritrovare i
+                    // conti — ma non si scelgono per sbaglio mentre si segna
+                    // un incasso di stasera. La spunta qui sotto le sblocca.
+                    disabled={e.passato && !mostraPassate && e.event_id !== evento}
+                  >
+                    {giornoEData(e.starts_at)} — {e.nome}
+                    {e.passato ? " — GIÀ FATTA" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {eventi.some((e) => e.passato) && (
+              <label className="mt-2 flex items-center gap-2 text-[11px] text-brand-gray">
+                <input
+                  type="checkbox"
+                  checked={mostraPassate}
+                  onChange={(e) => setMostraPassate(e.target.checked)}
+                  className="accent-brand-red"
+                />
+                sblocca le serate già fatte
+              </label>
             )}
-          </p>
-          <select
-            value={evento}
-            onChange={(e) => {
-              setEvento(e.target.value);
-              caricaEvento(e.target.value);
-            }}
-            className="mt-2 w-full border border-white/15 bg-black px-3 py-3 text-sm text-white outline-none focus:border-brand-red"
-          >
-            {eventi.map((e) => (
-              <option
-                key={e.event_id}
-                value={e.event_id}
-                // Le serate finite restano scritte — servono a ritrovare i
-                // conti — ma non si scelgono per sbaglio mentre si segna
-                // un incasso di stasera. La spunta qui sotto le sblocca.
-                disabled={e.passato && !mostraPassate && e.event_id !== evento}
-              >
-                {giornoEData(e.starts_at)} — {e.nome} — {dataLunga(e.starts_at)}
-                {e.passato ? " — GIÀ FATTA" : ""}
-              </option>
-            ))}
-          </select>
-
-          {eventi.some((e) => e.passato) && (
-            <label className="mt-2 flex items-center gap-2 text-[11px] text-brand-gray">
-              <input
-                type="checkbox"
-                checked={mostraPassate}
-                onChange={(e) => setMostraPassate(e.target.checked)}
-                className="accent-brand-red"
-              />
-              sblocca anche le serate già fatte (per rivedere i conti)
-            </label>
-          )}
-          {eventi.filter((e) => !e.passato).length > 1 && (
-            <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
-              Ci sono più serate aperte: conti, prevendite e incassi sono separati. Un incasso
-              segnato qui vale solo per questa.
-            </p>
-          )}
+            {eventi.filter((e) => !e.passato).length > 1 && (
+              <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
+                Ci sono più serate aperte: conti e incassi sono separati. Quello che segni qui
+                vale solo per questa.
+              </p>
+            )}
+          </div>
         </div>
 
         {ev && fasce.length === 0 && (
-          <div className="mt-4 border border-amber-400/50 bg-amber-400/5 px-4 py-4">
+          <div className="mt-6 border border-amber-400/50 bg-amber-400/5 px-4 py-4">
             <p className="font-display text-xl uppercase leading-none text-amber-300">
               Prima i prezzi
             </p>
             <p className="mt-2 text-[12px] leading-relaxed text-white/70">
               Questa serata non ha ancora nessuna fascia di prezzo, e senza prezzo non si può
-              fare nessun biglietto — né tu né i PR. Si mettono qui sotto, nella scheda
-              &quot;Prezzi&quot;: nome (Donna, Uomo, Prevendita…) e quanto costa.
+              fare nessun biglietto — né tu né i PR. Si mettono in fondo alla pagina, nella
+              scheda &quot;Prezzi&quot;: nome (Donna, Uomo, Prevendita…) e quanto costa.
             </p>
             <button
               onClick={() => {
@@ -1332,66 +1424,76 @@ export default function AdminPrPage() {
           </div>
         )}
 
-        {ev && fasce.length > 0 && (
-          <Link
-            href="/admin/porta"
-            className="mt-4 block border border-white/20 px-4 py-4 transition-colors hover:border-brand-red"
-          >
-            <p className="font-display text-lg uppercase leading-none text-white">
-              Apri la porta →
-            </p>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-brand-gray">
-              Lo scanner dell&apos;ingresso: valida i biglietti e tiene il conto di chi entra.
-            </p>
-          </Link>
-        )}
-
-        {ev && fasce.length > 0 && (
-          <Link
-            href={`/pr/${evento}`}
-            className="mt-4 block border border-brand-red bg-brand-red/10 px-4 py-4 transition-colors hover:bg-brand-red/20"
-          >
-            <p className="font-display text-lg uppercase leading-none text-white">
-              Fai tu una prevendita →
-            </p>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-white/60">
-              Senza limiti di scorte e di blocchetti. Quello che vendi tu è valido subito.
-            </p>
-          </Link>
-        )}
-
-        {/* Il cruscotto della serata: quello che si guardava su Evently */}
+        {/* ═══════════ I NUMERI ═══════════
+            Prima di ogni altra cosa: è quello che Luka apre venti volte
+            in una sera. L'incasso in grande, e sotto la barra che dice
+            quanto di quell'incasso è davvero in cassa — perché il numero
+            che conta non è quanto hai venduto, è quanto hai in mano. */}
         {cruscotto && (
-          <div className="mt-5">
-            <div className="grid grid-cols-3 gap-3">
-              <Riquadro n={cruscotto.consegnate} etichetta="consegnate ai pr" />
-              <Riquadro n={cruscotto.vendute} etichetta="vendute" forte />
-              <Riquadro n={cruscotto.da_vendere} etichetta="ancora in mano" />
+          <section className="mt-7">
+            <div
+              className="border border-white/15 px-5 py-6"
+              style={{
+                borderTopWidth: 3,
+                borderTopColor: evento ? accentoSerata(evento) : "#E0181F",
+              }}
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
+                  incasso della serata
+                </p>
+                <p className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                  {cruscotto.persone} persone in lista
+                </p>
+              </div>
+              <p className="mt-2 font-display text-5xl leading-none text-white sm:text-6xl">
+                {euro(cruscotto.incasso)}
+              </p>
+
+              <div className="mt-6 h-2.5 w-full bg-white/10">
+                <div
+                  className="h-2.5 bg-emerald-400 transition-all duration-500"
+                  style={{ width: `${percRaccolto}%` }}
+                />
+              </div>
+              <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2">
+                <p className="font-tech text-[10px] uppercase tracking-[0.15em] text-emerald-400">
+                  {euro(cruscotto.raccolto)} in cassa
+                </p>
+                <p
+                  className={`font-tech text-[10px] uppercase tracking-[0.15em] ${
+                    cruscotto.da_incassare > 0 ? "text-brand-red" : "text-brand-gray"
+                  }`}
+                >
+                  {euro(cruscotto.da_incassare)} da ritirare
+                </p>
+              </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-3 gap-3">
-              <Riquadro
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Tessera n={vendutePagate} etichetta="prevendite vendute" bordo="border-white/25" />
+              <Tessera n={cruscotto.entrate} etichetta="già entrate" />
+              <Tessera
+                n={omaggiVivi}
+                etichetta="omaggi"
+                colore={omaggiVivi > 0 ? "text-sky-300" : undefined}
+                nota={omaggiVivi > 0 ? "entrano senza pagare" : undefined}
+              />
+              <Tessera
                 n={cruscotto.in_attesa}
-                etichetta="in attesa"
+                etichetta="in attesa di soldi"
                 colore={cruscotto.in_attesa > 0 ? "text-amber-300" : undefined}
+                nota={cruscotto.in_attesa > 0 ? "così in porta non passano" : undefined}
+                bordo={cruscotto.in_attesa > 0 ? "border-amber-400/40" : undefined}
               />
-              <Riquadro n={cruscotto.valide} etichetta="valide" colore="text-emerald-400" />
-              <Riquadro n={cruscotto.entrate} etichetta="entrate" />
             </div>
 
             <div className="mt-3 grid grid-cols-3 gap-3">
-              <Riquadro n={euro(cruscotto.incasso)} etichetta="incasso serata" />
-              <Riquadro n={euro(cruscotto.raccolto)} etichetta="già in cassa" />
-              <Riquadro
-                n={euro(cruscotto.da_incassare)}
-                etichetta="da ritirare"
-                colore={cruscotto.da_incassare > 0 ? "text-brand-red" : "text-emerald-400"}
-              />
+              <Riquadro n={cruscotto.consegnate} etichetta="consegnate ai pr" />
+              <Riquadro n={cruscotto.da_vendere} etichetta="ancora in mano" />
+              <Riquadro n={cruscotto.valide} etichetta="valide" colore="text-emerald-400" />
             </div>
 
-            {/* I soldi che stanno ancora in mano a qualcuno. Quelli dei
-                manager sparivano dal conto: il PR risultava saldato e
-                l'incasso restava nella tasca di chi l'aveva ritirato. */}
             {daRicevere && Number(daRicevere.totale) > 0 && (
               <div className="mt-3 border border-brand-red/40 bg-brand-red/5 px-4 py-3">
                 <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-red">
@@ -1438,6 +1540,163 @@ export default function AdminPrPage() {
               </div>
             )}
 
+            <p className="mt-3 text-[10px] leading-relaxed text-brand-gray/60">
+              {cruscotto.pr_attivi} PR con prevendite in mano
+              {cruscotto.pr_in_debito > 0 && `, di cui ${cruscotto.pr_in_debito} devono ancora portare i soldi`}
+              . Tavoli e omaggi non sono ancora nel conto: arrivano con la Fase 3.
+            </p>
+          </section>
+        )}
+
+        {/* ═══════════ VENDO IO ═══════════ */}
+        {ev && fasce.length > 0 && (
+          <Link
+            href={`/pr/${evento}`}
+            className="mt-6 block border-2 border-brand-red bg-brand-red/10 px-5 py-5 transition-colors hover:bg-brand-red/20"
+          >
+            <p className="font-display text-2xl uppercase leading-none text-white">
+              Vendi una prevendita →
+            </p>
+            <p className="mt-2 text-[12px] leading-relaxed text-white/70">
+              La fai tu, a prezzo pieno: niente blocchetti, niente scorte, e il biglietto è
+              valido subito. I soldi finiscono già in cassa.
+            </p>
+          </Link>
+        )}
+
+        {/* ═══════════ OMAGGI ═══════════
+            Luka: *"si puo inserire solo questa opzione e solo per me, gli
+            viene generata la prevendita e non serve segnare i soldi da
+            nessuna parte"*. Biglietto vero, zero euro, nessun PR di mezzo. */}
+        {ev && (
+          <section className="mt-3 border-2 border-emerald-400/40 px-5 py-5">
+            <p className="font-display text-2xl uppercase leading-none text-white">
+              Regala un ingresso
+            </p>
+            <p className="mt-2 text-[12px] leading-relaxed text-brand-gray">
+              Solo tu. Esce un biglietto vero, col suo QR, ma a zero euro: non tocca il
+              blocchetto di nessun PR e non c&apos;è niente da ritirare. Nei numeri qui sopra lo
+              trovi contato a parte, sotto &quot;omaggi&quot;.
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <input
+                value={om.nome}
+                onChange={(e) => setOm({ ...om, nome: e.target.value })}
+                placeholder="nome"
+                className="border border-white/20 bg-black px-3 py-3 text-sm text-white outline-none placeholder:text-brand-gray/40 focus:border-emerald-400"
+              />
+              <input
+                value={om.cognome}
+                onChange={(e) => setOm({ ...om, cognome: e.target.value })}
+                placeholder="cognome"
+                className="border border-white/20 bg-black px-3 py-3 text-sm text-white outline-none placeholder:text-brand-gray/40 focus:border-emerald-400"
+              />
+              <input
+                inputMode="numeric"
+                value={om.anno}
+                onChange={(e) => setOm({ ...om, anno: e.target.value.replace(/[^0-9]/g, "").slice(0, 4) })}
+                placeholder="anno di nascita"
+                className="border border-white/20 bg-black px-3 py-3 text-sm text-white outline-none placeholder:text-brand-gray/40 focus:border-emerald-400"
+              />
+              <input
+                inputMode="tel"
+                value={om.telefono}
+                onChange={(e) => setOm({ ...om, telefono: e.target.value })}
+                placeholder="telefono (se vuoi)"
+                className="border border-white/20 bg-black px-3 py-3 text-sm text-white outline-none placeholder:text-brand-gray/40 focus:border-emerald-400"
+              />
+            </div>
+
+            {omErrore && <p className="mt-3 text-[12px] leading-relaxed text-brand-red">{omErrore}</p>}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => creaOmaggio(false)}
+                disabled={lavorando}
+                className="border border-emerald-400/60 bg-emerald-400/10 px-5 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-emerald-300 transition-colors hover:bg-emerald-400/20 disabled:opacity-40"
+              >
+                {lavorando ? "un attimo…" : "genera l'omaggio"}
+              </button>
+              {omDoppio && (
+                <button
+                  onClick={() => creaOmaggio(true)}
+                  disabled={lavorando}
+                  className="border border-white/20 px-5 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red disabled:opacity-40"
+                >
+                  è un&apos;altra persona, fallo lo stesso →
+                </button>
+              )}
+            </div>
+
+            {omFatto && (
+              <div className="mt-5 border border-emerald-400/50 bg-emerald-400/5 px-4 py-4">
+                <p className="font-display text-lg uppercase leading-none text-emerald-300">
+                  Fatto · {omFatto.nome} {omFatto.cognome}
+                </p>
+                {omFatto.under16 && (
+                  <p className="mt-2 text-[12px] leading-relaxed text-amber-300">
+                    Attenzione: potrebbe avere meno di 16 anni. Nel messaggio qui sotto c&apos;è
+                    già la delega da far firmare a un genitore.
+                  </p>
+                )}
+                <p className="mt-2 break-all font-tech text-[11px] text-white/70">
+                  {linkBiglietto(omFatto.token)}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() =>
+                      window.open(
+                        `https://wa.me/?text=${encodeURIComponent(testoOmaggio(omFatto))}`,
+                        "_blank",
+                      )
+                    }
+                    className="border border-emerald-400/60 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.15em] text-emerald-300"
+                  >
+                    mandalo su whatsapp
+                  </button>
+                  <button
+                    onClick={() => navigator.clipboard?.writeText(testoOmaggio(omFatto))}
+                    className="border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.15em] text-white"
+                  >
+                    copia il messaggio
+                  </button>
+                  <a
+                    href={`/biglietto/${omFatto.token}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.15em] text-white"
+                  >
+                    vedi il biglietto ↗
+                  </a>
+                  <button
+                    onClick={() => setOmFatto(null)}
+                    className="px-2 py-2.5 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray hover:text-white"
+                  >
+                    fanne un altro
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {ev && fasce.length > 0 && (
+          <Link
+            href="/admin/porta"
+            className="mt-3 block border border-white/20 px-5 py-4 transition-colors hover:border-brand-red"
+          >
+            <p className="font-display text-lg uppercase leading-none text-white">
+              Apri la porta →
+            </p>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-brand-gray">
+              Lo scanner dell&apos;ingresso: valida i biglietti e tiene il conto di chi entra.
+            </p>
+          </Link>
+        )}
+
+        {cruscotto && perFascia.length > 0 && (
+          <div className="mt-6">
             {/* I tasti delle ultime prevendite: è l'unico modo in cui un PR
                 viene a sapere che si sta chiudendo, e lo sa in percentuale. */}
             {perFascia.length > 0 && (
@@ -1494,12 +1753,6 @@ export default function AdminPrPage() {
                 </button>
               </div>
             )}
-
-            <p className="mt-3 text-[10px] leading-relaxed text-brand-gray/60">
-              {cruscotto.pr_attivi} PR con prevendite in mano
-              {cruscotto.pr_in_debito > 0 && `, di cui ${cruscotto.pr_in_debito} devono ancora portare i soldi`}
-              . Tavoli e omaggi non sono ancora nel conto: arrivano con la Fase 3.
-            </p>
           </div>
         )}
 
@@ -1513,21 +1766,22 @@ export default function AdminPrPage() {
         )}
 
         {/* Schede */}
-        <div id="schede" className="mt-8 flex gap-2 border-b border-white/10">
+        <div id="schede" className="mt-8 flex gap-1 overflow-x-auto border-b border-white/10">
           {(
             [
               ["pr", "PR"],
-              ["prezzi", "Prezzi"],
-              ["grafica", "Grafica"],
+              ["classifica", "Classifica"],
               ["biglietti", `Biglietti (${biglietti.length})`],
               ["registro", "Soldi"],
               ["manager", "Manager"],
+              ["prezzi", "Prezzi"],
+              ["grafica", "Grafica"],
             ] as const
           ).map(([k, etichetta]) => (
             <button
               key={k}
               onClick={() => setScheda(k)}
-              className={`-mb-px border-b-2 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] transition-colors ${
+              className={`-mb-px flex-shrink-0 whitespace-nowrap border-b-2 px-3 py-3 font-tech text-[10px] uppercase tracking-[0.15em] transition-colors ${
                 scheda === k
                   ? "border-brand-red text-white"
                   : "border-transparent text-brand-gray hover:text-white"
@@ -2216,6 +2470,85 @@ export default function AdminPrPage() {
           </div>
         )}
 
+        {/* La classifica: Luka la chiede da sempre, ed è anche il modo
+            più veloce per vedere chi non ha ancora mosso un dito. Ci sono
+            tutti i PR della serata, non solo quelli che hanno venduto. */}
+        {scheda === "classifica" && (
+          <div className="mt-5">
+            {classifica.length === 0 ? (
+              <p className="border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">
+                Nessun PR su questa serata: consegna qualche blocchetto dalla scheda PR.
+              </p>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-3">
+                  <Riquadro n={vendutePr} etichetta="vendute dai pr" forte />
+                  <Riquadro
+                    n={pr.length > 0 ? (vendutePr / pr.length).toFixed(1) : "0"}
+                    etichetta="media a testa"
+                  />
+                  <Riquadro
+                    n={prFermi}
+                    etichetta="fermi a zero"
+                    colore={prFermi > 0 ? "text-brand-red" : "text-emerald-400"}
+                  />
+                </div>
+
+                <div className="mt-4 flex flex-col gap-2">
+                  {classifica.map((x, i) => {
+                    const quota = migliore > 0 ? Math.round((x.vendute / migliore) * 100) : 0;
+                    const podio = i < 3 && x.vendute > 0;
+                    return (
+                      <div
+                        key={x.pr_id}
+                        className={`border px-4 py-3 ${
+                          podio ? "border-brand-red/50 bg-brand-red/5" : "border-white/10"
+                        }`}
+                      >
+                        <div className="flex items-baseline justify-between gap-3">
+                          <p className="min-w-0 truncate text-sm text-white">
+                            <span
+                              className={`mr-2 font-tech text-[11px] ${
+                                podio ? "text-brand-red" : "text-brand-gray"
+                              }`}
+                            >
+                              {i + 1}°
+                            </span>
+                            {x.alias}
+                            {x.nome && (
+                              <span className="ml-2 text-[11px] text-brand-gray">{x.nome}</span>
+                            )}
+                          </p>
+                          <p className="flex-shrink-0 font-display text-2xl leading-none text-white">
+                            {x.vendute}
+                          </p>
+                        </div>
+
+                        <div className="mt-2.5 h-1.5 w-full bg-white/10">
+                          <div
+                            className={`h-1.5 ${podio ? "bg-brand-red" : "bg-white/30"}`}
+                            style={{ width: `${quota}%` }}
+                          />
+                        </div>
+
+                        <p className="mt-2 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                          {x.entrate} entrate · {euro(x.dovuto)} generati ·{" "}
+                          {x.mancante > 0 ? (
+                            <span className="text-brand-red">{euro(x.mancante)} da portare</span>
+                          ) : (
+                            <span className="text-emerald-400">in pari</span>
+                          )}
+                          {x.residue > 0 ? ` · ${x.residue} ancora in mano` : ""}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {scheda === "biglietti" && (
           <div className="mt-5 flex flex-col gap-2">
             {biglietti.map((b) => (
@@ -2231,7 +2564,9 @@ export default function AdminPrPage() {
                       )}
                     </p>
                     <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
-                      {b.tier_label} · {euro(b.prezzo)} · {b.pr_alias}
+                      {Number(b.prezzo) > 0
+                        ? `${b.tier_label} · ${euro(b.prezzo)} · ${b.pr_alias}`
+                        : `${b.tier_label} · regalato da te`}
                       {b.telefono ? ` · ${b.telefono}` : ""}
                     </p>
                   </div>
@@ -2275,6 +2610,108 @@ export default function AdminPrPage() {
             )}
           </div>
         )}
+
+        {/* ═══════════ DA IMPOSTARE A MANO ═══════════
+            Stava tutto in cima, prima ancora dei numeri: tre riquadri di
+            roba che si tocca una volta al mese, davanti alla cosa che si
+            guarda venti volte a sera. Ora sta in fondo, dove si cerca. */}
+        <section className="mt-14 border-t border-white/10 pt-8">
+          <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
+            da impostare a mano
+          </p>
+          <p className="mt-2 text-[12px] leading-relaxed text-brand-gray/70">
+            Si toccano una volta ogni tanto e poi restano lì.
+          </p>
+
+        {/* Quanto riceve chi entra adesso */}
+        <div className="mt-6 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+              chi approvi adesso parte con
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-brand-gray/80">
+              Appena fai entrare un PR da /admin/crew, gli finiscono in mano queste
+              prevendite sulla <span className="text-white">prossima serata</span>, senza
+              che tu debba tornare qui. Zero = niente in automatico.
+            </p>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <input
+              inputMode="numeric"
+              value={iniziali}
+              onChange={(e) => setIniziali(e.target.value.replace(/[^0-9]/g, ""))}
+              className="w-20 border border-white/20 bg-black px-3 py-2.5 text-center text-sm text-white outline-none focus:border-brand-red"
+            />
+            <button
+              onClick={salvaIniziali}
+              className="border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red"
+            >
+              salva
+            </button>
+          </div>
+        </div>
+
+        {/* L'ingresso dei PR */}
+        <div className="mt-3 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+              ingresso omaggio del PR
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-brand-gray/80">
+              Il suo QR si accende da solo a questo numero di prevendite vendute, e lui
+              vede a che punto è. Le eccezioni le fai qui sotto, PR per PR.
+            </p>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <input
+              inputMode="numeric"
+              value={sogliaIngresso}
+              onChange={(e) => setSogliaIngresso(e.target.value.replace(/[^0-9]/g, ""))}
+              className="w-20 border border-white/20 bg-black px-3 py-2.5 text-center text-sm text-white outline-none focus:border-brand-red"
+            />
+            <button
+              onClick={salvaSogliaIngresso}
+              className="border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red"
+            >
+              salva
+            </button>
+          </div>
+        </div>
+
+        {/* L'interruttore */}
+        <div className="mt-6 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+              area PR su /pr
+            </p>
+            <p className="mt-1 text-sm text-white">
+              {config?.aperta ? "Aperta: i PR entrano" : "Chiusa: la vedi solo tu"}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => cambiaConfig({ aperta: !config?.aperta })}
+              className={`border px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                config?.aperta
+                  ? "border-emerald-400/50 text-emerald-300"
+                  : "border-white/20 text-white hover:border-brand-red"
+              }`}
+            >
+              {config?.aperta ? "chiudi l'area" : "apri l'area"}
+            </button>
+            <button
+              onClick={() => cambiaConfig({ vendite_on: !config?.vendite_on })}
+              className={`border px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                config?.vendite_on
+                  ? "border-white/20 text-white hover:border-brand-red"
+                  : "border-brand-red/60 text-brand-red"
+              }`}
+            >
+              {config?.vendite_on ? "ferma le vendite" : "riapri le vendite"}
+            </button>
+          </div>
+        </div>
+        </section>
       </div>
     </main>
   );

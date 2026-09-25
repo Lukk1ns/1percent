@@ -112,7 +112,10 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
         {b.nome} {b.cognome}
       </p>
       <p className="mt-1.5 text-center font-tech text-[11px] uppercase tracking-[0.2em] text-brand-gray">
-        {b.tier_label} · {Number(b.prezzo).toFixed(0)} €
+        {/* Un omaggio della direzione non ha un prezzo da scrivere:
+            "0 €" sembrerebbe un errore, e a chi lo riceve non si dice
+            quanto non ha pagato. */}
+        {Number(b.prezzo) > 0 ? `${b.tier_label} · ${Number(b.prezzo).toFixed(0)} €` : b.tier_label}
       </p>
     </>
   );
