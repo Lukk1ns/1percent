@@ -873,7 +873,7 @@ declare
 begin
   foreach v_nome in array array['Leonardo Ceolin', 'Samuele Chezzi', 'Marco Florean']
   loop
-    select count(*), min(p.id) into v_quanti, v_id
+    select count(*), (array_agg(p.id))[1] into v_quanti, v_id
       from public.profiles p
      where p.role = 'crew' and p.deleted_at is null
        and (

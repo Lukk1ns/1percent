@@ -4,6 +4,26 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**L'APP DALLA SCHERMATA HOME RESTAVA SCOLLEGATA (25 set, `/login`, `/admin/login`,
+`supabase/TEMPLATE_EMAIL_CODICE.html`).** Luka: *"ho fatto aggiungi alla schermata Home e ora l'app
+me la dà disconnessa; se clicco il link della mail mi apre Safari, entro lì, ma l'app resta fuori —
+tanto vale cancellarla. E i PR si scazzano."* Ha ragione ed è una trappola di iOS, non un bug:
+**una web app aggiunta alla Home ha un contenitore di cookie e storage separato da Safari.** Il
+magic link apre il browser, quindi la sessione nasce dalla parte sbagliata e dentro l'icona non
+arriva mai. Nessun "ricordami" può risolverlo: la sessione giusta deve **nascere dentro l'app**.
+Fatto: la mail adesso porta **un codice di 6 cifre** oltre al link, e le due pagine di accesso hanno
+il campo per scriverlo (`verifyOtp`, con ripiego su `type: 'signup'` per chi non aveva mai
+confermato). Se la pagina gira in modalità app (`display-mode: standalone`, o `navigator.standalone`
+su iOS) lo dice esplicitamente: *usa il codice, il link ti butterebbe fuori*.
+**PENDING Luka: incollare `supabase/TEMPLATE_EMAIL_CODICE.html`** in Supabase → Authentication →
+Emails, in **due** template: *Magic Link* e *Confirm signup*. Finché non lo fa, nella mail il codice
+non c'è (il campo sì) e si entra solo dal link. La variabile è `{{ .Token }}`; il link con
+`{{ .TokenHash }}` resta identico a prima.
+
+**⚠️ GOTCHA POSTGRES: `min()` non esiste per gli uuid** (visto il 25 set sullo script 32, che si è
+fermato lì e — SQL Editor = una transazione sola — ha annullato tutto il resto). Per prendere "uno
+qualsiasi" da un gruppo si usa `(array_agg(x))[1]`.
+
 **GLI ACCOUNT MANAGER (25 set, `supabase/32_account_manager.sql`, `/manager`).** Luka ha nominato
 **Leonardo Ceolin, Samuele Chezzi e Marco Florean**: PR come gli altri, con tre poteri in più e
 **nient'altro**. (1) Stanno in **porta** — le funzioni `porta_*` ora accettano `is_staff()` **oppure**
