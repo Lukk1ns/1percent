@@ -4,6 +4,25 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**CONTROLLO DI SICUREZZA COMPLETO — 25 settembre 2026 (dopo la falla del pannello).** Fatto da
+fuori con la sola chiave anon, su tutto quello che è nato dopo il controllo di settembre.
+**Tabelle:** 24 provate in lettura diretta, **nessuna restituisce una riga** (RLS attiva ovunque,
+comprese `am_movimenti`, `account_managers`, `photo_removal_requests`).
+**Funzioni:** delle **85 riservate** che il sito chiama (`admin_*`, `am_*`, `porta_*`, interne),
+**83 rifiutano** un estraneo. Le due eccezioni sono innocue: `admin_reports` è `language sql` con
+`where public.is_admin()` dentro la query, quindi **filtra invece di rifiutare** (torna `[]`), e
+`am_i_staff` risponde `false` perché serve proprio a chiedere "sono staff?".
+**Le altre funzioni sensibili** (messaggi, poke, segnalazioni, blocchi, foto, regali, vendita
+prevendite) rispondono `Non autorizzato`, `Nessuna sessione attiva`, `not_member` o vuoto.
+**API:** `/api/locandina`, `/api/foto/upload`, `/api/biglietto-grafica` chiedono `is_admin`;
+`/api/volto` una sessione; `/api/foto/[id]` passa da `foto_chiave`; `/api/locandina/vista` dà la
+nitida solo a chi ha un profilo. **Storage:** la locandina **nitida** è negata, sfocata e grafica
+del biglietto sono pubbliche come da progetto, l'elenco dei file nei bucket privati torna vuoto e i
+bucket non si possono elencare. **Pagine membro:** tutte rimbalzano su `/unisciti` senza sessione.
+⚠️ **Il metodo conta:** i valori dei parametri vanno presi dai **tipi veri delle firme** (si
+estraggono dagli script con una regex), se no PostgREST risponde "invalid input syntax" e una
+funzione protetta sembra aperta. Con i valori sbagliati il primo giro dava 55 "sospette": erano 2.
+
 **IL PANNELLO ERA APERTO A CHIUNQUE AVESSE UN ACCOUNT (25 set, `components/GuardiaAdmin.tsx`).**
 Trovato da Luka provando il sito dal telefono: dallo scanner si finiva sull'accesso staff, e **con
 una mail qualsiasi** ci si ritrovava dentro `/admin/dashboard`, con eventi e candidature davanti.
