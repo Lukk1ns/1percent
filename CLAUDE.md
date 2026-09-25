@@ -4,6 +4,41 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**LA POSTA, LA BARRA DEL PANNELLO, IL BENVENUTO E LA GUIDA PR (25 set, `supabase/33_posta_admin.sql`,
+`/admin/posta`, `components/BarraAdmin.tsx`, `public/moduli/guida-pr.pdf`).**
+- **La posta** (`/admin/posta`) raccoglie quello che aspetta una risposta. Nasce da una richiesta di
+  Luka, ma il buco vero era un altro: **le richieste di togliere una foto non si potevano leggere.**
+  `chiedi_rimozione` (17) le scriveva in `photo_removal_requests`, `admin_albums` ne mostrava solo il
+  numero, e nessuna funzione le restituiva — motivo compreso. Ora `admin_rimozioni()` le elenca con
+  la miniatura, `admin_rimozione_respingi()` le chiude ("la lascio"), togliere la foto lo fa già
+  `admin_foto_togli`. `admin_notifiche()` conta tutto in una chiamata (rimozioni, segnalazioni,
+  candidature, bacheca), ogni pezzo dentro il suo `exception when others`, così una tabella che non
+  c'è non fa fallire il resto.
+- **`app/admin/layout.tsx` + `BarraAdmin`**: riga in cima a ogni pagina del pannello con ritorno,
+  posta (col pallino) e **link al sito**, che Luka chiedeva. Si toglie su login, porta e scanner,
+  che lavorano a tutto schermo.
+- **Il benvenuto mostra il prossimo evento** (locandina, data, locale) sopra il bottone delle foto:
+  *"un utente nuovo che si iscrive per vedere le foto deve sbattere sul prossimo evento"*.
+- **`NavBasso` anche su `/eventi` e `/foto`**, e **cambia voci per chi non è iscritto**: Home,
+  Serate, Foto, Entra — prima offriva Card, QR e Profilo a gente che non ne ha, cioè quattro porte
+  chiuse in faccia a chi arriva da un album.
+- **`public/moduli/guida-pr.pdf`** (sorgente `guide/guida-pr.html`, si rigenera con
+  `weasyprint guide/guida-pr.html public/moduli/guida-pr.pdf`): una facciata per i PR — entrare col
+  codice, aggiungere alla schermata Home, e la regola che dentro l'app si entra solo col codice.
+  Linkato in cima a `/pr`.
+**PENDING Luka: incollare `33_posta_admin.sql`.**
+
+**CHECK GENERALE DEL 25 SET.** Fatto da fuori, con la sola chiave anon. **Delle 140 RPC che il sito
+chiama, 138 esistono**; mancano solo `signups_open` e `admin_set_signups` (`iscrizioni.sql`, mai
+incollato: l'interruttore iscrizioni non esiste e il sito tira dritto — `/unisciti` tratta l'errore
+come "aperte"). **23 rotte su 23 rispondono 200.** Le quattro route che importano `sharp`
+(`/api/volto`, `/api/locandina`, `/api/biglietto-grafica`, `/api/foto/upload`) rispondono **401 in
+JSON** a una chiamata senza sessione, cioè il binario si carica. Come si rifà: si estraggono le
+chiamate `rpc("nome", {...})` da `app/` e `lib/` con una regex, si costruisce il corpo dai **nomi dei
+parametri trovati nel codice** e si guarda se torna `PGRST202`. ⚠️ Sui parametri la regex prende
+anche i `null` scritti in linea: quelle due o tre funzioni vanno riprovate a mano con la firma vera,
+altrimenti sembrano mancanti.
+
 **L'APP DALLA SCHERMATA HOME RESTAVA SCOLLEGATA (25 set, `/login`, `/admin/login`,
 `supabase/TEMPLATE_EMAIL_CODICE.html`).** Luka: *"ho fatto aggiungi alla schermata Home e ora l'app
 me la dà disconnessa; se clicco il link della mail mi apre Safari, entro lì, ma l'app resta fuori —
