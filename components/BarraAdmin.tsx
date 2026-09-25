@@ -44,40 +44,50 @@ export function BarraAdmin() {
   const suPannello = pathname === "/admin/dashboard";
 
   return (
-    <div className="sticky top-0 z-40 border-b border-white/10 bg-black/90 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-2 px-4 py-2.5">
-        <Link
-          href={suPannello ? "/" : "/admin/dashboard"}
-          className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white"
-        >
-          {suPannello ? "← il sito" : "← pannello"}
-        </Link>
+    <>
+      {/* Lo spazio che la barra occupa: senza, il contenuto le finirebbe
+          sotto e si intravedrebbe attraverso, che è quello che succedeva
+          quando era "sticky" e mezza trasparente. */}
+      <div className="h-[2.85rem]" aria-hidden />
 
-        <div className="flex items-center gap-3">
+      <div
+        className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-2 px-4 py-2.5">
           <Link
-            href="/admin/posta"
-            className={`relative font-tech text-[10px] uppercase tracking-[0.2em] transition-colors ${
-              pathname.startsWith("/admin/posta")
-                ? "text-brand-red"
-                : "text-brand-gray hover:text-white"
-            }`}
-          >
-            posta
-            {posta !== null && posta > 0 && (
-              <span className="ml-1.5 bg-brand-red px-1.5 py-0.5 text-[9px] text-white">
-                {posta}
-              </span>
-            )}
-          </Link>
-
-          <Link
-            href="/"
+            href={suPannello ? "/" : "/admin/dashboard"}
             className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white"
           >
-            sito ↗
+            {suPannello ? "← il sito" : "← pannello"}
           </Link>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/posta"
+              className={`relative font-tech text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                pathname.startsWith("/admin/posta")
+                  ? "text-brand-red"
+                  : "text-brand-gray hover:text-white"
+              }`}
+            >
+              posta
+              {posta !== null && posta > 0 && (
+                <span className="ml-1.5 bg-brand-red px-1.5 py-0.5 text-[9px] text-white">
+                  {posta}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/"
+              className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white"
+            >
+              sito ↗
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
