@@ -4,6 +4,33 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**IL PANNELLO ERA APERTO A CHIUNQUE AVESSE UN ACCOUNT (25 set, `components/GuardiaAdmin.tsx`).**
+Trovato da Luka provando il sito dal telefono: dallo scanner si finiva sull'accesso staff, e **con
+una mail qualsiasi** ci si ritrovava dentro `/admin/dashboard`, con eventi e candidature davanti.
+Causa: `dashboard`, `eventi`, `crew`, `scan` e `regali` **non controllavano niente** (o solo
+`user?.email`), fidandosi del fatto che le RPC rifiutano gli estranei.
+**Cosa NON è successo, verificato una per una:** tutte le `admin_*` di quelle pagine hanno
+`is_admin()`/`is_staff()` in testa — comprese `admin_approve_post`/`admin_reject_post`, che stanno
+fuori dal repo — quindi nessun dato è uscito e nessun tasto avrebbe funzionato. Ma il pannello non
+deve nemmeno aprirsi: chi lo vede prova.
+**Fix:** il controllo sta ora in `app/admin/layout.tsx` via `GuardiaAdmin`, quindi vale per ogni
+pagina del pannello, anche future — **porta e scanner allo staff** (admin, operatori, account
+manager), **tutto il resto solo agli admin**. Chi non ha i permessi vede una porta chiusa col
+ritorno al sito, **non il modulo d'accesso**: era quello a far credere che bastasse entrare per
+avere i diritti, e a creare il giro infinito scanner → login → indietro → scanner.
+Chiusi anche i due ingressi laterali: `/admin/login` dopo il codice manda in dashboard **solo** se
+sei admin (staff → porta, altri → messaggio), e `/auth/callback` rispetta un `next` che punta a
+`/admin` solo per chi ne ha diritto. **Lezione: il controllo lato server c'era, ma una pagina che si
+apre a tutti è già un invito — la guardia va messa nel layout, non copiata in ogni pagina.**
+
+**LA FOTOCAMERA CHE NON PARTIVA (25 set).** Segnalato da Luka: *"lo scanner non apre mai la
+fotocamera e non chiede neanche il permesso"*. Il `catch {}` era muto, quindi non si sapeva
+**perché**. Ora `/admin/scan` e `/admin/porta` mostrano il messaggio vero (`NotAllowedError`,
+`NotReadableError`, …) e un bottone **"Accendi la fotocamera"**: ripartire da un tocco è anche
+l'unico modo in cui certi telefoni chiedono il permesso. Sospetto principale: **in una web app
+aggiunta alla schermata Home iOS `getUserMedia` spesso non parte**; il messaggio suggerisce di
+aprire il sito da Safari. Da riverificare col telefono di Luka leggendo l'errore che compare.
+
 **UN MANAGER NON RITIRA DA SE STESSO (25 set, `supabase/34_manager_non_da_se.sql`).** Trovato da
 Luka provandolo con Leonardo: *"ha venduto una prevendita, ha segnato di aver ritirato quei soldi, e
 adesso a me non risultano nemmeno da ritirare"*. Vero: `am_incassa` non vietava niente, quindi un
