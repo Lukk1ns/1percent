@@ -291,7 +291,7 @@ function SlotGrafica({
             ) : (
               <div
                 className="absolute inset-x-0 flex flex-col items-center px-4"
-                style={{ top: `${pos}%` }}
+                style={{ top: `${pos}%`, transform: `translateY(-${pos}%)` }}
               >
                 <div className="rounded-sm bg-black/75 px-5 py-4 backdrop-blur-sm">
                   <div className="mx-auto h-24 w-24 bg-white/90" aria-hidden />

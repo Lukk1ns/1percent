@@ -149,10 +149,17 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
               </div>
             ) : (
               // Appoggiato dove c'è spazio: un velo dietro, così il QR
-              // si legge anche se sotto la grafica è chiara
+              // si legge anche se sotto la grafica è chiara.
+              //
+              // `top` e `translateY` con la STESSA percentuale: a 0 il
+              // blocco è attaccato in alto, a 100 in fondo, in mezzo
+              // scorre restando sempre dentro l'immagine. Prima era solo
+              // `top`, quindi spostandolo in basso il nome e il prezzo
+              // finivano fuori e venivano tagliati — il QR "ritagliato"
+              // visto da Luka il 25 set.
               <div
                 className="absolute inset-x-0 flex flex-col items-center px-4"
-                style={{ top: `${b.qr_pos}%` }}
+                style={{ top: `${b.qr_pos}%`, transform: `translateY(-${b.qr_pos}%)` }}
               >
                 <div className="rounded-sm bg-black/75 px-5 py-4 backdrop-blur-sm">
                   {codice}
