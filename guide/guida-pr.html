@@ -2,115 +2,125 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<title>1% · Guida PR</title>
+<title>1% · Il portale sul telefono</title>
 <style>
   @page { size: A4; margin: 0; }
-  * { box-sizing: border-box; }
   body {
-    margin: 0; background: #0A0A0A; color: #ffffff;
-    font-family: Helvetica, Arial, sans-serif; font-size: 10pt; line-height: 1.42;
+    margin: 0; background: #0A0A0A; color: #fff;
+    font-family: Helvetica, Arial, sans-serif; font-size: 12pt; line-height: 1.45;
   }
-  .foglio { padding: 16mm 15mm; min-height: 297mm; }
+  .foglio { padding: 18mm 16mm; }
 
-  .marchio { color: #E0181F; font-size: 44pt; font-weight: bold; line-height: 0.9; letter-spacing: -2pt; }
-  .payoff { color: #8a8a8a; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 3pt; margin-top: 2mm; }
-  h1 { font-size: 18pt; margin: 6mm 0 2mm; line-height: 1.15; text-transform: uppercase; letter-spacing: -0.3pt; }
-  .occhiello { color: #A3A3A3; font-size: 9.5pt; margin: 0 0 6mm; }
+  .marchio { color: #E0181F; font-size: 34pt; font-weight: bold; line-height: 0.9; letter-spacing: -2pt; }
+  h1 { font-size: 26pt; margin: 7mm 0 9mm; line-height: 1.05; text-transform: uppercase; letter-spacing: -0.5pt; }
 
-  .passo { border-left: 2pt solid #E0181F; padding: 0 0 0 5mm; margin: 0 0 5mm; }
-  .numero { color: #E0181F; font-size: 8pt; font-weight: bold; text-transform: uppercase; letter-spacing: 2pt; }
-  .titolo { font-size: 12.5pt; font-weight: bold; margin: 1.5mm 0 1.5mm; }
-  .testo { color: #c9c9c9; margin: 0; }
-  .testo b { color: #ffffff; }
-
-  .riquadro { border: 1pt solid #2a2a2a; background: #131313; padding: 4mm 5mm; margin: 0 0 5mm; }
-  .riquadro .titolo { color: #E0181F; font-size: 9pt; text-transform: uppercase; letter-spacing: 1.5pt; margin-bottom: 2mm; }
-
-  .indirizzo {
-    display: inline-block; border: 1pt solid #E0181F; color: #ffffff;
-    padding: 2.5mm 5mm; font-size: 12pt; font-weight: bold; letter-spacing: 0.5pt; margin: 1mm 0 3mm;
+  table.passo { width: 100%; border-collapse: collapse; margin-bottom: 8mm; }
+  table.passo td { vertical-align: top; }
+  td.n {
+    width: 16mm;
+    color: #E0181F; font-size: 30pt; font-weight: bold; line-height: 1; padding-top: 1mm;
   }
-  .piede { color: #6b6b6b; font-size: 8pt; border-top: 1pt solid #222; padding-top: 3mm; margin-top: 4mm; }
-  .due { display: flex; gap: 6mm; }
-  .due > div { flex: 1; border: 1pt solid #2a2a2a; padding: 4mm 5mm; }
-  .due .titolo { font-size: 9.5pt; }
-  .tag { color: #E0181F; font-weight: bold; }
+  .frase { font-size: 15pt; font-weight: bold; line-height: 1.25; }
+  .sotto { color: #b5b5b5; font-size: 11pt; margin-top: 2mm; }
+  .sotto b { color: #fff; }
+
+  .url {
+    display: inline-block; border: 1.5pt solid #E0181F; color: #fff;
+    padding: 3mm 7mm; font-size: 17pt; font-weight: bold; margin-top: 3mm;
+  }
+  .codice {
+    display: inline-block; background: #1a1a1a; border: 1pt solid #333; color: #fff;
+    padding: 2.5mm 6mm; font-size: 17pt; font-weight: bold; letter-spacing: 6pt; margin-top: 3mm;
+  }
+
+  .telefoni { width: 100%; border-collapse: collapse; margin-top: 4mm; }
+  .telefoni td { width: 50%; border: 1pt solid #2e2e2e; padding: 4mm 5mm; vertical-align: top; }
+  .telefoni .chi { color: #E0181F; font-size: 10pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5pt; }
+  .telefoni p { margin: 2mm 0 0; font-size: 11pt; color: #d5d5d5; line-height: 1.4; }
+  .telefoni b { color: #fff; }
+  svg { vertical-align: -2mm; }
+
+  .regola { border: 1.5pt solid #E0181F; background: rgba(224,24,31,0.08); padding: 5mm 6mm; margin-top: 4mm; }
+  .regola .tit { color: #E0181F; font-size: 10pt; font-weight: bold; text-transform: uppercase; letter-spacing: 2pt; }
+  .regola p { margin: 2mm 0 0; font-size: 12.5pt; line-height: 1.4; }
+  .piede { color: #777; font-size: 9.5pt; margin-top: 7mm; }
 </style>
 </head>
 <body>
 <div class="foglio">
 
-  <div class="marchio" style="font-size:38pt">1%</div>
-  <div class="payoff">not for everyone</div>
+  <div class="marchio">1%</div>
+  <h1>Il portale<br>sul telefono</h1>
 
-  <h1>Mettiti il portale<br>sul telefono</h1>
-  <p class="occhiello">
-    Due minuti, una volta sola. Poi hai l'icona sulla schermata come un'app: le tue prevendite,
-    i nominativi e il QR d'ingresso sempre lì, senza cercare il link su WhatsApp.
-  </p>
+  <table class="passo">
+    <tr>
+      <td class="n">1</td>
+      <td>
+        <div class="frase">Apri il sito dal telefono</div>
+        <div class="url">unpercento.it</div>
+      </td>
+    </tr>
+  </table>
 
-  <div class="passo">
-    <div class="numero">passo 1 · apri</div>
-    <div class="titolo">Vai su unpercento.it</div>
-    <p class="testo">
-      Dal <b>browser del telefono</b>: Safari se hai l'iPhone, Chrome se hai Android.
-    </p>
-    <div class="indirizzo">unpercento.it</div>
-  </div>
+  <table class="passo">
+    <tr>
+      <td class="n">2</td>
+      <td>
+        <div class="frase">Tocca RIENTRA e metti la tua mail</div>
+        <div class="sotto">Ti arriva una mail con un numero. Scrivilo nel sito ed è fatta.</div>
+        <div class="codice">1 2 3 4 5 6</div>
+      </td>
+    </tr>
+  </table>
 
-  <div class="passo">
-    <div class="numero">passo 2 · entra</div>
-    <div class="titolo">Rientra con la tua mail</div>
-    <p class="testo">
-      Tocca <b>Rientra</b>, scrivi la mail con cui ti sei iscritto e chiedi il codice.
-      Ti arriva una mail con un <b>codice</b> e un link: scrivi il <b>codice</b> nella pagina.
-      Niente password, non devi ricordarti niente.
-    </p>
-  </div>
+  <table class="passo">
+    <tr>
+      <td class="n">3</td>
+      <td>
+        <div class="frase">Salvalo come app</div>
+        <table class="telefoni">
+          <tr>
+            <td>
+              <div class="chi">iPhone</div>
+              <p>
+                Tocca
+                <svg width="16" height="20" viewBox="0 0 16 20">
+                  <rect x="2" y="7" width="12" height="11" fill="none" stroke="#fff" stroke-width="1.4"/>
+                  <line x1="8" y1="2" x2="8" y2="12" stroke="#fff" stroke-width="1.4"/>
+                  <polyline points="5,5 8,2 11,5" fill="none" stroke="#fff" stroke-width="1.4"/>
+                </svg>
+                in basso, poi <b>Aggiungi alla schermata Home</b>.
+              </p>
+            </td>
+            <td>
+              <div class="chi">Android</div>
+              <p>
+                Tocca
+                <svg width="8" height="20" viewBox="0 0 8 20">
+                  <circle cx="4" cy="5" r="1.6" fill="#fff"/>
+                  <circle cx="4" cy="10" r="1.6" fill="#fff"/>
+                  <circle cx="4" cy="15" r="1.6" fill="#fff"/>
+                </svg>
+                in alto, poi <b>Aggiungi a schermata Home</b>.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 
-  <div class="passo">
-    <div class="numero">passo 3 · installa</div>
-    <div class="titolo">Aggiungi alla schermata Home</div>
-    <div class="due">
-      <div>
-        <div class="titolo"><span class="tag">iPhone</span> · Safari</div>
-        <p class="testo">
-          Tocca il tasto <b>Condividi</b> in basso (il quadrato con la freccia in su),
-          scorri e scegli <b>Aggiungi alla schermata Home</b>, poi <b>Aggiungi</b>.
-        </p>
-      </div>
-      <div>
-        <div class="titolo"><span class="tag">Android</span> · Chrome</div>
-        <p class="testo">
-          Tocca i <b>tre puntini</b> in alto a destra e scegli
-          <b>Aggiungi a schermata Home</b> (o <b>Installa app</b>), poi conferma.
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <div class="riquadro">
-    <div class="titolo">l'unica cosa da ricordare</div>
-    <p class="testo">
-      Da quando apri il sito dall'icona, <b>entra sempre col codice</b>, mai dal link della mail.
-      L'icona è una finestra a parte: il link apre il browser, e lì dentro resteresti scollegato.
-      Se ti capita, non cancellare l'app — riapri l'icona, tocca Rientra e usa le cifre.
-    </p>
-  </div>
-
-  <div class="riquadro">
-    <div class="titolo">cosa trovi dentro</div>
-    <p class="testo">
-      <b>Le tue prevendite</b> — quante ne hai in mano, quante ne hai fatte, quanto devi portare.<br>
-      <b>Vendi prevendita</b> — nome, cognome, anno, telefono: il biglietto parte su WhatsApp da solo,
-      con il QR e, se il cliente è minorenne, anche il modulo da far firmare.<br>
-      <b>Il tuo ingresso</b> — il QR che si accende quando arrivi al numero di prevendite richiesto.
+  <div class="regola">
+    <div class="tit">da ricordare</div>
+    <p>
+      Dall'icona si entra <b>sempre col numero</b>, mai cliccando il link della mail.
+      Se il link ti apre il browser, torna sull'icona e usa il numero.
     </p>
   </div>
 
   <p class="piede">
-    Il biglietto vale una volta sola e in porta serve il documento vero, non la foto sul telefono.
-    Se qualcosa non torna, scrivi a Luka invece di rifare l'account: i tuoi nominativi restano attaccati al tuo profilo.
+    Dentro trovi le tue prevendite, il tasto per venderne una (il biglietto parte su WhatsApp da
+    solo) e il tuo QR d'ingresso. Problemi? Scrivi a Luka, non rifare l'account.
   </p>
 
 </div>
