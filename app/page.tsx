@@ -169,7 +169,7 @@ export default function Home() {
                 href="/admin/scan"
                 className="border border-brand-red bg-black/70 px-2.5 py-2 font-tech text-[9px] uppercase tracking-[0.25em] text-brand-red transition-colors hover:bg-brand-red hover:text-white"
               >
-                🎁 scanner
+                🎁 estrazione premi
               </Link>
             )}
             {io && (
