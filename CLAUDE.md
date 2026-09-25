@@ -147,10 +147,15 @@ Fatto: la mail adesso porta **un codice di 6 cifre** oltre al link, e le due pag
 il campo per scriverlo (`verifyOtp`, con ripiego su `type: 'signup'` per chi non aveva mai
 confermato). Se la pagina gira in modalità app (`display-mode: standalone`, o `navigator.standalone`
 su iOS) lo dice esplicitamente: *usa il codice, il link ti butterebbe fuori*.
-**PENDING Luka: incollare `supabase/TEMPLATE_EMAIL_CODICE.html`** in Supabase → Authentication →
-Emails, in **due** template: *Magic Link* e *Confirm signup*. Finché non lo fa, nella mail il codice
-non c'è (il campo sì) e si entra solo dal link. La variabile è `{{ .Token }}`; il link con
-`{{ .TokenHash }}` resta identico a prima.
+**FATTO il 25 set (verificato da Luka sul telefono):** `supabase/TEMPLATE_EMAIL_CODICE.html` è su
+Supabase in *Magic link or OTP* (e *Confirm signup*), mittente **"1%"**, oggetto "Il tuo codice di
+accesso all'1% ⚡". Si resta su **Gmail SMTP** (~500/giorno, gratis): Luka non paga Resend e 100/giorno
+sono pochi nei picchi. ⚠️ **L'app Gmail col tema scuro inverte i colori anche delle mail nere**: il
+template regge con sfondi doppi `background-image: linear-gradient`, testi dentro `.gs`/`.gd`
+(`u + .body`, fusione screen+difference) e logo trasparente `public/email-logo.png`. Niente bordi
+colorati. Per provarla senza disturbare Luka: `POST /auth/v1/otp` con la chiave anon,
+`{"email":"lukkins2212@gmail.com","create_user":false}`. La foto accanto al mittente è quella
+dell'account Google del Papi (le mail partono da lì).
 
 **⚠️ GOTCHA POSTGRES: `min()` non esiste per gli uuid** (visto il 25 set sullo script 32, che si è
 fermato lì e — SQL Editor = una transazione sola — ha annullato tutto il resto). Per prendere "uno
