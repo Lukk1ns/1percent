@@ -33,6 +33,13 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "1% — not for everyone",
   description: "Pordenone eventi. Ogni festa ha un nome, sopra c'è sempre il nostro.",
+  // Il nome sotto l'icona, quando il sito finisce sulla schermata Home.
+  // Senza questo iOS ci mette il titolo intero, che non ci sta.
+  appleWebApp: {
+    title: "1%",
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
