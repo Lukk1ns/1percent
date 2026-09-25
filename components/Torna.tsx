@@ -16,14 +16,10 @@ import { usePathname, useRouter } from "next/navigation";
  * lì un secondo tasto sarebbe solo un doppione.
  */
 
+// Tutto il pannello ha già "← il sito" nella barra fissa in alto: il
+// tasto qui finiva sotto quella barra, visibile solo per un filo rosso.
 const HANNO_GIA_IL_LORO = [
-  "/admin/crew",
-  "/admin/eventi",
-  "/admin/foto",
-  "/admin/porta",
-  "/admin/posta",
-  "/admin/pr",
-  "/admin/regali",
+  "/admin/",
   "/benvenuto",
   "/candidatura",
   "/card",
