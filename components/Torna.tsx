@@ -63,13 +63,17 @@ export function Torna() {
   // Sta nel flusso, non sopra la pagina: appoggiato in alto a sinistra
   // coprirebbe il titolo delle pagine che partono da lì.
   return (
-    <div className="px-4 pt-4">
+    <div className="px-4 pt-3">
+      {/* Era una scritta di 10px grigio scuro, e su alcune pagine finiva
+          sotto il contenuto: un tasto che non si vede non esiste. Ora è
+          un rettangolo con il bordo, grande abbastanza da premerlo col
+          pollice (Luka, 25 set). */}
       <button
         onClick={indietro}
         aria-label="Torna indietro"
-        className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray transition-colors hover:text-white"
+        className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 font-tech text-[11px] uppercase tracking-[0.2em] text-white transition-colors hover:border-brand-red"
       >
-        ← indietro
+        <span aria-hidden>←</span> indietro
       </button>
     </div>
   );

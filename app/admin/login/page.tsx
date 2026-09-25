@@ -30,8 +30,8 @@ export default function AdminLoginPage() {
     setError("");
     const supabase = createClient();
     const { error: err } = await supabase.auth.verifyOtp({ email, token, type: "email" });
-    setLoading(false);
     if (err) {
+      setLoading(false);
       const msg = err.message?.toLowerCase() ?? "";
       setError(
         msg.includes("expired")
@@ -40,7 +40,22 @@ export default function AdminLoginPage() {
       );
       return;
     }
-    router.replace("/admin/dashboard");
+
+    // Entrare non vuol dire comandare: la dashboard si apre solo a chi è
+    // nella tabella degli admin. Prima chiunque, con una mail qualsiasi,
+    // ci finiva dentro.
+    const { data: admin } = await supabase.rpc("is_admin");
+    const { data: staff } = await supabase.rpc("is_staff");
+    setLoading(false);
+    if (admin) {
+      router.replace("/admin/dashboard");
+      return;
+    }
+    if (staff) {
+      router.replace("/admin/porta");
+      return;
+    }
+    setError("Sei dentro, ma questa email non è dello staff. Vai al sito dalla home.");
   }
 
   async function handleSend(e: React.FormEvent) {

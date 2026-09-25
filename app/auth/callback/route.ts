@@ -28,9 +28,22 @@ export async function GET(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
-    // Rientro staff via magic link: vai alla destinazione richiesta.
-    // L'autorizzazione vera è nella dashboard e nelle RPC (is_admin()).
+    // Rientro via magic link: si va dove chiedeva il link, ma **non**
+    // dentro il pannello se non se ne ha diritto. Prima bastava un link
+    // con `next=/admin/dashboard` — o passare dall'accesso staff con una
+    // mail qualsiasi — per ritrovarsi davanti ai comandi.
     if (next) {
+      if (next.startsWith("/admin")) {
+        const { data: isAdmin } = await supabase.rpc("is_admin");
+        const { data: isStaff } = await supabase.rpc("is_staff");
+        if (isAdmin) {
+          return NextResponse.redirect(new URL(next, url.origin));
+        }
+        if (isStaff) {
+          return NextResponse.redirect(new URL("/admin/porta", url.origin));
+        }
+        return NextResponse.redirect(new URL("/", url.origin));
+      }
       return NextResponse.redirect(new URL(next, url.origin));
     }
 

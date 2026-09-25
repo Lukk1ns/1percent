@@ -48,7 +48,7 @@ export function BarraAdmin() {
       {/* Lo spazio che la barra occupa: senza, il contenuto le finirebbe
           sotto e si intravedrebbe attraverso, che è quello che succedeva
           quando era "sticky" e mezza trasparente. */}
-      <div className="h-[2.85rem]" aria-hidden />
+      <div className="h-[3.1rem]" aria-hidden />
 
       <div
         className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black"
@@ -57,7 +57,7 @@ export function BarraAdmin() {
         <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-2 px-4 py-2.5">
           <Link
             href={suPannello ? "/" : "/admin/dashboard"}
-            className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white"
+            className="font-tech text-[11px] uppercase tracking-[0.12em] text-brand-gray transition-colors hover:text-white"
           >
             {suPannello ? "← il sito" : "← pannello"}
           </Link>
@@ -65,7 +65,7 @@ export function BarraAdmin() {
           <div className="flex items-center gap-3">
             <Link
               href="/admin/posta"
-              className={`relative font-tech text-[10px] uppercase tracking-[0.2em] transition-colors ${
+              className={`relative font-tech text-[11px] uppercase tracking-[0.12em] transition-colors ${
                 pathname.startsWith("/admin/posta")
                   ? "text-brand-red"
                   : "text-brand-gray hover:text-white"
@@ -81,7 +81,7 @@ export function BarraAdmin() {
 
             <Link
               href="/"
-              className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white"
+              className="font-tech text-[11px] uppercase tracking-[0.12em] text-brand-gray transition-colors hover:text-white"
             >
               sito ↗
             </Link>

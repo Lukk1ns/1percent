@@ -105,7 +105,10 @@ export default function PortaPage() {
   const [autorizzato, setAutorizzato] = useState<boolean | null>(null);
   const [sonoAdmin, setSonoAdmin] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
-  const [camErrore, setCamErrore] = useState(false);
+  const [camErrore, setCamErrore] = useState<string | null>(null);
+  // Un tocco in più per riprovare: su certi telefoni il permesso della
+  // fotocamera arriva solo se parte da un gesto.
+  const [tentativoCam, setTentativoCam] = useState(0);
 
   // ricerca per nome, per chi arriva senza QR
   const [cerca, setCerca] = useState("");
@@ -285,7 +288,7 @@ export default function PortaPage() {
     if (!autorizzato || errore || esito || modoCerca || !serata) return;
 
     let annullato = false;
-    setCamErrore(false);
+    setCamErrore(null);
 
     (async () => {
       const { Html5Qrcode } = await import("html5-qrcode");
@@ -312,8 +315,17 @@ export default function PortaPage() {
           },
           () => {},
         );
-      } catch {
-        if (!annullato) setCamErrore(true);
+      } catch (e) {
+        if (!annullato) {
+          const err = e as { name?: string; message?: string };
+          setCamErrore(
+            err?.name === "NotAllowedError"
+              ? "Permesso alla fotocamera negato."
+              : err?.name === "NotReadableError"
+                ? "La fotocamera è occupata da un'altra app."
+                : `${err?.name ?? "Errore"}: ${err?.message ?? "non si accende"}`,
+          );
+        }
       }
     })();
 
@@ -323,7 +335,7 @@ export default function PortaPage() {
       scannerRef.current = null;
       if (inst) inst.stop().then(() => inst.clear()).catch(() => {});
     };
-  }, [autorizzato, errore, esito, modoCerca, serata, valida]);
+  }, [autorizzato, errore, esito, modoCerca, serata, valida, tentativoCam]);
 
   // Ricerca per nome
   useEffect(() => {
@@ -628,9 +640,16 @@ export default function PortaPage() {
             <div id="porta-reader" className="h-full w-full [&_video]:h-full [&_video]:object-cover" />
             {camErrore && (
               <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
-                <p className="text-sm text-white">Non riesco ad accendere la fotocamera.</p>
-                <p className="mt-2 text-[12px] leading-relaxed text-brand-gray">
-                  Dai il permesso al browser, oppure cerca le persone per nome.
+                <button
+                  onClick={() => setTentativoCam((n) => n + 1)}
+                  className="w-full max-w-xs bg-brand-red px-6 py-4 text-sm font-semibold uppercase tracking-widest text-white"
+                >
+                  Accendi la fotocamera
+                </button>
+                <p className="mt-3 text-[12px] leading-relaxed text-brand-gray">{camErrore}</p>
+                <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
+                  Dall&apos;icona sulla schermata Home a volte non parte: apri unpercento.it da
+                  Safari. Oppure cerca le persone per nome, qui sotto.
                 </p>
               </div>
             )}

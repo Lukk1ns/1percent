@@ -86,7 +86,13 @@ function ScanContent() {
   const [rollIdx, setRollIdx] = useState(0);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [scannerReady, setScannerReady] = useState(false);
-  const [camError, setCamError] = useState(false);
+  // Il messaggio vero del telefono, non un "non funziona": senza, non si
+  // capisce se manca il permesso, se la pagina non è sicura o se la
+  // fotocamera è occupata da un'altra app.
+  const [camError, setCamError] = useState<string | null>(null);
+  // Cambia a ogni "riprova": far ripartire l'accensione da un tocco è
+  // anche l'unico modo in cui certi telefoni chiedono il permesso.
+  const [tentativo, setTentativo] = useState(0);
   // Esito della registrazione presenza alla serata in corso
   const [presenza, setPresenza] = useState<Presenza | null>(null);
   const [torchSupported, setTorchSupported] = useState(false);
@@ -151,7 +157,7 @@ function ScanContent() {
 
     let cancelled = false;
     setScannerReady(false);
-    setCamError(false);
+    setCamError(null);
     setTorchOn(false);
 
     (async () => {
@@ -192,8 +198,19 @@ function ScanContent() {
           const torch = instance.getRunningTrackCameraCapabilities().torchFeature();
           if (torch.isSupported()) setTorchSupported(true);
         } catch { /* torcia non disponibile: pazienza */ }
-      } catch {
-        if (!cancelled) setCamError(true);
+      } catch (e) {
+        if (!cancelled) {
+          const err = e as { name?: string; message?: string };
+          setCamError(
+            err?.name === "NotAllowedError"
+              ? "Hai negato il permesso alla fotocamera (o il telefono non l'ha chiesto)."
+              : err?.name === "NotFoundError"
+                ? "Non trovo nessuna fotocamera su questo dispositivo."
+                : err?.name === "NotReadableError"
+                  ? "La fotocamera è occupata da un'altra app: chiudila e riprova."
+                  : `${err?.name ?? "Errore"}: ${err?.message ?? "non riesco ad accenderla"}`,
+          );
+        }
       }
     })();
 
@@ -204,7 +221,7 @@ function ScanContent() {
       if (inst) inst.stop().then(() => inst.clear()).catch(() => {});
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, tokenFromUrl]);
+  }, [phase, tokenFromUrl, tentativo]);
 
   async function toggleTorch() {
     const inst = scannerRef.current;
@@ -217,9 +234,19 @@ function ScanContent() {
   }
 
   async function handleLogout() {
+    // "Esci" toglie l'accesso a tutto il sito, non solo al pannello: va
+    // detto prima, e va lasciata la home come approdo. Rimandare
+    // all'accesso staff faceva pensare che bastasse rientrare da lì per
+    // avere i permessi, e mandava in tondo con il tasto indietro.
+    if (
+      !window.confirm(
+        "Esci dall'account?\n\nEsci da tutto il sito, non solo da qui. Per rientrare ti serve di nuovo il codice via mail.",
+      )
+    )
+      return;
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/admin/login");
+    router.replace("/");
   }
 
   const won = phase === "done" && result?.ok && result.prize;
@@ -357,9 +384,20 @@ function ScanContent() {
           />
 
           {camError ? (
-            <p className="text-brand-red text-sm mt-4 text-center max-w-xs">
-              Non riesco ad accedere alla fotocamera. Consenti l&apos;accesso alla camera nel browser e ricarica la pagina.
-            </p>
+            <div className="mt-4 flex max-w-xs flex-col items-center text-center">
+              <button
+                onClick={() => setTentativo((n) => n + 1)}
+                className="w-full bg-brand-red px-6 py-4 text-sm font-semibold uppercase tracking-widest text-white"
+              >
+                Accendi la fotocamera
+              </button>
+              <p className="mt-3 text-[12px] leading-relaxed text-brand-gray">{camError}</p>
+              <p className="mt-2 text-[11px] leading-relaxed text-brand-gray/70">
+                Se stai usando l&apos;icona sulla schermata Home e non si accende, apri
+                <strong className="text-white"> unpercento.it da Safari</strong>: la fotocamera
+                nelle app salvate sul telefono a volte non parte.
+              </p>
+            </div>
           ) : !scannerReady ? (
             <p className="text-brand-gray text-sm animate-pulse-glow mt-4">
               Accendo la fotocamera…

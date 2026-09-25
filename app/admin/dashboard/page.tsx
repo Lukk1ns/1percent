@@ -256,9 +256,19 @@ export default function AdminDashboardPage() {
   }
 
   async function handleLogout() {
+    // "Esci" toglie l'accesso a tutto il sito, non solo al pannello: va
+    // detto prima, e va lasciata la home come approdo. Rimandare
+    // all'accesso staff faceva pensare che bastasse rientrare da lì per
+    // avere i permessi, e mandava in tondo con il tasto indietro.
+    if (
+      !window.confirm(
+        "Esci dall'account?\n\nEsci da tutto il sito, non solo da qui. Per rientrare ti serve di nuovo il codice via mail.",
+      )
+    )
+      return;
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/admin/login");
+    router.replace("/");
   }
 
   async function handleToggleSignups() {

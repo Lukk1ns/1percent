@@ -1,17 +1,18 @@
 import { BarraAdmin } from "@/components/BarraAdmin";
+import { GuardiaAdmin } from "@/components/GuardiaAdmin";
 
 /**
  * Il pannello.
  *
- * Serve solo a mettere in cima la riga con "← pannello", la posta e il
- * collegamento al sito: prima da metà delle pagine non si tornava
- * indietro se non riscrivendo l'indirizzo a mano.
+ * Due cose per tutte le pagine che stanno qui sotto: il controllo dei
+ * permessi (che prima mancava su metà di loro) e la riga in cima con il
+ * ritorno, la posta e il collegamento al sito.
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <GuardiaAdmin>
       <BarraAdmin />
       {children}
-    </>
+    </GuardiaAdmin>
   );
 }

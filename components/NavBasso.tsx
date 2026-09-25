@@ -85,8 +85,8 @@ export function NavBasso() {
                 key={v.href}
                 href={v.href}
                 aria-current={attiva ? "page" : undefined}
-                className={`relative flex-1 px-1 py-3.5 text-center font-tech text-[11px] uppercase tracking-[0.12em] transition-colors ${
-                  attiva ? "text-brand-red" : "text-white/70 hover:text-white"
+                className={`relative flex-1 px-1 py-3.5 text-center font-tech text-[12px] uppercase tracking-[0.06em] transition-colors ${
+                  attiva ? "text-brand-red" : "text-white hover:text-white"
                 }`}
               >
                 {/* Tacca accesa sopra la voce corrente, come un LED della parete */}
