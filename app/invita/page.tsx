@@ -70,7 +70,7 @@ export default function InvitaPage() {
 Sono le serate che organizziamo in zona Pordenone. Iscriviti da qui, ci vogliono 30 secondi e non serve il nome vero:
 ${link}
 
-Quando vieni, passa dallo stand UNPERCENTO dentro il locale e fai scansionare il tuo QR: parte l'estrazione e ritiri sul momento quello che vinci — drink, shot e altro. Si gioca a ogni serata.`;
+Quando vieni, passa dallo stand UNPERCENTO dentro il locale e fai scansionare il tuo ticket estrazione premi: ritiri sul momento quello che vinci — drink, shot, magliette e anche la foto con l'ospite. Si gioca a ogni serata.`;
 
   async function copia(testo: string) {
     await navigator.clipboard.writeText(testo);
@@ -149,7 +149,7 @@ Quando vieni, passa dallo stand UNPERCENTO dentro il locale e fai scansionare il
             {
               n: "03",
               t: "Passa dallo stand UNPERCENTO",
-              d: "Fai scansionare il QR dal telefono: parte l'estrazione e ritiri sul momento — drink, shot, magliette. Si gioca a ogni serata, anche tu.",
+              d: "Fai scansionare il ticket estrazione premi dal telefono: ritiri sul momento — drink, shot, magliette, foto con l'ospite. Si gioca a ogni serata, anche tu.",
             },
           ].map((r) => (
             <li key={r.n} className="flex gap-3">

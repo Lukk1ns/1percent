@@ -170,7 +170,7 @@ export default function AdminRegaliPage() {
             onClick={() => router.push("/admin/scan")}
             className="text-xs uppercase tracking-widest text-brand-red border border-brand-red px-3 py-2 hover:bg-brand-red hover:text-white transition-all"
           >
-            Scanner QR
+            Estrazione premi
           </button>
           <button
             onClick={() => router.push("/admin/dashboard")}

@@ -20,7 +20,7 @@ import { createClient } from "@/lib/supabase/client";
 const VOCI = [
   { href: "/", label: "Home" },
   { href: "/card", label: "Card" },
-  { href: "/pass", label: "QR" },
+  { href: "/pass", label: "Ticket" },
   { href: "/membri", label: "Muro" },
   { href: "/profilo", label: "Profilo" },
   { href: "/invita", label: "Invita" },

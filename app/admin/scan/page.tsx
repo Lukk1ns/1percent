@@ -257,7 +257,7 @@ function ScanContent() {
       {won && !result?.already && <Confetti />}
 
       <div className="w-full max-w-xs flex items-center justify-between mb-8">
-        <h1 className="font-display text-brand-red text-3xl">Area Benvenuto</h1>
+        <h1 className="font-display text-brand-red text-3xl">Estrazione premi</h1>
         <button
           onClick={handleLogout}
           className="text-xs text-brand-gray uppercase tracking-widest border border-white/10 px-3 py-1"

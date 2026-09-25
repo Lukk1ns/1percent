@@ -361,8 +361,8 @@ export default function AdminDashboardPage() {
             {
               href: "/admin/scan",
               emoji: "📷",
-              titolo: "Stand regali",
-              cosa: "Leggi il pass dei membri: regalo a sorpresa e presenza",
+              titolo: "Ticket estrazione premi",
+              cosa: "Allo stand: scansiona il ticket dei membri, il premio esce subito",
               acceso: false,
             },
             {
@@ -426,7 +426,7 @@ export default function AdminDashboardPage() {
           {[
             ["/admin/pr", "Prevendite e PR"],
             ["/admin/porta", "Porta"],
-            ["/admin/scan", "Scanner regali"],
+            ["/admin/scan", "Estrazione premi"],
             ["/admin/eventi", "Eventi"],
             ["/admin/foto", "Foto"],
             ["/admin/crew", "Candidature"],

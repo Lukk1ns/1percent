@@ -117,7 +117,7 @@ export default function RegaloPage() {
             <p className="text-white font-semibold mb-2">Non l&apos;hai ancora ritirato</p>
             <p className="text-brand-gray text-sm">
               Passa dallo <span className="text-white">stand UNPERCENTO</span>, dentro il
-              locale, e fai scansionare il tuo QR: l&apos;estrazione parte lì e il regalo
+              locale, e fai scansionare il tuo ticket: l&apos;estrazione parte lì e il regalo
               lo ritiri sul momento. Una giocata a serata.
             </p>
             <p className="text-brand-gray/50 text-[11px] mt-4 animate-pulse-glow">
@@ -127,7 +127,7 @@ export default function RegaloPage() {
               onClick={() => router.push("/pass")}
               className="btn btn-primary mt-6 px-8"
             >
-              Mostra il mio QR →
+              Mostra il mio ticket →
             </button>
           </div>
 

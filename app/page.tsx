@@ -339,7 +339,7 @@ export default function Home() {
                 <span className="text-brand-red">Porta chi merita.</span>
               </p>
               <div className="mt-6 grid gap-2 sm:grid-cols-2">
-                <Link href="/pass" className="btn btn-primary">Il tuo QR code</Link>
+                <Link href="/pass" className="btn btn-primary">Ticket estrazione premi</Link>
                 <Link href="/invita" className="btn btn-outline">Invita qualcuno</Link>
                 {io?.crew && prevenditeAperte && (
                   <Link href="/pr" className="btn btn-primary">Le tue prevendite</Link>
@@ -356,7 +356,7 @@ export default function Home() {
                   <div className="mt-3 grid gap-2 sm:grid-cols-3">
                     <Link href="/admin/pr" className="btn btn-outline">Prevendite e PR</Link>
                     <Link href="/admin/porta" className="btn btn-outline">Porta</Link>
-                    <Link href="/admin/scan" className="btn btn-outline">🎁 Scanner</Link>
+                    <Link href="/admin/scan" className="btn btn-outline">🎁 Estrazione premi</Link>
                     <Link href="/admin/eventi" className="btn btn-ghost">Eventi</Link>
                     <Link href="/admin/foto" className="btn btn-ghost">Foto</Link>
                     <Link href="/admin/crew" className="btn btn-ghost">Candidature</Link>
@@ -376,12 +376,12 @@ export default function Home() {
               </p>
               <p className="mt-3 max-w-[46ch] text-sm leading-relaxed text-brand-gray">
                 Questo account non ha una card da membro: serve a gestire. Per avere
-                anche il tuo QR dello stand, iscriviti con un&apos;altra email.
+                anche il tuo ticket estrazione premi, iscriviti con un&apos;altra email.
               </p>
               <div className="mt-6 grid gap-2 sm:grid-cols-3">
                 <Link href="/admin/pr" className="btn btn-primary">Prevendite e PR</Link>
                 <Link href="/admin/porta" className="btn btn-outline">Porta</Link>
-                <Link href="/admin/scan" className="btn btn-outline">🎁 Scanner</Link>
+                <Link href="/admin/scan" className="btn btn-outline">🎁 Estrazione premi</Link>
                 <Link href="/admin/eventi" className="btn btn-outline">Eventi</Link>
                 <Link href="/admin/foto" className="btn btn-ghost">Foto</Link>
                 <Link href="/admin/crew" className="btn btn-ghost">Candidature</Link>
@@ -434,9 +434,9 @@ export default function Home() {
             Stand <span className="text-brand-red">UNPERCENTO</span>
           </p>
           <p className="mt-3 max-w-[46ch] text-sm leading-relaxed text-brand-gray">
-            A ogni serata siamo dentro il locale con il nostro banchetto. Fai scansionare
-            il QR del tuo profilo: parte l&apos;estrazione e ritiri sul momento quello che
-            vinci — drink, shot, magliette e altro.
+            Se vieni alla serata hai un ticket per l&apos;estrazione premi: lo trovi nel tuo
+            profilo. Fallo scansionare al nostro stand dentro il locale e ritiri sul momento
+            quello che vinci — drink, shot, magliette e anche la foto con l&apos;ospite.
           </p>
           <p className="mt-2 max-w-[46ch] text-sm leading-relaxed text-brand-gray/60">
             {STAND_NON_INGRESSO}

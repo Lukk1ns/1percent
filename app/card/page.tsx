@@ -275,7 +275,7 @@ export default function CardPage() {
           onClick={() => router.push("/pass")}
           className="btn btn-primary w-full"
         >
-          QR code estrazione →
+          Ticket estrazione premi →
         </button>
         {profile.role === "crew" && (
           <button

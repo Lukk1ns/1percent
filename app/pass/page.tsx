@@ -132,7 +132,7 @@ export default function PassPage() {
       {justWon && won && <Confetti />}
 
       <p className="text-xs uppercase tracking-[0.3em] text-brand-gray mb-2">
-        {drawn ? "il tuo regalo" : "il tuo QR code per lo stand"}
+        {drawn ? "il tuo regalo" : "ticket estrazione premi"}
       </p>
       <h1 className="font-display text-brand-red text-5xl mb-2">1%</h1>
 

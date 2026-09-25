@@ -28,9 +28,9 @@ export const BRAND_CLAIM = "Pordenone eventi";
 export const STAND_NAME = "stand UNPERCENTO";
 export const STAND_DOVE = "dentro il locale";
 export const STAND_FRASE =
-  "Allo stand UNPERCENTO, dentro il locale, fai scansionare il tuo QR: l'estrazione parte lì e il regalo lo ritiri sul momento.";
+  "È il tuo ticket per l'estrazione premi: vieni alla serata, fallo scansionare allo stand UNPERCENTO e scopri subito cosa hai vinto. Drink, shot, magliette e anche la foto con l'ospite: il premio lo ritiri sul momento.";
 export const STAND_NON_INGRESSO =
-  "Non c'entra con l'ingresso: in discoteca entri come sempre. Lo stand è nostro, e si gioca a ogni serata.";
+  "Non è il biglietto d'ingresso: in discoteca entri come sempre. Il ticket vale una giocata a ogni serata.";
 
 /** La zona in cui operiamo, per firme e footer. */
 export const BRAND_AREA = "Pordenone e dintorni";
