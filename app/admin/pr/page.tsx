@@ -157,12 +157,23 @@ function SlotGrafica({
   versione: number | null;
   pos: number;
   onSposta: (v: number) => void;
-  onSalvaPos: (v: number) => void;
+  /** Torna il messaggio del database se non è andata, `null` se è salvata. */
+  onSalvaPos: (v: number) => Promise<string | null>;
   onFatto: () => void | Promise<void>;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [lavorando, setLavorando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
+  // Il cursore salva da solo quando lo lasci: senza questo non si vede
+  // che è successo qualcosa, e si resta col dubbio di aver perso tutto.
+  const [posStato, setPosStato] = useState<"fermo" | "salvo" | "ok" | "no">("fermo");
+
+  async function salvaPos(v: number) {
+    setPosStato("salvo");
+    const male = await onSalvaPos(v);
+    setPosStato(male ? "no" : "ok");
+    if (!male) setTimeout(() => setPosStato("fermo"), 2500);
+  }
 
   async function carica(f: File) {
     setLavorando(true);
@@ -257,6 +268,9 @@ function SlotGrafica({
             </p>
             <p className="font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
               QR al {pos}% dall&apos;alto
+              {posStato === "salvo" && <span className="ml-2 text-white">salvo…</span>}
+              {posStato === "ok" && <span className="ml-2 text-emerald-400">salvato ✓</span>}
+              {posStato === "no" && <span className="ml-2 text-brand-red">non salvato</span>}
             </p>
           </div>
 
@@ -297,13 +311,16 @@ function SlotGrafica({
               step={1}
               value={pos}
               onChange={(e) => onSposta(Number(e.target.value))}
-              onMouseUp={() => onSalvaPos(pos)}
-              onTouchEnd={() => onSalvaPos(pos)}
+              onPointerUp={() => salvaPos(pos)}
+              onTouchEnd={() => salvaPos(pos)}
+              onKeyUp={() => salvaPos(pos)}
               className="w-full accent-[#e0181f]"
             />
             <p className="mt-1.5 text-[11px] leading-relaxed text-brand-gray/70">
               Trascina per appoggiare il quadrato dove la locandina ha spazio — per esempio
               sotto il titolo. Tutto a destra torna in fondo, con la sfumatura nera.
+              <strong className="text-white"> Non c&apos;è niente da confermare</strong>: si
+              salva da solo quando lasci il cursore, e qui sopra ti dice &quot;salvato&quot;.
             </p>
           </div>
         </div>
@@ -1652,7 +1669,11 @@ export default function AdminPrPage() {
               onSposta={setQrPos}
               onSalvaPos={async (v) => {
                 const supabase = createClient();
-                await supabase.rpc("admin_set_event_qr", { p_id: evento, p_pos: v });
+                const { error } = await supabase.rpc("admin_set_event_qr", {
+                  p_id: evento,
+                  p_pos: v,
+                });
+                return error ? error.message : null;
               }}
               onFatto={() => caricaEvento(evento)}
             />
