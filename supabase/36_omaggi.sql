@@ -97,10 +97,10 @@ grant execute on function public.admin_omaggio(uuid, text, text, int, text, bool
 -- Controllo: quanti omaggi ci sono già in giro, serata per serata.
 -- (Appena incollato esce zero, o niente righe.)
 -- ============================================================
-select e.nome as "serata",
+select e.name as "serata",
        count(*) filter (where ps.prezzo = 0 and ps.stato <> 'annullata') as "omaggi",
        count(*) filter (where ps.prezzo > 0 and ps.stato <> 'annullata') as "a pagamento"
 from public.events e
 left join public.presales ps on ps.event_id = e.id
-group by e.nome, e.starts_at
+group by e.name, e.starts_at
 order by e.starts_at desc;
