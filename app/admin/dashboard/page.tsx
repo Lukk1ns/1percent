@@ -361,8 +361,8 @@ export default function AdminDashboardPage() {
             {
               href: "/admin/scan",
               emoji: "📷",
-              titolo: "Scanner QR",
-              cosa: "Valida gli ingressi alla serata",
+              titolo: "Stand regali",
+              cosa: "Leggi il pass dei membri: regalo a sorpresa e presenza",
               acceso: false,
             },
             {
@@ -390,7 +390,7 @@ export default function AdminDashboardPage() {
               href: "/admin/porta",
               emoji: "🚪",
               titolo: "Porta",
-              cosa: "Valida i biglietti all'ingresso",
+              cosa: "Leggi i biglietti delle prevendite: ognuno entra una volta",
               acceso: false,
             },
           ].map((p) => (
