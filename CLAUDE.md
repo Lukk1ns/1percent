@@ -4,6 +4,22 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**UN MANAGER NON RITIRA DA SE STESSO (25 set, `supabase/34_manager_non_da_se.sql`).** Trovato da
+Luka provandolo con Leonardo: *"ha venduto una prevendita, ha segnato di aver ritirato quei soldi, e
+adesso a me non risultano nemmeno da ritirare"*. Vero: `am_incassa` non vietava niente, quindi un
+manager poteva segnare come riscossi **i propri** incassi — il suo debito da PR spariva dalla lista
+di Luka e restava solo nel registro dei manager, dove lui non guardava. **I soldi sembravano
+sistemati ed erano ancora in tasca a qualcuno.** Ora `am_incassa` rifiuta `p_pr = auth.uid()` e
+rifiuta anche gli altri account manager (i loro incassi li porta ognuno di persona); `am_pr_lista`
+dice `manager` e `sono_io`, così nella pagina il tasto non compare nemmeno e al suo posto c'è scritto
+perché. **Le prevendite restano libere**: quelle un manager può consegnarle a chiunque, anche a sé.
+**E il conto di Luka adesso li vede:** `admin_da_ricevere(event)` somma *quello che i PR non hanno
+portato* + *quello che i manager hanno raccolto e non consegnato*, e il pannello lo mostra in rosso
+sotto i conti della serata con il tasto "chi ce li ha". **Lo storico va corretto a mano**: lo script
+conta in fondo gli auto-incassi già fatti (deve dire 0) e si rimediano con due storni — scheda Soldi
+per l'incasso, scheda Manager per il movimento — perché i registri non si cancellano.
+**PENDING Luka: incollare `34_manager_non_da_se.sql`.**
+
 **LA POSTA, LA BARRA DEL PANNELLO, IL BENVENUTO E LA GUIDA PR (25 set, `supabase/33_posta_admin.sql`,
 `/admin/posta`, `components/BarraAdmin.tsx`, `public/moduli/guida-pr.pdf`).**
 - **La posta** (`/admin/posta`) raccoglie quello che aspetta una risposta. Nasce da una richiesta di

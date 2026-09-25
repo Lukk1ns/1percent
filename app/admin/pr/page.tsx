@@ -417,6 +417,14 @@ export default function AdminPrPage() {
   // Gli account manager: chi sono e quanti soldi hanno addosso adesso.
   const [managers, setManagers] = useState<RigaManager[]>([]);
   const [movAm, setMovAm] = useState<MovimentoAm[]>([]);
+  // Quello che manca all'appello: i PR che non hanno portato i soldi
+  // **più** quelli che i manager hanno raccolto e non consegnato. Il
+  // secondo pezzo prima non si vedeva da nessuna parte.
+  const [daRicevere, setDaRicevere] = useState<{
+    dai_pr: number;
+    dai_manager: number;
+    totale: number;
+  } | null>(null);
   const [ricevo, setRicevo] = useState<Record<string, string>>({});
   const [registro, setRegistro] = useState<Movimento[]>([]);
   const [conti, setConti] = useState<Conto[]>([]);
@@ -476,6 +484,9 @@ export default function AdminPrPage() {
     supabase
       .rpc("admin_am_registro", { p_event: id })
       .then(({ data }) => setMovAm((data as MovimentoAm[]) ?? []));
+    supabase
+      .rpc("admin_da_ricevere", { p_event: id })
+      .then(({ data }) => setDaRicevere(data?.[0] ?? null));
 
     setPr(prRes.data ?? []);
     setFasce(fRes.data ?? []);
@@ -1356,6 +1367,30 @@ export default function AdminPrPage() {
                 colore={cruscotto.da_incassare > 0 ? "text-brand-red" : "text-emerald-400"}
               />
             </div>
+
+            {/* I soldi che stanno ancora in mano a qualcuno. Quelli dei
+                manager sparivano dal conto: il PR risultava saldato e
+                l'incasso restava nella tasca di chi l'aveva ritirato. */}
+            {daRicevere && Number(daRicevere.totale) > 0 && (
+              <div className="mt-3 border border-brand-red/40 bg-brand-red/5 px-4 py-3">
+                <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-red">
+                  da ricevere in tutto · {euro(daRicevere.totale)}
+                </p>
+                <p className="mt-2 text-[12px] leading-relaxed text-white/80">
+                  <strong>{euro(daRicevere.dai_pr)}</strong> li devono ancora portare i PR ·{" "}
+                  <strong>{euro(daRicevere.dai_manager)}</strong> ce li hanno in mano i manager,
+                  che li hanno già ritirati per te.
+                </p>
+                {Number(daRicevere.dai_manager) > 0 && (
+                  <button
+                    onClick={() => setScheda("manager")}
+                    className="mt-3 border border-white/20 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.15em] text-white transition-colors hover:border-brand-red"
+                  >
+                    chi ce li ha →
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Come si dividono: su Evently era Donne / Uomini */}
             {perFascia.length > 0 && (

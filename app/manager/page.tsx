@@ -37,6 +37,10 @@ type Riga = {
   dovuto: number;
   raccolto: number;
   da_ritirare: number;
+  /** È un altro account manager: i suoi soldi li porta lui. */
+  manager?: boolean;
+  /** Sei tu: i tuoi incassi li porti tu alla direzione. */
+  sono_io?: boolean;
 };
 
 type Saldo = {
@@ -226,7 +230,9 @@ export default function ManagerPage() {
   }
 
   const ev = serate.find((s) => s.event_id === serata);
-  const daRitirare = righe.reduce((t, r) => t + Math.max(Number(r.da_ritirare), 0), 0);
+  const daRitirare = righe
+    .filter((r) => !r.sono_io && !r.manager)
+    .reduce((t, r) => t + Math.max(Number(r.da_ritirare), 0), 0);
   const q = cerca.trim().toLowerCase();
   const visibili = righe.filter((r) => {
     if (q) {
@@ -374,7 +380,11 @@ export default function ManagerPage() {
                           {euro(scoperto > 0 ? scoperto : 0)}
                         </p>
                         <p className="font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-                          {scoperto > 0 ? "da ritirare" : "a posto"}
+                          {r.sono_io || r.manager
+                            ? "porta lui"
+                            : scoperto > 0
+                              ? "da ritirare"
+                              : "a posto"}
                         </p>
                       </div>
                     </div>
@@ -390,7 +400,7 @@ export default function ManagerPage() {
                           }}
                           className="border border-white/20 px-3 py-2 font-tech text-[9px] uppercase tracking-[0.15em] text-white transition-colors hover:border-brand-red"
                         >
-                          ritira / consegna
+                          {r.sono_io || r.manager ? "consegna prevendite" : "ritira / consegna"}
                         </button>
                         {r.telefono && (
                           <a
@@ -403,10 +413,18 @@ export default function ManagerPage() {
                       </div>
                     ) : (
                       <div className="mt-4 border-t border-white/10 pt-4">
-                        {/* Ritiro */}
+                        {/* Ritiro — non da se stessi, non da un altro manager:
+                            quei soldi li porta ognuno di persona a Luka. */}
                         <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
                           ho ritirato i soldi
                         </p>
+                        {r.sono_io || r.manager ? (
+                          <p className="mt-2 text-[11px] leading-relaxed text-brand-gray">
+                            {r.sono_io
+                              ? "I tuoi incassi li porti tu alla direzione: da qui si ritira solo dagli altri PR."
+                              : "È un account manager come te: i suoi incassi li porta lui alla direzione."}
+                          </p>
+                        ) : (
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <button
                             onClick={() => ritira(r, true)}
@@ -433,6 +451,7 @@ export default function ManagerPage() {
                             segna
                           </button>
                         </div>
+                        )}
 
                         {/* Prevendite */}
                         <p className="mt-5 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
