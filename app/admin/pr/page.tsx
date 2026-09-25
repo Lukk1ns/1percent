@@ -1082,7 +1082,28 @@ export default function AdminPrPage() {
     );
     if (motivo === null) return;
     const supabase = createClient();
-    await supabase.rpc("admin_presale_annulla", { p_id: b.id, p_motivo: motivo });
+    // Annullare adesso rende anche i soldi, se erano già arrivati: la
+    // funzione dice quanto ha stornato, e se quei contanti sono ancora
+    // in mano a un manager lo scrive, perché quello lo decide una persona.
+    const { data: esito, error: errAnn } = await supabase.rpc("admin_presale_annulla", {
+      p_id: b.id,
+      p_motivo: motivo,
+    });
+    if (errAnn) {
+      window.alert(errAnn.message);
+      return;
+    }
+    const r = esito?.[0];
+    if (r && Number(r.rimborso) > 0) {
+      window.alert(
+        `Biglietto annullato e ${euro(Number(r.rimborso))} rimessi a posto: ` +
+          `${b.pr_alias ?? "il PR"} non li deve più.` +
+          (r.manager_da_sistemare
+            ? `\n\n⚠️ Quei contanti risultano in mano a ${r.manager_da_sistemare}. ` +
+              "Se li ha restituiti al cliente, storna anche il suo movimento dalla scheda Manager."
+            : ""),
+      );
+    }
     await caricaEvento(evento);
     await carica();
   }
