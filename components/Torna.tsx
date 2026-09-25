@@ -38,7 +38,10 @@ export function Torna() {
   const router = useRouter();
 
   if (!pathname || pathname === "/") return null;
+  // Queste due stanno nel pannello ma senza la barra: il ritorno serve.
+  const senzaBarra = pathname === "/admin/login" || pathname === "/admin/scan";
   if (
+    !senzaBarra &&
     HANNO_GIA_IL_LORO.some((p) =>
       p.endsWith("/") ? pathname.startsWith(p) : pathname === p || pathname.startsWith(p + "/"),
     )
