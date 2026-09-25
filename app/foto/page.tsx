@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { NavBasso } from "@/components/NavBasso";
 
 type Album = {
   id: string;
@@ -130,6 +131,8 @@ export default function FotoPage() {
           </div>
         )}
       </div>
+    
+      <NavBasso />
     </main>
   );
 }

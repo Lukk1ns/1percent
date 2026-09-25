@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>1% · Guida PR</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #0A0A0A; color: #ffffff;
+    font-family: Helvetica, Arial, sans-serif; font-size: 10pt; line-height: 1.42;
+  }
+  .foglio { padding: 16mm 15mm; min-height: 297mm; }
+
+  .marchio { color: #E0181F; font-size: 44pt; font-weight: bold; line-height: 0.9; letter-spacing: -2pt; }
+  .payoff { color: #8a8a8a; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 3pt; margin-top: 2mm; }
+  h1 { font-size: 18pt; margin: 6mm 0 2mm; line-height: 1.15; text-transform: uppercase; letter-spacing: -0.3pt; }
+  .occhiello { color: #A3A3A3; font-size: 9.5pt; margin: 0 0 6mm; }
+
+  .passo { border-left: 2pt solid #E0181F; padding: 0 0 0 5mm; margin: 0 0 5mm; }
+  .numero { color: #E0181F; font-size: 8pt; font-weight: bold; text-transform: uppercase; letter-spacing: 2pt; }
+  .titolo { font-size: 12.5pt; font-weight: bold; margin: 1.5mm 0 1.5mm; }
+  .testo { color: #c9c9c9; margin: 0; }
+  .testo b { color: #ffffff; }
+
+  .riquadro { border: 1pt solid #2a2a2a; background: #131313; padding: 4mm 5mm; margin: 0 0 5mm; }
+  .riquadro .titolo { color: #E0181F; font-size: 9pt; text-transform: uppercase; letter-spacing: 1.5pt; margin-bottom: 2mm; }
+
+  .indirizzo {
+    display: inline-block; border: 1pt solid #E0181F; color: #ffffff;
+    padding: 2.5mm 5mm; font-size: 12pt; font-weight: bold; letter-spacing: 0.5pt; margin: 1mm 0 3mm;
+  }
+  .piede { color: #6b6b6b; font-size: 8pt; border-top: 1pt solid #222; padding-top: 3mm; margin-top: 4mm; }
+  .due { display: flex; gap: 6mm; }
+  .due > div { flex: 1; border: 1pt solid #2a2a2a; padding: 4mm 5mm; }
+  .due .titolo { font-size: 9.5pt; }
+  .tag { color: #E0181F; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="foglio">
+
+  <div class="marchio" style="font-size:38pt">1%</div>
+  <div class="payoff">not for everyone</div>
+
+  <h1>Mettiti il portale<br>sul telefono</h1>
+  <p class="occhiello">
+    Due minuti, una volta sola. Poi hai l'icona sulla schermata come un'app: le tue prevendite,
+    i nominativi e il QR d'ingresso sempre lì, senza cercare il link su WhatsApp.
+  </p>
+
+  <div class="passo">
+    <div class="numero">passo 1 · apri</div>
+    <div class="titolo">Vai su unpercento.it</div>
+    <p class="testo">
+      Dal <b>browser del telefono</b>: Safari se hai l'iPhone, Chrome se hai Android.
+    </p>
+    <div class="indirizzo">unpercento.it</div>
+  </div>
+
+  <div class="passo">
+    <div class="numero">passo 2 · entra</div>
+    <div class="titolo">Rientra con la tua mail</div>
+    <p class="testo">
+      Tocca <b>Rientra</b>, scrivi la mail con cui ti sei iscritto e chiedi il codice.
+      Ti arriva una mail con un <b>codice</b> e un link: scrivi il <b>codice</b> nella pagina.
+      Niente password, non devi ricordarti niente.
+    </p>
+  </div>
+
+  <div class="passo">
+    <div class="numero">passo 3 · installa</div>
+    <div class="titolo">Aggiungi alla schermata Home</div>
+    <div class="due">
+      <div>
+        <div class="titolo"><span class="tag">iPhone</span> · Safari</div>
+        <p class="testo">
+          Tocca il tasto <b>Condividi</b> in basso (il quadrato con la freccia in su),
+          scorri e scegli <b>Aggiungi alla schermata Home</b>, poi <b>Aggiungi</b>.
+        </p>
+      </div>
+      <div>
+        <div class="titolo"><span class="tag">Android</span> · Chrome</div>
+        <p class="testo">
+          Tocca i <b>tre puntini</b> in alto a destra e scegli
+          <b>Aggiungi a schermata Home</b> (o <b>Installa app</b>), poi conferma.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="riquadro">
+    <div class="titolo">l'unica cosa da ricordare</div>
+    <p class="testo">
+      Da quando apri il sito dall'icona, <b>entra sempre col codice</b>, mai dal link della mail.
+      L'icona è una finestra a parte: il link apre il browser, e lì dentro resteresti scollegato.
+      Se ti capita, non cancellare l'app — riapri l'icona, tocca Rientra e usa le cifre.
+    </p>
+  </div>
+
+  <div class="riquadro">
+    <div class="titolo">cosa trovi dentro</div>
+    <p class="testo">
+      <b>Le tue prevendite</b> — quante ne hai in mano, quante ne hai fatte, quanto devi portare.<br>
+      <b>Vendi prevendita</b> — nome, cognome, anno, telefono: il biglietto parte su WhatsApp da solo,
+      con il QR e, se il cliente è minorenne, anche il modulo da far firmare.<br>
+      <b>Il tuo ingresso</b> — il QR che si accende quando arrivi al numero di prevendite richiesto.
+    </p>
+  </div>
+
+  <p class="piede">
+    Il biglietto vale una volta sola e in porta serve il documento vero, non la foto sul telefono.
+    Se qualcosa non torna, scrivi a Luka invece di rifare l'account: i tuoi nominativi restano attaccati al tuo profilo.
+  </p>
+
+</div>
+</body>
+</html>

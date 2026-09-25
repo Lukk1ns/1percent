@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Locandina from "@/components/Locandina";
+import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
+import { dataLunga, ora, type Evento } from "@/lib/eventi";
 
 type MemberData = {
   member_number: number;
@@ -18,6 +22,11 @@ export default function BenvenutoPage() {
   const [phase, setPhase] = useState<"reveal" | "done">("reveal");
   // Chi si è iscritto per vedere le foto ci torna direttamente
   const [dove, setDove] = useState("/");
+  // "Un utente nuovo che si iscrive per vedere le foto dell'ultimo
+  // evento deve sbattere sul prossimo evento" (Luka, 25 set): è il
+  // momento in cui sta guardando lo schermo, e l'unico in cui gli
+  // stiamo parlando. Le foto restano lì sotto, un tocco più in là.
+  const [evento, setEvento] = useState<Evento | null>(null);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("member_data");
@@ -29,6 +38,12 @@ export default function BenvenutoPage() {
       setDove(next);
       sessionStorage.removeItem("reg_next");
     }
+
+    createClient()
+      .rpc("next_event")
+      .then(({ data, error }) => {
+        if (!error && data) setEvento(data as Evento);
+      });
 
     const t = setTimeout(() => setPhase("done"), 2200);
     return () => clearTimeout(t);
@@ -78,9 +93,59 @@ export default function BenvenutoPage() {
             </div>
           )}
 
+          {/* Il prossimo evento, prima di tutto il resto */}
+          {evento && !evento.passato && (
+            <div className="mt-2 w-full max-w-[17rem] border border-brand-red/40 bg-brand-red/5 px-4 py-4">
+              <p className="font-tech text-[10px] uppercase tracking-[0.3em] text-brand-red">
+                la prossima
+              </p>
+
+              {evento.svelato ? (
+                <>
+                  {evento.cover_key && (
+                    <Locandina
+                      coverKey={evento.cover_key}
+                      coverV={evento.cover_v}
+                      nome={evento.nome}
+                      className="mt-3"
+                    />
+                  )}
+                  <p className="mt-3 font-display text-lg uppercase leading-tight text-white">
+                    {evento.nome}
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-brand-gray">
+                    {dataLunga(evento.starts_at)} · {ora(evento.starts_at)}
+                    {evento.locale ? ` · ${evento.locale}` : ""}
+                  </p>
+                  <Link
+                    href={`/eventi/${evento.slug}`}
+                    className="btn btn-primary cta-pulse mt-4 w-full"
+                  >
+                    Guarda la serata →
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="mt-2 font-display text-3xl uppercase leading-none text-white">
+                    ?????
+                  </p>
+                  <p className="mt-2 text-[11px] leading-relaxed text-brand-gray">
+                    {dataLunga(evento.starts_at)}. Il nome lo sveliamo dopo: da dentro lo
+                    saprai per primo.
+                  </p>
+                  <Link href="/eventi" className="btn btn-primary mt-4 w-full">
+                    Le nostre serate →
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
+
           <button
             onClick={() => router.push(dove)}
-            className="btn btn-primary cta-pulse mt-4 px-10"
+            className={`mt-1 px-10 ${
+              evento && !evento.passato ? "btn btn-outline" : "btn btn-primary cta-pulse mt-4"
+            }`}
           >
             {dove.startsWith("/foto") ? "Guarda le foto →" : "Vai al sito →"}
           </button>

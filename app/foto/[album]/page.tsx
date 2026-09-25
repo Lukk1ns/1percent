@@ -4,6 +4,7 @@ import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { TornaA } from "@/components/Torna";
 import { createClient } from "@/lib/supabase/client";
+import { NavBasso } from "@/components/NavBasso";
 
 type Foto = {
   id: string;
@@ -378,6 +379,8 @@ export default function AlbumPage({ params }: { params: Promise<{ album: string 
           </div>
         </div>
       )}
+    
+      <NavBasso />
     </main>
   );
 }

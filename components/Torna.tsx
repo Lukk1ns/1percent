@@ -21,6 +21,7 @@ const HANNO_GIA_IL_LORO = [
   "/admin/eventi",
   "/admin/foto",
   "/admin/porta",
+  "/admin/posta",
   "/admin/pr",
   "/admin/regali",
   "/benvenuto",

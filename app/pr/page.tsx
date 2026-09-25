@@ -169,6 +169,25 @@ export default function PrPage() {
           </Link>
         )}
 
+        {/* La guida in PDF: due minuti, e il portale diventa un'icona
+            sul telefono. Girata anche su WhatsApp ai nuovi PR. */}
+        <a
+          href="/moduli/guida-pr.pdf"
+          target="_blank"
+          rel="noreferrer"
+          className="mb-6 flex items-center justify-between gap-3 border border-white/15 px-4 py-3 transition-colors hover:border-white/40"
+        >
+          <span className="text-[12px] leading-snug text-white">
+            📱 Mettiti il portale sul telefono
+            <span className="block text-[11px] text-brand-gray">
+              come entrare e farne un&apos;app · PDF
+            </span>
+          </span>
+          <span className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+            apri
+          </span>
+        </a>
+
         <p className="font-tech text-[10px] uppercase tracking-[0.35em] text-brand-gray">
           le tue prevendite
         </p>

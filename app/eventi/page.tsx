@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { dataLunga, ora, type Evento } from "@/lib/eventi";
+import { NavBasso } from "@/components/NavBasso";
 
 /**
  * Il calendario di tutto quello che organizziamo.
@@ -75,6 +76,8 @@ export default function EventiPage() {
           )}
         </>
       )}
+    
+      <NavBasso />
     </main>
   );
 }

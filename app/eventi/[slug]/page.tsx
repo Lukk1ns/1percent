@@ -7,6 +7,7 @@ import { Countdown } from "@/components/Countdown";
 import Locandina from "@/components/Locandina";
 import { createClient } from "@/lib/supabase/client";
 import { dataLunga, ora, type EventoSvelato } from "@/lib/eventi";
+import { NavBasso } from "@/components/NavBasso";
 
 /**
  * La scheda di un singolo evento.
@@ -127,6 +128,8 @@ export default function EventoPage({ params }: { params: Promise<{ slug: string 
           Già dell&apos;1%? Rientra →
         </Link>
       </div>
+    
+      <NavBasso />
     </main>
   );
 }

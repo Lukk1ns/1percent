@@ -26,25 +26,46 @@ const VOCI = [
   { href: "/invita", label: "Invita" },
 ];
 
+/**
+ * Chi non è iscritto non ha una card, né un QR, né un profilo: mandarlo
+ * su quelle pagine vuol dire sbatterlo contro una porta chiusa. A lui la
+ * barra mostra dove può andare davvero — e come entrare.
+ */
+const VOCI_FUORI = [
+  { href: "/", label: "Home" },
+  { href: "/eventi", label: "Serate" },
+  { href: "/foto", label: "Foto" },
+  { href: "/unisciti", label: "Entra" },
+];
+
 export function NavBasso() {
   const pathname = usePathname();
   // I PR hanno una voce in più. Non è un vezzo: fino a ieri all'area
   // prevendite non portava nessun link, e chi ci lavora doveva
   // scriversi /pr a mano — infatti nessuno la trovava.
   const [sonoPr, setSonoPr] = useState(false);
+  // null = non lo so ancora: meglio non far lampeggiare voci sbagliate.
+  const [dentro, setDentro] = useState<boolean | null>(null);
 
   useEffect(() => {
-    createClient()
-      .rpc("prevendite_stato")
-      .then(({ data }) => {
-        const s = data?.[0];
-        setSonoPr(Boolean(s?.sono_pr) && Boolean(s?.aperta || s?.sono_admin));
-      });
+    const supabase = createClient();
+    supabase.rpc("prevendite_stato").then(({ data }) => {
+      const s = data?.[0];
+      setSonoPr(Boolean(s?.sono_pr) && Boolean(s?.aperta || s?.sono_admin));
+      // Un PR è dentro per definizione, anche se il profilo tardasse.
+      if (s?.sono_pr || s?.sono_admin) setDentro(true);
+    });
+    supabase.rpc("my_profile").then(({ data }) => {
+      const c = Array.isArray(data) ? data.length > 0 : Boolean(data);
+      setDentro((prima) => prima || c);
+    });
   }, []);
 
-  const voci = sonoPr
-    ? [...VOCI.slice(0, 1), { href: "/pr", label: "PR" }, ...VOCI.slice(1)]
-    : VOCI;
+  const voci = !dentro
+    ? VOCI_FUORI
+    : sonoPr
+      ? [...VOCI.slice(0, 1), { href: "/pr", label: "PR" }, ...VOCI.slice(1)]
+      : VOCI;
 
   return (
     <>

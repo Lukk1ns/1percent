@@ -370,6 +370,13 @@ export default function AdminDashboardPage() {
               acceso: false,
             },
             {
+              href: "/admin/posta",
+              emoji: "📬",
+              titolo: "Posta",
+              cosa: "Chi chiede di togliere una foto, segnalazioni, candidature",
+              acceso: false,
+            },
+            {
               href: "/admin/porta",
               emoji: "🚪",
               titolo: "Porta",
@@ -413,6 +420,7 @@ export default function AdminDashboardPage() {
             ["/admin/eventi", "Eventi"],
             ["/admin/foto", "Foto"],
             ["/admin/crew", "Candidature"],
+            ["/admin/posta", "Posta"],
             ["/admin/regali", "Regali"],
             ["/", "Home del sito"],
           ].map(([href, testo]) => (
