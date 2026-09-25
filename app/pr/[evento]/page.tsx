@@ -7,6 +7,7 @@ import QRCode from "qrcode";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, dataLunga, giornoEData, ora } from "@/lib/eventi";
+import { delegaPerLocale, forseUnder16 } from "@/lib/event";
 
 type Riepilogo = {
   assegnate: number;
@@ -64,6 +65,8 @@ type EventoPR = {
   locale: string | null;
   starts_at: string;
   residue: number;
+  /** Il modulo di delega scelto per questa serata. Se manca lo si indovina dal locale. */
+  delega_url?: string | null;
 };
 
 const ANNO = new Date().getFullYear();
@@ -86,12 +89,38 @@ function linkBiglietto(token: string): string {
   return `${window.location.origin}/biglietto/${token}`;
 }
 
-function messaggio(b: { nome: string; token: string }, evento: string, quando: string): string {
-  return (
+function linkAssoluto(percorso: string): string {
+  if (typeof window === "undefined") return percorso;
+  return `${window.location.origin}${percorso}`;
+}
+
+/**
+ * Il messaggio che il PR manda al cliente.
+ *
+ * Se il cliente potrebbe avere meno di 16 anni la sera della serata, il
+ * modulo di delega ci finisce dentro da solo: il PR non deve ricordarsi
+ * di niente e il ragazzo se lo scarica subito, non la sera stessa
+ * davanti alla porta.
+ */
+function messaggio(
+  b: { nome: string; token: string; anno_nascita?: number },
+  evento: string,
+  quando: string,
+  delega?: { serve: boolean; url: string },
+): string {
+  const base =
     `Ciao ${b.nome}! Ecco il tuo biglietto per ${evento} — ${quando}.\n\n` +
     `${linkBiglietto(b.token)}\n\n` +
     `Fallo scansionare all'ingresso, non serve stamparlo. ` +
-    `Ricordati il documento fisico, non la foto sul telefono: serve a tutti.`
+    `Ricordati il documento fisico, non la foto sul telefono: serve a tutti.`;
+
+  if (!delega?.serve) return base;
+
+  return (
+    base +
+    `\n\n⚠️ SE HAI MENO DI 16 ANNI ti serve anche la delega firmata da un genitore. ` +
+    `Scaricala qui, compilala e portala con te: senza quella non si entra.\n` +
+    `${linkAssoluto(delega.url)}`
   );
 }
 
@@ -276,10 +305,24 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   const quando = ev ? `${dataLunga(ev.starts_at)} ore ${ora(ev.starts_at)}` : "";
   const accento = accentoSerata(evento);
 
+  /**
+   * Chi va avvisato della delega, e con quale modulo.
+   *
+   * Il modulo è quello scelto per la serata nel pannello; finché
+   * `31_delega_automatica.sql` non è incollato la serata non ce l'ha e
+   * lo si riconosce dal nome del locale, che è sempre uno dei due.
+   */
+  function delegaPer(b: { anno_nascita?: number; under16?: boolean }) {
+    return {
+      serve: forseUnder16(b.anno_nascita, ev?.starts_at) || Boolean(b.under16),
+      url: ev?.delega_url || delegaPerLocale(ev?.locale),
+    };
+  }
+
   // Appena venduto: la cosa da fare adesso è una sola, mandarlo su WhatsApp.
   if (appenaFatto) {
     const num = numeroWhatsapp(appenaFatto.telefono);
-    const testo = messaggio(appenaFatto, ev?.nome ?? "la serata", quando);
+    const testo = messaggio(appenaFatto, ev?.nome ?? "la serata", quando, delegaPer(appenaFatto));
     return (
       <main className="flex-1 px-5 py-10">
         <div className="mx-auto w-full max-w-sm">
@@ -299,14 +342,15 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
             {appenaFatto.tier_label} · {Number(appenaFatto.prezzo).toFixed(0)} € da incassare
           </p>
 
-          {appenaFatto.under16 && (
+          {delegaPer(appenaFatto).serve && (
             <div className="mt-4 border border-amber-400/40 bg-amber-400/5 px-4 py-3">
               <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-amber-300">
-                meno di 16 anni
+                nato nel {appenaFatto.anno_nascita} · delega
               </p>
               <p className="mt-1 text-[11px] leading-relaxed text-white/70">
-                Oltre al documento fisico gli serve la delega firmata da un genitore.
-                Diglielo adesso, non in porta.
+                Se non ha ancora compiuto 16 anni gli serve la delega firmata da un
+                genitore. <strong className="text-white">Il link è già dentro al messaggio</strong>
+                : non devi mandarlo tu.
               </p>
             </div>
           )}
@@ -860,7 +904,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                     <div className="min-w-0">
                       <p className="truncate text-sm text-white">
                         {b.nome} {b.cognome}
-                        {b.under16 && (
+                        {delegaPer(b).serve && (
                           <span className="ml-2 font-tech text-[9px] uppercase tracking-[0.15em] text-amber-300">
                             under 16 · delega
                           </span>
@@ -895,7 +939,10 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                     <div className="mt-3 flex gap-2">
                       <button
                         onClick={() =>
-                          apriWhatsapp(num, messaggio(b, ev?.nome ?? "la serata", quando))
+                          apriWhatsapp(
+                            num,
+                            messaggio(b, ev?.nome ?? "la serata", quando, delegaPer(b)),
+                          )
                         }
                         className="border border-white/15 px-3 py-2 font-tech text-[9px] uppercase tracking-[0.15em] text-white transition-colors hover:border-brand-red"
                       >

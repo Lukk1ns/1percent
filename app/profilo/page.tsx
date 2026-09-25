@@ -150,7 +150,7 @@ export default function ProfiloPage() {
   }
 
   async function handleDeleteProfile() {
-    if (!window.confirm("Eliminare il tuo profilo? Spariranno foto, QR code, ciao, legami e messaggi. Non si torna indietro.")) return;
+    if (!window.confirm("Eliminare il tuo account? Spariranno nome, email, foto, QR code, ciao, legami e messaggi. Non si torna indietro.")) return;
     if (!window.confirm("Sicuro sicuro? Questa è definitiva.")) return;
     setDeleting(true);
     const supabase = createClient();
@@ -163,7 +163,18 @@ export default function ProfiloPage() {
         supabase.storage.from("volti").remove([`${user.id}/volto.webp`]),
         supabase.storage.from("volti-blur").remove([`${user.id}/volto.webp`]),
       ]).catch(() => {});
-      await supabase.rpc("delete_my_profile");
+      // Se il database dice di no, non si esce fingendo che sia fatto:
+      // meglio un messaggio che un account che si crede cancellato.
+      const { error } = await supabase.rpc("delete_my_profile");
+      if (error) {
+        setDeleting(false);
+        window.alert(
+          "Non sono riuscito a cancellare l'account: " +
+            error.message +
+            "\nScrivi a chi gestisce il sito e lo facciamo a mano.",
+        );
+        return;
+      }
       await supabase.auth.signOut();
     }
     router.replace("/");
@@ -365,17 +376,23 @@ export default function ProfiloPage() {
 
       <NavBasso />
 
-      {/* ---- Zona pericolosa: elimina profilo ---- */}
-      <div className="w-full mt-8 pt-6 border-t border-white/5 flex flex-col items-center">
+      {/* ---- Zona pericolosa: elimina l'account ----
+           Era una scrittina grigia in fondo, che nessuno trovava. Chi si
+           iscrive deve poter uscire quando vuole, e vederlo senza cercarlo. */}
+      <div className="w-full mt-10 pt-6 border-t border-white/5 flex flex-col items-center">
+        <p className="text-[10px] uppercase tracking-[0.25em] text-brand-gray/60">
+          non vuoi più starci
+        </p>
         <button
           onClick={handleDeleteProfile}
           disabled={deleting}
-          className="text-[10px] uppercase tracking-widest text-brand-gray/40 hover:text-brand-red transition-colors"
+          className="mt-3 w-full max-w-xs border border-brand-red/40 py-3 text-[11px] uppercase tracking-[0.2em] text-brand-red hover:bg-brand-red hover:text-white transition-colors disabled:opacity-40"
         >
-          {deleting ? "elimino..." : "elimina il mio profilo"}
+          {deleting ? "elimino..." : "elimina il mio account"}
         </button>
-        <p className="text-[9px] text-brand-gray/30 mt-2 text-center max-w-xs">
-          Cancella tutto: foto, QR code, ciao, legami e messaggi. Definitivo.
+        <p className="text-[10px] leading-relaxed text-brand-gray/50 mt-3 text-center max-w-xs">
+          Sparisce tutto: nome, email, foto, QR code, ciao, legami e messaggi. Nessuno
+          ti trova più sul muro. È definitivo, non si torna indietro.
         </p>
       </div>
     </main>

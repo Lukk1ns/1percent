@@ -1,8 +1,48 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 22 settembre 2026
+> Ultimo aggiornamento: 25 settembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**LA DELEGA PARTE DA SOLA (25 set, `supabase/31_delega_automatica.sql`, `lib/event.ts`).**
+Luka: *"quando il PR vende a uno del 2010 in su, il link della delega dev'essere mandato in
+automatico — così non ci devono pensare loro"*. Adesso il messaggio WhatsApp che il PR manda
+(sia appena venduta, sia col tasto "rimanda") si porta dietro da solo il modulo:
+*"⚠️ SE HAI MENO DI 16 ANNI ti serve anche la delega firmata da un genitore…"* più il link
+assoluto al PDF. Il PR non deve ricordarsi niente e non deve avere il file.
+**La regola è prudente, e questo è il punto.** Del cliente si sa solo l'ANNO di nascita: con
+"anno di oggi meno anno di nascita" un nato nel 2010 a settembre 2026 risulta già sedicenne, ma
+se compie gli anni a dicembre alla serata del 31 ottobre ne ha 15 e in porta resta fuori. Quindi
+si sbaglia dalla parte giusta: **avvisati tutti i nati dall'anno di confine in poi**
+(`forse_under16` nel database, `forseUnder16()` in `lib/event.ts`) — per una serata del 2026 sono
+i 2010 in su, cioè esattamente quello che ha chiesto Luka. A chi i 16 li ha già compiuti non
+costa niente: il messaggio dice *se*. `minorenne` (i 18 anni) resta la regola di prima.
+Lo script tocca anche `porta_checkin`, così **in porta la delega la chiedono alle stesse
+persone** a cui l'abbiamo promessa, e `pr_eventi` per portare al PR il modulo della serata.
+**Quale modulo:** quello scelto per la serata (scheda Grafica); finché non è scelto lo si
+riconosce dal nome del locale (`delegaPerLocale`), perché PAPI è QFB SRL e PR1ME è EXO SRLS e
+l'informativa privacy sbagliata non vale niente.
+**PENDING Luka: incollare `31_delega_automatica.sql`** — dentro c'è anche tutto il 22, che non era
+mai stato incollato (senza, nella scheda Grafica il modulo under-16 e la posizione del QR non si
+salvano). Finché non lo fa, il messaggio del PR funziona lo stesso col modulo indovinato dal locale.
+
+**IL TASTO PER ANDARSENE (25 set, `app/profilo/page.tsx`).** Luka: *"nel profilo di tutti anche il
+tasto ELIMINA IL MIO ACCOUNT, così ognuno si può cancellare quando vuole"*. C'era già, ma era una
+scrittina grigia al 40% di opacità in fondo alla pagina: nessuno la trovava. Ora è un bottone
+bordato di rosso, con scritto cosa sparisce. **E se il database rifiuta, adesso lo dice**: prima
+la pagina faceva `signOut` e rimbalzava in home comunque, quindi uno usciva convinto di essersi
+cancellato mentre il profilo era ancora lì. `delete_my_profile` (in `volti_fix.sql`) anonimizza il
+profilo e cancella il pass, non tocca la contabilità dei PR: un PR con soldi a suo nome riesce a
+cancellarsi e il registro resta intero.
+
+**STATO DEL DATABASE AL 25 SET, verificato uno per uno.** Si controlla senza essere admin e senza
+service key: `POST /rest/v1/rpc/<nome>` con la chiave anon e i **parametri giusti** — `PGRST202`
+significa che la funzione non c'è, "Non autorizzato"/`42501` significa che c'è (chiamarla senza
+parametri dà PGRST202 anche se esiste: è il trabocchetto). Risultato: **26, 27, 28, 29, 30 sono
+dentro** (ritiri in blocco, dotazione iniziale, consegna a tutti, ingresso PR, fix lista).
+**Mancano `22_delega_per_serata.sql`** (ora inglobato nel 31) **e `iscrizioni.sql`**
+(`signups_open`/`admin_set_signups`: l'interruttore iscrizioni non esiste e il sito tira dritto —
+va bene finché le iscrizioni devono restare aperte a tutti).
 
 **L'INGRESSO DEL PR SE LO GUADAGNA (24 set, `supabase/30_ingresso_pr.sql`).** Luka: *"un QR che si
 attiva solo quando il PR vende il numero richiesto, fissato a 10; poi io posso fare eccezione e

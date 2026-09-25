@@ -116,6 +116,43 @@ export const CHIAVE_INVITO = "pn935ad9c1";
 export const DELEGA_UNDER16_URL = "/moduli/delega-pr1me.pdf";
 
 /**
+ * I moduli dei due locali, per scegliere quello giusto quando la serata
+ * non ha ancora il suo (`events.delega_url`, scheda Grafica del pannello).
+ *
+ * Il modulo sbagliato non è un dettaglio: dentro c'è l'informativa
+ * privacy, e nomina la società che tratta i dati del ragazzo. PAPI ON
+ * THE BEACH è QFB SRL, PR1ME CLUB è EXO SRLS.
+ */
+const DELEGHE: Array<{ indizio: string; url: string }> = [
+  { indizio: "pr1me", url: "/moduli/delega-pr1me.pdf" },
+  { indizio: "prime", url: "/moduli/delega-pr1me.pdf" },
+  { indizio: "papi", url: "/moduli/delega-papion.pdf" },
+];
+
+/** Il modulo del locale dove si va, riconosciuto dal nome. */
+export function delegaPerLocale(locale: string | null | undefined): string {
+  const n = (locale ?? "").toLowerCase();
+  return DELEGHE.find((d) => n.includes(d.indizio))?.url ?? DELEGA_UNDER16_URL;
+}
+
+/**
+ * "Questo qui, la sera della serata, potrebbe avere meno di 16 anni?"
+ *
+ * Del cliente il PR scrive solo l'ANNO di nascita, non il giorno: chi è
+ * nato nel 2010 può aver già compiuto 16 anni o compierli a dicembre, e
+ * da qui non si vede. Quindi si sbaglia dalla parte giusta e la delega
+ * si nomina a tutti i nati dall'anno di confine in poi — a chi i 16 li
+ * ha già compiuti non costa niente, il messaggio dice "SE hai meno di
+ * 16 anni". È la stessa regola di `forse_under16` nel database.
+ */
+export function forseUnder16(anno: number | null | undefined, quando?: string | null): boolean {
+  if (!anno) return false;
+  const rif = quando ? new Date(quando) : new Date();
+  const annoSerata = Number.isNaN(rif.getTime()) ? new Date().getFullYear() : rif.getFullYear();
+  return anno >= annoSerata - 16;
+}
+
+/**
  * Le foto aprono la porta.
  *
  * Il resto del sito è ancora su invito e accetta solo candidature staff

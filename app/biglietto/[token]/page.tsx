@@ -5,7 +5,7 @@ import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import { graficaBigliettoUrl } from "@/lib/biglietto";
 import { dataLunga, ora } from "@/lib/eventi";
-import { DELEGA_UNDER16_URL } from "@/lib/event";
+import { DELEGA_UNDER16_URL, delegaPerLocale } from "@/lib/event";
 
 type Biglietto = {
   nome: string;
@@ -205,29 +205,33 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
               documento non si entra.
             </p>
 
-            {b.under16 && (
+            {(b.under16 || b.minorenne) && (
               <div className="mt-4 border-t border-white/10 pt-3">
                 <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-amber-300">
-                  hai meno di 16 anni
+                  {b.under16 ? "hai meno di 16 anni" : "non hai ancora 18 anni"}
                 </p>
                 <p className="mt-2 text-[11px] leading-relaxed text-white">
-                  Oltre al documento serve la <strong>delega</strong>, firmata da un genitore
-                  o da chi ti accompagna. Senza quella non si entra.
+                  {b.under16 ? (
+                    <>
+                      Oltre al documento serve la <strong>delega</strong>, firmata da un
+                      genitore o da chi ti accompagna. Senza quella non si entra.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Se non hai ancora compiuto 16 anni</strong> serve anche la
+                      delega, firmata da un genitore o da chi ti accompagna: senza quella
+                      non si entra. Se i 16 li hai già fatti, ti basta il documento.
+                    </>
+                  )}
                 </p>
-                {b.delega_url || DELEGA_UNDER16_URL ? (
-                  <a
-                    href={b.delega_url || DELEGA_UNDER16_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-block border border-amber-400/50 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-amber-200"
-                  >
-                    scarica il modulo →
-                  </a>
-                ) : (
-                  <p className="mt-2 text-[11px] leading-relaxed text-brand-gray">
-                    Chiedi il modulo a chi ti ha venduto il biglietto.
-                  </p>
-                )}
+                <a
+                  href={b.delega_url || delegaPerLocale(b.locale) || DELEGA_UNDER16_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-block border border-amber-400/50 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-amber-200"
+                >
+                  scarica il modulo →
+                </a>
               </div>
             )}
           </div>
