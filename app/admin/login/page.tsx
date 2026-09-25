@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
     e.preventDefault();
     const token = codice.replace(/\D/g, "");
     if (token.length < 6) {
-      setError("Il codice è di 6 cifre.");
+      setError("Il codice è più lungo: ricopialo tutto dalla mail.");
       return;
     }
     setLoading(true);
@@ -78,19 +78,27 @@ export default function AdminLoginPage() {
         <div className="font-display text-brand-red text-6xl mb-6 text-center">%</div>
         <h2 className="text-white text-xl font-semibold mb-3 text-center">Controlla la mail</h2>
         <p className="text-brand-gray text-sm max-w-xs text-center">
-          Mandata a <strong className="text-white">{email}</strong>: dentro c&apos;è un codice di
-          6 cifre e un link. Dall&apos;app sulla schermata Home funziona solo il codice.
+          Mandata a <strong className="text-white">{email}</strong>: dentro c&apos;è un codice e
+          un link. Dall&apos;app sulla schermata Home funziona solo il codice.
         </p>
 
         <form onSubmit={handleCode} className="w-full max-w-xs flex flex-col gap-4 mt-8">
+          <label className="text-[10px] uppercase tracking-[0.25em] text-brand-gray text-center">
+            il codice della mail
+          </label>
           <input
             inputMode="numeric"
+            pattern="[0-9]*"
             autoComplete="one-time-code"
-            placeholder="il codice · 6 cifre"
+            enterKeyHint="go"
+            maxLength={10}
+            placeholder="······"
             value={codice}
-            onChange={(e) => setCodice(e.target.value)}
+            onChange={(e) => setCodice(e.target.value.replace(/\D/g, "").slice(0, 10))}
             autoFocus
-            className="bg-transparent border-b border-white/20 text-center text-2xl tracking-[0.4em] text-white placeholder-brand-gray/40 pb-2 outline-none focus:border-brand-red transition-colors"
+            className={`bg-transparent border-b border-white/20 text-center text-3xl text-white placeholder-brand-gray/30 pb-2 outline-none focus:border-brand-red transition-colors ${
+              codice ? "tracking-[0.3em]" : "tracking-[0.15em]"
+            }`}
           />
           {error && <p className="text-brand-red text-sm">{error}</p>}
           <button
