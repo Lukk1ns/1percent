@@ -1,54 +1,101 @@
 <!--
-  IL TEMPLATE DELLA MAIL DI ACCESSO — 25 settembre 2026
+  IL TEMPLATE DELLA MAIL DI ACCESSO — rifatto il 25 settembre 2026
 
   Da incollare su Supabase in due posti:
     Authentication → Emails → "Magic Link"     (chi rientra)
     Authentication → Emails → "Confirm signup" (chi si iscrive)
+  Oggetto da mettere in tutti e due:  Il tuo codice di accesso · 1%
 
-  Perché: chi si mette il sito sulla schermata Home del telefono ha una
-  finestra separata, con i suoi cookie. Il LINK apre Safari, quindi la
-  sessione nasce fuori dall'app e dentro l'app resta scollegato per
-  sempre. Il CODICE invece si incolla dentro l'app, e allora funziona.
-  Quindi la mail deve avere tutti e due, con il codice per primo.
+  Perché il codice: chi si mette il sito sulla schermata Home del
+  telefono ha una finestra separata, con i suoi cookie. Il LINK apre
+  Safari, quindi la sessione nasce fuori dall'app. Il CODICE invece si
+  scrive dentro l'app, e allora funziona. Quindi il codice viene prima.
+
+  Scritta a tabelle e con gli stili in linea: è l'unico modo in cui
+  Gmail, Outlook e Mail di iPhone la mostrano tutti uguale.
 
   {{ .Token }}     = il codice di 6 cifre
   {{ .TokenHash }} = il link (va lasciato com'era)
 -->
-<div style="background:#0A0A0A;padding:40px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-  <div style="max-width:420px;margin:0 auto">
-
-    <p style="color:#E0181F;font-size:44px;font-weight:800;margin:0 0 4px;letter-spacing:-1px">1%</p>
-    <p style="color:#A3A3A3;font-size:11px;text-transform:uppercase;letter-spacing:3px;margin:0 0 32px">
-      not for everyone
-    </p>
-
-    <p style="color:#ffffff;font-size:16px;margin:0 0 8px">Il tuo codice di accesso</p>
-    <p style="color:#A3A3A3;font-size:13px;line-height:1.6;margin:0 0 20px">
-      Scrivilo nella pagina dove hai chiesto di entrare. Vale un'ora.
-    </p>
-
-    <p style="background:#151515;border:1px solid #2a2a2a;color:#ffffff;font-size:34px;
-              letter-spacing:10px;text-align:center;padding:20px 0;margin:0 0 28px">
-      {{ .Token }}
-    </p>
-
-    <p style="color:#A3A3A3;font-size:13px;line-height:1.6;margin:0 0 12px">
-      Oppure, se stai leggendo dal computer o dal browser del telefono:
-    </p>
-    <p style="margin:0 0 28px">
-      <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email"
-         style="display:inline-block;background:#E0181F;color:#ffffff;text-decoration:none;
-                font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;
-                padding:14px 28px">
-        Entra dal link
-      </a>
-    </p>
-
-    <p style="color:#6b6b6b;font-size:11px;line-height:1.6;margin:0">
-      Hai il sito sulla schermata Home? Aprilo da lì e usa <strong style="color:#A3A3A3">il
-      codice</strong>: il link aprirebbe il browser, e l'icona resterebbe scollegata.<br><br>
-      Se non hai chiesto tu di entrare, butta questa mail: senza il codice non entra nessuno.
-    </p>
-
-  </div>
+<!-- Riga nascosta: è l'anteprima che si legge nella lista delle mail -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0">
+  Il tuo codice per entrare su unpercento.it: {{ .Token }}
 </div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background:#0A0A0A;margin:0;padding:0">
+  <tr>
+    <td align="center" style="padding:40px 16px">
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:440px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+
+        <!-- Marchio -->
+        <tr>
+          <td align="center" style="padding:0 0 28px">
+            <img src="https://www.unpercento.it/icona-1percent.png" width="88" height="88" alt="1%"
+                 style="display:block;border:0;width:88px;height:88px">
+            <p style="color:#A3A3A3;font-size:10px;text-transform:uppercase;letter-spacing:4px;margin:10px 0 0">
+              not for everyone
+            </p>
+          </td>
+        </tr>
+
+        <!-- Riquadro -->
+        <tr>
+          <td style="background:#111111;border:1px solid #242424;border-top:2px solid #E0181F;padding:32px 28px">
+
+            <p style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 10px">
+              Il tuo codice di accesso
+            </p>
+            <p style="color:#A3A3A3;font-size:14px;line-height:1.6;margin:0 0 24px">
+              Scrivilo nella pagina in cui hai chiesto di entrare. Vale un'ora.
+            </p>
+
+            <p style="background:#0A0A0A;border:1px solid #2a2a2a;color:#ffffff;font-size:36px;
+                      font-weight:700;letter-spacing:12px;text-align:center;padding:22px 0 22px 12px;margin:0 0 28px;
+                      font-family:'SF Mono',Menlo,Consolas,monospace">
+              {{ .Token }}
+            </p>
+
+            <p style="color:#A3A3A3;font-size:13px;line-height:1.6;margin:0 0 14px">
+              Stai leggendo dal computer o dal browser del telefono? Puoi entrare anche da qui:
+            </p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background:#E0181F">
+                  <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email"
+                     style="display:inline-block;color:#ffffff;text-decoration:none;font-size:13px;
+                            font-weight:700;text-transform:uppercase;letter-spacing:2px;padding:14px 28px">
+                    Entra su unpercento.it
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="color:#6b6b6b;font-size:12px;line-height:1.6;margin:24px 0 0;border-top:1px solid #242424;padding-top:18px">
+              Hai il sito sulla schermata Home? Aprilo da lì e usa <strong style="color:#A3A3A3">il
+              codice</strong>: il link aprirebbe il browser e l'app resterebbe scollegata.
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- Piè di pagina -->
+        <tr>
+          <td align="center" style="padding:24px 8px 0">
+            <p style="color:#6b6b6b;font-size:11px;line-height:1.7;margin:0">
+              Non hai chiesto tu di entrare? Ignora questa mail: senza il codice non entra nessuno.
+            </p>
+            <p style="color:#4a4a4a;font-size:11px;line-height:1.7;margin:12px 0 0;letter-spacing:1px">
+              <a href="https://www.unpercento.it" style="color:#A3A3A3;text-decoration:none">unpercento.it</a>
+              &nbsp;·&nbsp; Pordenone eventi
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
