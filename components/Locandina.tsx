@@ -28,48 +28,41 @@ type Props = {
  * prima del momento, dallo screenshot si risale a chi l'ha fatto.
  */
 export default function Locandina({ coverKey, coverV, nome, className = "" }: Props) {
-  const [nitida, setNitida] = useState<string | null>(null);
+  // `false` = il server l'ha negata (o non è arrivata): si resta sulla
+  // sfocata col lucchetto. Finché è `null` si prova a mostrarla.
+  const [nitida, setNitida] = useState<false | null>(null);
   const [controllato, setControllato] = useState(false);
   // Serve a dire la cosa giusta a chi è già dentro: a lui non si chiede
   // di iscriversi, gli si dice che la foto non è arrivata.
   const [loggato, setLoggato] = useState(false);
 
   useEffect(() => {
-    if (!coverKey) return;
+    // Chi guarda lo decide il server: se non è dei nostri la route
+    // risponde 403 e resta la sfocata. Qui serve solo per scrivere la
+    // frase giusta sotto il lucchetto, quindi non ferma l'immagine:
+    // prima si parte a scaricarla, poi eventualmente si spiega.
     let vivo = true;
-
-    (async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        if (vivo) setControllato(true);
-        return;
-      }
-      if (vivo) setLoggato(true);
-      // Chi decide è il server: la copia firmata arriva solo a chi ha un
-      // profilo (o allo staff). Se non è dei nostri risponde 403 e resta
-      // la versione sfocata — il controllo non è nel browser.
-      // `v` è il momento del caricamento: impedisce al telefono di
-      // riproporre una copia vecchia presa prima della filigrana.
-      const url =
-        `/api/locandina/vista?key=${encodeURIComponent(coverKey)}` +
-        (coverV ? `&v=${coverV}` : "");
-      const res = await fetch(url, { cache: "no-store" });
-      if (!vivo) return;
-      setNitida(res.ok ? url : null);
-      setControllato(true);
-    })();
-
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        if (vivo) setLoggato(Boolean(data.user));
+      });
     return () => {
       vivo = false;
     };
-  }, [coverKey, coverV]);
+  }, []);
 
   if (!coverKey) return null;
 
   const sfocata = locandinaSfocataUrl(coverKey, coverV);
+  // Prima si chiedeva la nitida con un `fetch` solo per sapere se
+  // arrivava, e poi la si rimetteva nell'<img>: due scaricamenti della
+  // stessa immagine, con la filigrana rifatta dal server tutte e due le
+  // volte. Ecco perché appariva in ritardo. Adesso parte subito dal tag,
+  // e se il server dice di no si torna alla sfocata.
+  const urlNitida =
+    `/api/locandina/vista?key=${encodeURIComponent(coverKey)}` +
+    (coverV ? `&v=${coverV}` : "");
 
   return (
     <div
@@ -85,21 +78,34 @@ export default function Locandina({ coverKey, coverV, nome, className = "" }: Pr
         className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60"
       />
 
-      {nitida ? (
+      {/* La sfocata sta sotto e c'è da subito: è leggera e pubblica, quindi
+          il riquadro non è mai vuoto. La nitida, quando arriva, la copre. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={sfocata}
+        alt={`Locandina di ${nome}, sfocata`}
+        className="absolute inset-0 h-full w-full object-contain"
+      />
+
+      {nitida !== false && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={nitida}
+          src={urlNitida}
           alt={`Locandina di ${nome}`}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          onError={() => {
+            setNitida(false);
+            setControllato(true);
+          }}
+          onLoad={() => setControllato(true)}
           className="relative h-full w-full object-contain"
         />
-      ) : (
+      )}
+
+      {nitida === false && (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={sfocata}
-            alt={`Locandina di ${nome}, sfocata`}
-            className="relative h-full w-full object-contain"
-          />
           {controllato && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/45 px-5 text-center backdrop-blur-[2px]">
               <span className="text-3xl" aria-hidden>

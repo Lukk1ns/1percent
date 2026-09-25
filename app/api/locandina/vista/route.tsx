@@ -153,7 +153,10 @@ export async function GET(req: Request) {
     headers: {
       "Content-Type": "image/webp",
       // Ogni copia è personale: non deve finire in nessuna cache condivisa
-      "Cache-Control": "private, no-store, max-age=0",
+      // Solo il browser di chi l'ha chiesta (`private`: dentro c'è il suo
+      // nome), ma tenerla dieci minuti evita di rifare la filigrana a ogni
+      // apertura — era il motivo per cui la locandina compariva in ritardo.
+      "Cache-Control": "private, max-age=600",
     },
   });
 }
