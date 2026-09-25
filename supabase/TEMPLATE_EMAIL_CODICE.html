@@ -11,59 +11,123 @@
   Safari, quindi la sessione nasce fuori dall'app. Il CODICE invece si
   scrive dentro l'app, e allora funziona. Quindi il codice viene prima.
 
-  Scritta a tabelle e con gli stili in linea: è l'unico modo in cui
-  Gmail, Outlook e Mail di iPhone la mostrano tutti uguale.
+  ⚠️ L'APP DI GMAIL COL TEMA SCURO INVERTE I COLORI (visto da Luka il
+  25 set: mail bianca con le scritte nere e il logo in un quadrato nero).
+  Tre difese, tutte e tre necessarie:
+    1. gli sfondi sono anche `background-image: linear-gradient(...)`:
+       Gmail inverte i colori, non le immagini, quindi il nero resta nero;
+    2. i testi stanno dentro `.gs` + `.gd` (fondo nero con fusione
+       "screen" e poi "difference"): Gmail inverte anche quei fondi,
+       e la differenza col bianco rimette i testi al loro colore.
+       Il selettore `u + .body` vale solo dentro Gmail, altrove non fa niente;
+    3. il logo è un PNG rosso su fondo trasparente (public/email-logo.png).
+  Niente bordi colorati: Gmail li inverte. Le righe sono celle col fondo.
 
   {{ .Token }}     = il codice di 6 cifre
   {{ .TokenHash }} = il link (va lasciato com'era)
 -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<style>
+  u + .body .gs { background:#000; mix-blend-mode:screen; }
+  u + .body .gd { background:#000; mix-blend-mode:difference; }
+</style>
+</head>
+<body class="body" style="margin:0;padding:0;background-color:#000000;background-image:linear-gradient(#000000,#000000)">
+
 <!-- Riga nascosta: è l'anteprima che si legge nella lista delle mail -->
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">
   Il tuo codice per entrare su unpercento.it: {{ .Token }}
 </div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-       style="background:#0A0A0A;margin:0;padding:0">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#000000"
+       style="background-color:#000000;background-image:linear-gradient(#000000,#000000)">
   <tr>
-    <td align="center" style="padding:40px 16px">
+    <td align="center" style="padding:36px 16px 40px">
 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
              style="max-width:440px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
 
         <!-- Marchio -->
         <tr>
-          <td align="center" style="padding:0 0 28px">
-            <img src="https://www.unpercento.it/icona-1percent.png" width="88" height="88" alt="1%"
-                 style="display:block;border:0;width:88px;height:88px">
-            <p style="color:#A3A3A3;font-size:10px;text-transform:uppercase;letter-spacing:4px;margin:10px 0 0">
-              not for everyone
-            </p>
+          <td align="center" style="padding:0 0 8px">
+            <img src="https://www.unpercento.it/email-logo.png" width="120" alt="1%"
+                 style="display:block;border:0;width:120px;height:auto">
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:0 0 30px">
+            <div class="gs"><div class="gd">
+              <p style="color:#A3A3A3;font-size:10px;text-transform:uppercase;letter-spacing:4px;margin:0">
+                not for everyone
+              </p>
+            </div></div>
           </td>
         </tr>
 
-        <!-- Riquadro -->
+        <!-- Riga rossa -->
         <tr>
-          <td style="background:#111111;border:1px solid #242424;border-top:2px solid #E0181F;padding:32px 28px">
+          <td height="2" style="height:2px;font-size:0;line-height:0;background-color:#E0181F;background-image:linear-gradient(#E0181F,#E0181F)">&nbsp;</td>
+        </tr>
 
-            <p style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 10px">
-              Il tuo codice di accesso
-            </p>
-            <p style="color:#A3A3A3;font-size:14px;line-height:1.6;margin:0 0 24px">
-              Scrivilo nella pagina in cui hai chiesto di entrare. Vale un'ora.
-            </p>
+        <!-- Il corpo -->
+        <tr>
+          <td style="padding:30px 4px 0">
+            <div class="gs"><div class="gd">
+              <p style="color:#ffffff;font-size:21px;font-weight:700;margin:0 0 10px">
+                Il tuo codice di accesso
+              </p>
+              <p style="color:#A3A3A3;font-size:14px;line-height:1.6;margin:0 0 24px">
+                Scrivilo nella pagina in cui hai chiesto di entrare. Vale un'ora.
+              </p>
+            </div></div>
+          </td>
+        </tr>
 
-            <p style="background:#0A0A0A;border:1px solid #2a2a2a;color:#ffffff;font-size:36px;
-                      font-weight:700;letter-spacing:12px;text-align:center;padding:22px 0 22px 12px;margin:0 0 28px;
-                      font-family:'SF Mono',Menlo,Consolas,monospace">
-              {{ .Token }}
-            </p>
+        <!-- Il codice: la cornice è una cella grigia con dentro una cella nera -->
+        <tr>
+          <td style="padding:0 4px 28px">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="padding:1px;background-color:#333333;background-image:linear-gradient(#333333,#333333)">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td align="center" style="padding:22px 0;background-color:#000000;background-image:linear-gradient(#000000,#000000)">
+                        <div class="gs"><div class="gd">
+                          <p style="color:#ffffff;font-size:36px;font-weight:700;letter-spacing:12px;margin:0;padding-left:12px;
+                                    font-family:'SF Mono',Menlo,Consolas,monospace">
+                            {{ .Token }}
+                          </p>
+                        </div></div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-            <p style="color:#A3A3A3;font-size:13px;line-height:1.6;margin:0 0 14px">
-              Stai leggendo dal computer o dal browser del telefono? Puoi entrare anche da qui:
-            </p>
+        <!-- Il link -->
+        <tr>
+          <td style="padding:0 4px 14px">
+            <div class="gs"><div class="gd">
+              <p style="color:#A3A3A3;font-size:13px;line-height:1.6;margin:0">
+                Stai leggendo dal computer o dal browser del telefono? Puoi entrare anche da qui:
+              </p>
+            </div></div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 4px">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="background:#E0181F">
+                <td style="background-color:#E0181F;background-image:linear-gradient(#E0181F,#E0181F)">
                   <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email"
                      style="display:inline-block;color:#ffffff;text-decoration:none;font-size:13px;
                             font-weight:700;text-transform:uppercase;letter-spacing:2px;padding:14px 28px">
@@ -72,25 +136,36 @@
                 </td>
               </tr>
             </table>
-
-            <p style="color:#6b6b6b;font-size:12px;line-height:1.6;margin:24px 0 0;border-top:1px solid #242424;padding-top:18px">
-              Hai il sito sulla schermata Home? Aprilo da lì e usa <strong style="color:#A3A3A3">il
-              codice</strong>: il link aprirebbe il browser e l'app resterebbe scollegata.
-            </p>
-
           </td>
         </tr>
 
-        <!-- Piè di pagina -->
+        <!-- Riga grigia -->
         <tr>
-          <td align="center" style="padding:24px 8px 0">
-            <p style="color:#6b6b6b;font-size:11px;line-height:1.7;margin:0">
-              Non hai chiesto tu di entrare? Ignora questa mail: senza il codice non entra nessuno.
-            </p>
-            <p style="color:#4a4a4a;font-size:11px;line-height:1.7;margin:12px 0 0;letter-spacing:1px">
-              <a href="https://www.unpercento.it" style="color:#A3A3A3;text-decoration:none">unpercento.it</a>
-              &nbsp;·&nbsp; Pordenone eventi
-            </p>
+          <td style="padding:28px 4px 0">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td height="1" style="height:1px;font-size:0;line-height:0;background-color:#262626;background-image:linear-gradient(#262626,#262626)">&nbsp;</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Note e piè di pagina -->
+        <tr>
+          <td style="padding:18px 4px 0">
+            <div class="gs"><div class="gd">
+              <p style="color:#8a8a8a;font-size:12px;line-height:1.6;margin:0 0 14px">
+                Hai il sito sulla schermata Home? Aprilo da lì e usa <strong style="color:#cfcfcf">il
+                codice</strong>: il link aprirebbe il browser e l'app resterebbe scollegata.
+              </p>
+              <p style="color:#6b6b6b;font-size:11px;line-height:1.7;margin:0 0 10px">
+                Non hai chiesto tu di entrare? Ignora questa mail: senza il codice non entra nessuno.
+              </p>
+              <p style="color:#6b6b6b;font-size:11px;line-height:1.7;margin:0;letter-spacing:1px">
+                <a href="https://www.unpercento.it" style="color:#A3A3A3;text-decoration:none">unpercento.it</a>
+                &nbsp;·&nbsp; Pordenone eventi
+              </p>
+            </div></div>
           </td>
         </tr>
 
@@ -99,3 +174,6 @@
     </td>
   </tr>
 </table>
+
+</body>
+</html>
