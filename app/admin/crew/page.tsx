@@ -104,6 +104,9 @@ export default function AdminCrewPage() {
   const [loading, setLoading] = useState(true);
   const [errore, setErrore] = useState<string | null>(null);
   const [lavorando, setLavorando] = useState<string | null>(null);
+  // Cercare per nome o numero di tessera, come in Prevendite: con
+  // ottanta persone nello staff scorrere la lista non si fa.
+  const [cerca, setCerca] = useState("");
 
   async function carica() {
     const supabase = createClient();
@@ -181,6 +184,24 @@ export default function AdminCrewPage() {
     );
   }
 
+  // Guarda alias, nome vero, email e numero di tessera. Il numero si
+  // può scrivere come viene: 55, #55 o 0055.
+  const cercato = cerca.trim().toLowerCase().replace(/^#/, "");
+  const corrisponde = (x: {
+    alias: string;
+    nome: string | null;
+    email: string | null;
+    member_number: number;
+  }) =>
+    !cercato ||
+    x.alias.toLowerCase().includes(cercato) ||
+    (x.nome ?? "").toLowerCase().includes(cercato) ||
+    (x.email ?? "").toLowerCase().includes(cercato) ||
+    String(x.member_number) === String(Number(cercato)) ||
+    String(x.member_number).padStart(4, "0").includes(cercato);
+  const candidatureVisibili = candidature.filter(corrisponde);
+  const membriVisibili = membri.filter(corrisponde);
+
   return (
     <main className="flex-1 px-5 py-8 max-w-2xl mx-auto w-full">
       <button
@@ -221,6 +242,39 @@ export default function AdminCrewPage() {
         </div>
       </div>
 
+      {/* Cerca */}
+      {/* Resta attaccata sotto la barra del pannello mentre scorri. */}
+      <div
+        className="sticky z-10 -mx-5 mb-8 bg-black px-5 py-2"
+        style={{ top: "calc(3.1rem + env(safe-area-inset-top))" }}
+      >
+        <div className="flex items-center gap-2">
+          <input
+            type="search"
+            value={cerca}
+            onChange={(e) => setCerca(e.target.value)}
+            placeholder="cerca per nome o numero…"
+            className="min-w-0 flex-1 border border-white/15 bg-black px-3 py-3 text-sm text-white placeholder-brand-gray/50 outline-none focus:border-brand-red"
+          />
+          {cerca && (
+            <button
+              onClick={() => setCerca("")}
+              className="border border-white/10 px-3 py-3 text-[10px] uppercase tracking-widest text-brand-gray hover:text-white"
+            >
+              pulisci
+            </button>
+          )}
+        </div>
+        {cercato && (
+          <p className="mt-2 text-[10px] uppercase tracking-widest text-brand-gray/60">
+            {membriVisibili.length + candidatureVisibili.length === 0
+              ? "nessuno con questo nome o numero"
+              : `trovati: ${membriVisibili.length} nello staff` +
+                (candidatureVisibili.length ? `, ${candidatureVisibili.length} in attesa` : "")}
+          </p>
+        )}
+      </div>
+
       {/* Candidature in attesa */}
       <div className="mb-10">
         <p className="text-xs uppercase tracking-widest text-brand-gray mb-1">
@@ -230,13 +284,15 @@ export default function AdminCrewPage() {
           Nessuno viene avvisato in automatico — a chi ti interessa scrivi tu
         </p>
 
-        {candidature.length === 0 ? (
+        {candidatureVisibili.length === 0 ? (
           <p className="text-brand-gray/50 text-sm py-8 text-center border border-white/5">
-            Nessuna candidatura da leggere.
+            {cercato && candidature.length > 0
+              ? "Nessuna candidatura con questo nome o numero."
+              : "Nessuna candidatura da leggere."}
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            {candidature.map((c) => (
+            {candidatureVisibili.map((c) => (
               <div key={c.id} className="border border-brand-red/40 bg-brand-red/[0.03]">
                 <div className="px-4 py-4">
                   <div className="flex items-baseline justify-between gap-3 mb-1">
@@ -293,13 +349,15 @@ export default function AdminCrewPage() {
         Tocca un nome per leggere il suo questionario
       </p>
 
-      {membri.length === 0 ? (
+      {membriVisibili.length === 0 ? (
         <p className="text-brand-gray/50 text-sm py-8 text-center border border-white/5">
-          Ancora nessuno nello staff.
+          {cercato && membri.length > 0
+            ? "Nessuno nello staff con questo nome o numero."
+            : "Ancora nessuno nello staff."}
         </p>
       ) : (
         <div className="flex flex-col gap-2">
-          {membri.map((m) => {
+          {membriVisibili.map((m) => {
             const espanso = aperto === m.id;
             return (
               <div key={m.id} className="border border-white/10">

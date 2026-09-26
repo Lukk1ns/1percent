@@ -54,6 +54,8 @@ export function Notifiche() {
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_requests" }, refresh)
         .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_requests" }, refresh)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "pokes", filter: `to_profile=eq.${user.id}` }, refresh)
+        // Le risposte della direzione (script 37): contano come messaggi.
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "direzione_messaggi", filter: `profile_id=eq.${user.id}` }, refresh)
         .subscribe();
     })();
 

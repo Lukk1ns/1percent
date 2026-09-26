@@ -1,8 +1,31 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 25 settembre 2026
+> Ultimo aggiornamento: 26 settembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**PENDING Luka: incollare `supabase/37_posta_conversazioni.sql`** — senza, la posta dice cosa
+manca nella sezione "conversazioni" e il tasto "rispondi" non compare; il resto funziona.
+
+**RISPONDERE DALLA POSTA (26 set, `supabase/37_posta_conversazioni.sql`, `/admin/posta`,
+`/messaggi/direzione`).** Luka: *"a chi mi segnala le foto e mi scrive la motivazione dovrei poter
+rispondere e avviare una conversazione"*. Tabella **`direzione_messaggi`**: **una conversazione per
+persona** (non per richiesta), fra lei e la direzione. **La apre solo l'admin** (tasto "✉ rispondi"
+su una richiesta foto, "scrivi" su quelle già gestite); la persona non può scrivere per prima
+(`direzione_rispondi` → `chiusa`), così non nasce un secondo canale da tenere pulito. Il primo
+messaggio che parte da una richiesta si porta dietro `rimozione_id`, e sopra di lui si vede di quale
+foto si parla (album, miniatura, il suo motivo). La persona la trova **in cima a `/messaggi`**
+firmata "1% · direzione", e il pallino globale (`inbox_badge`, ridefinito qui con la voce
+`direzione`) la conta come messaggio. In posta la sezione **conversazioni** mette in cima chi ha
+risposto e non è ancora stato letto; `admin_notifiche` ha la voce `risposte` (persone, non
+messaggi) e `admin_rimozioni` ora torna `profile_id` — tutte e due cambiano forma, quindi lo
+script le butta e le rifà. Tempo reale: policy di lettura `profile_id = auth.uid() or is_admin()`
++ tabella nella publication. **Limite da sapere:** nessuna mail né notifica sul telefono, la
+risposta si vede solo quando la persona riapre il sito.
+
+**RICERCA IN `/admin/crew` (26 set).** Casella "cerca per nome o numero" fissa sotto la barra del
+pannello, filtra candidature e crew insieme su alias, nome vero, email e numero di tessera (55, #55
+o 0055 — stessa regola di `/admin/pr`). Solo frontend.
 
 **PENDING Luka: incollare `supabase/36_omaggi.sql`** — senza, il riquadro "Regala un ingresso"
 su `/admin/pr` risponde *"manca lo script sul database"* e tutto il resto della pagina funziona
@@ -837,6 +860,7 @@ Landing (/) → "Ci sei o no?" → /unisciti (alias + avatar + consenso)
 | `/u/[alias]` | Profilo pubblico di un membro (solo per membri) |
 | `/legami` | Chi ti ha ricambiato il poke: foto nitide |
 | `/messaggi` · `/messaggi/[id]` | Inbox e chat, con richiesta+accettazione, blocco e segnalazione |
+| `/messaggi/direzione` | La conversazione con la direzione (la apre solo l'admin dalla posta) |
 | `/login` | Accesso per membri esistenti (magic link email) |
 | `/privacy` | Privacy policy GDPR + cancellazione dati |
 | `/admin/login` | Login staff |

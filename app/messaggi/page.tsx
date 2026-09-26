@@ -32,21 +32,32 @@ type Conversation = {
   unread_count: number;
 };
 
+/** La conversazione con la direzione (script 37): c'è solo se l'ha aperta lei. */
+type Direzione = {
+  ultimo_testo: string;
+  ultimo_mio: boolean;
+  ultimo_at: string;
+  non_letti: number;
+} | null;
+
 export default function MessaggiPage() {
   const router = useRouter();
   const [requests, setRequests] = useState<ChatRequest[]>([]);
   const [convos, setConvos] = useState<Conversation[]>([]);
+  const [direzione, setDirezione] = useState<Direzione>(null);
   const [clearUrls, setClearUrls] = useState<Map<number, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [notReady, setNotReady] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = createClient();
-    const [{ data: reqs, error: e1 }, { data: convs, error: e2 }, legami] =
+    const [{ data: reqs, error: e1 }, { data: convs, error: e2 }, legami, dir] =
       await Promise.all([
         supabase.rpc("my_chat_requests"),
         supabase.rpc("my_conversations"),
         fetchLegami(supabase),
+        // Se lo script 37 non c'è, risponde errore: semplicemente niente riquadro.
+        supabase.rpc("direzione_riepilogo"),
       ]);
     if (e1 && e2) {
       setNotReady(true);
@@ -55,6 +66,7 @@ export default function MessaggiPage() {
     }
     setRequests((reqs ?? []) as ChatRequest[]);
     setConvos((convs ?? []) as Conversation[]);
+    setDirezione(dir.error ? null : ((dir.data as Direzione) ?? null));
     setClearUrls(legami.clearUrls);
     setLoading(false);
   }, []);
@@ -78,6 +90,11 @@ export default function MessaggiPage() {
         .channel("inbox")
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, load)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_requests" }, load)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "direzione_messaggi", filter: `profile_id=eq.${user.id}` },
+          load,
+        )
         .subscribe();
     })();
 
@@ -179,9 +196,47 @@ export default function MessaggiPage() {
         </section>
       )}
 
+      {/* La direzione: sempre in cima, quando ti ha scritto */}
+      {direzione && (
+        <section className="w-full mb-6">
+          <button
+            onClick={() => router.push("/messaggi/direzione")}
+            className={`w-full flex items-center gap-2.5 px-3 py-2.5 border text-left transition-colors ${
+              Number(direzione.non_letti) > 0
+                ? "border-brand-red/60 bg-brand-red/[0.08]"
+                : "border-white/[0.1] bg-white/[0.02] hover:border-white/20"
+            }`}
+            style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}
+          >
+            <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center border border-brand-red/50 font-display text-lg text-brand-red">
+              1%
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm text-white truncate">
+                1% <span className="text-brand-gray/70">· direzione</span>
+              </span>
+              <span className="block text-xs text-brand-gray/70 truncate">
+                {direzione.ultimo_mio ? "tu: " : ""}
+                {direzione.ultimo_testo}
+              </span>
+            </span>
+            <span className="flex flex-col items-end gap-1">
+              <span className="text-[9px] text-brand-gray/50">
+                {new Date(direzione.ultimo_at).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
+              </span>
+              {Number(direzione.non_letti) > 0 && (
+                <span className="px-1.5 py-0.5 text-[9px] bg-brand-red text-white rounded-full">
+                  {direzione.non_letti}
+                </span>
+              )}
+            </span>
+          </button>
+        </section>
+      )}
+
       {/* Conversazioni */}
       <section className="w-full">
-        {convos.length === 0 && incoming.length === 0 ? (
+        {convos.length === 0 && incoming.length === 0 && !direzione ? (
           <div className="flex flex-col items-center text-center py-10">
             <p className="text-white text-lg mb-2">Silenzio, per ora.</p>
             <p className="text-brand-gray text-sm max-w-xs mb-6">
