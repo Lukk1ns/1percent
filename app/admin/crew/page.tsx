@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { CREW_QUESTIONS } from "@/lib/quiz";
+import { ConversazioneDirezione } from "@/components/ConversazioneDirezione";
 
 type RisposteCrew = Record<string, string | { text?: string; tag?: string }> | null;
 
@@ -107,6 +108,9 @@ export default function AdminCrewPage() {
   // Cercare per nome o numero di tessera, come in Prevendite: con
   // ottanta persone nello staff scorrere la lista non si fa.
   const [cerca, setCerca] = useState("");
+  // Con chi è aperta la chat (id del profilo): per fare domande a chi si
+  // candida prima di decidere. La trova nei suoi Messaggi sul sito.
+  const [chat, setChat] = useState<string | null>(null);
 
   async function carica() {
     const supabase = createClient();
@@ -334,6 +338,19 @@ export default function AdminCrewPage() {
                       Rifiuta
                     </button>
                   </div>
+                  <button
+                    onClick={() => setChat(chat === c.id ? null : c.id)}
+                    className={`mt-2 w-full text-[10px] uppercase tracking-widest border py-3 transition-colors ${
+                      chat === c.id
+                        ? "border-brand-red text-white"
+                        : "border-white/20 text-white hover:border-brand-red"
+                    }`}
+                  >
+                    {chat === c.id ? "chiudi la chat" : "✉ scrivigli per fargli domande"}
+                  </button>
+                  {chat === c.id && (
+                    <ConversazioneDirezione profileId={c.id} chi={c.nome ?? c.alias} />
+                  )}
                 </div>
               </div>
             ))}
@@ -385,13 +402,28 @@ export default function AdminCrewPage() {
                       <p className="text-[11px] text-brand-gray/60 mb-4 break-all">{m.email}</p>
                     )}
                     <Risposte risposte={m.crew_answers} />
-                    <button
-                      onClick={() => togliDallaCrew(m)}
-                      disabled={lavorando === m.id}
-                      className="mt-5 text-[10px] uppercase tracking-widest border border-white/10 text-brand-gray px-4 py-2 hover:text-brand-red hover:border-brand-red/40 transition-colors disabled:opacity-40"
-                    >
-                      Togli dallo staff
-                    </button>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setChat(chat === m.id ? null : m.id)}
+                        className={`text-[10px] uppercase tracking-widest border px-4 py-2 transition-colors ${
+                          chat === m.id
+                            ? "border-brand-red text-white"
+                            : "border-white/20 text-white hover:border-brand-red"
+                        }`}
+                      >
+                        {chat === m.id ? "chiudi la chat" : "✉ scrivi"}
+                      </button>
+                      <button
+                        onClick={() => togliDallaCrew(m)}
+                        disabled={lavorando === m.id}
+                        className="text-[10px] uppercase tracking-widest border border-white/10 text-brand-gray px-4 py-2 hover:text-brand-red hover:border-brand-red/40 transition-colors disabled:opacity-40"
+                      >
+                        Togli dallo staff
+                      </button>
+                    </div>
+                    {chat === m.id && (
+                      <ConversazioneDirezione profileId={m.id} chi={m.alias} />
+                    )}
                   </div>
                 )}
               </div>

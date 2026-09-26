@@ -4,8 +4,13 @@
 
 ## ⚠️ Leggi prima di tutto
 
-**PENDING Luka: incollare `supabase/37_posta_conversazioni.sql`** — senza, la posta dice cosa
-manca nella sezione "conversazioni" e il tasto "rispondi" non compare; il resto funziona.
+**Anche con chi si candida (26 set, stesso giorno).** Luka: *"anche chi si candida come PR devo
+poter avviare una chat per fargli domande"*. La conversazione è ora un componente condiviso,
+`components/ConversazioneDirezione.tsx`: in `/admin/crew` ogni candidatura ha "✉ scrivigli per
+fargli domande" e ogni membro dello staff (aperto) ha "✉ scrivi". Stessa tabella e stesse funzioni
+dello script 37 (una conversazione per persona, `p_rimozione` vuoto): nessuno script nuovo. Dopo
+l'approvazione la chat continua uguale, e in Posta le conversazioni sono tutte nella stessa lista.
+`37_posta_conversazioni.sql` è **incollato e verificato** il 26 set.
 
 **RISPONDERE DALLA POSTA (26 set, `supabase/37_posta_conversazioni.sql`, `/admin/posta`,
 `/messaggi/direzione`).** Luka: *"a chi mi segnala le foto e mi scrive la motivazione dovrei poter
