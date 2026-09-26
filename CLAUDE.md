@@ -541,8 +541,9 @@ l'informativa di un'altra società, che non vale niente. Colonna `events.delega_
 scheda **Grafica** di `/admin/pr`, e il biglietto usa quello della sua serata (`DELEGA_UNDER16_URL`
 resta solo come ripiego). I PDF stanno in `public/moduli/`, sorgenti HTML in
 `ClaudeLukkins/STAGIONE_INVERNALE_2026-27/PDF/` (si rigenerano con `weasyprint file.html file.pdf`).
-**⚠️ Nel modulo PAPI-ON mancano P.IVA e PEC di QFB**, marcati in nero "DA INSERIRE" perché non
-si possa stampare per sbaglio: nelle fatture c'era solo la partita IVA del fornitore.
+Nel modulo PAPI-ON **P.IVA e PEC di QFB sono inserite dal 26 set** (01920690938,
+qfbsrl@legalmail.it, dalla visura). Gli stessi dati, con REA e capitale, stanno nel piede della
+home (`DATI_SOCIETA` in `lib/event.ts`): la P.IVA in home page è obbligatoria (art. 35 DPR 633/72).
 **Il documento lo chiede a tutti**, non solo ai minorenni (correzione di Luka: "serve per chiunque"),
 ed è ricordato anche nel messaggio WhatsApp che il PR manda al cliente; **sotto i 16 si aggiunge la
 delega** firmata da chi accompagna, con il link preso da `DELEGA_UNDER16_URL` in `lib/event.ts` — **vuoto finché Luka non
