@@ -11,6 +11,7 @@ import {
   BRAND_AREA,
   BRAND_CLAIM,
   BRAND_PAYOFF,
+  DATI_SOCIETA,
   SOLO_SU_INVITO,
   STAND_NON_INGRESSO,
 } from "@/lib/event";
@@ -484,6 +485,9 @@ export default function Home() {
             <Link href="/membri" className="hover:text-white">il muro</Link>
             <Link href="/privacy" className="hover:text-white">privacy</Link>
           </div>
+          <p className="font-tech text-[9px] leading-relaxed tracking-[0.1em] text-brand-gray/40">
+            {DATI_SOCIETA.join(" · ")}
+          </p>
         </div>
       </footer>
     </main>

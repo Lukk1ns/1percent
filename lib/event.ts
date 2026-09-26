@@ -39,6 +39,19 @@ export const BRAND_AREA = "Pordenone e dintorni";
 export const LEGAL_NAME = "Papi on the Beach";
 
 /**
+ * I dati della società, nel piede della home: la partita IVA in home
+ * page la chiede l'art. 35 DPR 633/72 a chiunque abbia un sito, anche
+ * senza vendere; sede e REA li aggiunge l'art. 2250 c.c. per le SRL.
+ * Per una SRL codice fiscale e partita IVA sono lo stesso numero.
+ */
+export const DATI_SOCIETA = [
+  "QFB SRL",
+  "Via XX Settembre 289, 33080 Roveredo in Piano (PN)",
+  "C.F. e P.IVA 01920690938",
+  "REA PN-364068",
+];
+
+/**
  * Interruttore master delle iscrizioni.
  * false = "ISCRIZIONI CHIUSE AL MOMENTO" su tutto il sito.
  *
