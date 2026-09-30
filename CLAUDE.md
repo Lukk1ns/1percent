@@ -52,9 +52,8 @@ risposta si vede solo quando la persona riapre il sito.
 pannello, filtra candidature e crew insieme su alias, nome vero, email e numero di tessera (55, #55
 o 0055 — stessa regola di `/admin/pr`). Solo frontend.
 
-**PENDING Luka: incollare `supabase/36_omaggi.sql`** — senza, il riquadro "Regala un ingresso"
-su `/admin/pr` risponde *"manca lo script sul database"* e tutto il resto della pagina funziona
-comunque.
+`supabase/36_omaggi.sql` è **incollato** (verificato da fuori il 30 set: `admin_omaggio` risponde
+"Non autorizzato", quindi esiste).
 
 **`/admin/pr` RIFATTA NELL'ORDINE IN CUI SI USA (25 set).** Luka: *"in alto a destra dev'esserci
 la selezione dell'evento ben visibile... poi la schermata con i numeri bella grande... dopo io
