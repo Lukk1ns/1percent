@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, dataLunga, giornoEData, ora } from "@/lib/eventi";
 import { delegaPerLocale, forseUnder16 } from "@/lib/event";
+import { PiuPunti } from "@/components/Stelle";
 
 type Riepilogo = {
   assegnate: number;
@@ -156,6 +157,10 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   // Il pass del PR: esiste per serata e si accende con le vendite.
   const [ingresso, setIngresso] = useState<Ingresso | null>(null);
   const qrRef = useRef<HTMLCanvasElement>(null);
+  // Le vendite che contano per le stelle, prima e dopo l'ultima vendita:
+  // la differenza è il "+10 punti" della schermata "fatto".
+  const [puntiVendite, setPuntiVendite] = useState<number | null>(null);
+  const [puntiPrima, setPuntiPrima] = useState<number | null>(null);
 
   const carica = useCallback(async () => {
     const supabase = createClient();
@@ -167,12 +172,16 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
       return;
     }
 
-    const [evRes, rRes, fRes, bRes] = await Promise.all([
+    // pr_punti viaggia insieme alle altre: se 38_punti_pr.sql non è
+    // ancora incollato torna un errore, non un'eccezione, e il resto va.
+    const [evRes, rRes, fRes, bRes, ptRes] = await Promise.all([
       supabase.rpc("pr_eventi"),
       supabase.rpc("pr_riepilogo", { p_event: evento }),
       supabase.rpc("pr_fasce", { p_event: evento }),
       supabase.rpc("pr_miei_biglietti", { p_event: evento }),
+      supabase.rpc("pr_punti"),
     ]);
+    setPuntiVendite(ptRes.error ? null : (ptRes.data?.[0]?.vendite ?? null));
 
     if (rRes.error) {
       setErrore(rRes.error.message);
@@ -214,6 +223,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
     setSalvando(true);
     setEsito(null);
     setOmonimo(false);
+    setPuntiPrima(puntiVendite);
 
     const supabase = createClient();
     const { data, error } = await supabase.rpc("pr_vendi", {
@@ -341,6 +351,9 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           <p className="mt-2 text-xs text-brand-gray">
             {appenaFatto.tier_label} · {Number(appenaFatto.prezzo).toFixed(0)} € da incassare
           </p>
+
+          {/* I punti appena presi: le vendite della direzione non ne danno. */}
+          {!r.senza_limite && <PiuPunti prima={puntiPrima} dopo={puntiVendite} />}
 
           {delegaPer(appenaFatto).serve && (
             <div className="mt-4 border border-amber-400/40 bg-amber-400/5 px-4 py-3">

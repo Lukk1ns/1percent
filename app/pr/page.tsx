@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, dataLunga, giornoEData } from "@/lib/eventi";
+import { ProfiloStelle } from "@/components/Stelle";
 
 type EventoPR = {
   event_id: string;
@@ -26,6 +27,14 @@ type Stato = {
   soglia: number;
 };
 
+/** Le vendite che contano per i punti: sue, valide, a pagamento. */
+type Punti = {
+  alias: string;
+  numero: number | null;
+  vendite: number;
+  per_serata: Record<string, number>;
+};
+
 /**
  * L'ingresso dell'area PR.
  *
@@ -40,6 +49,13 @@ export default function PrPage() {
   // (la lezione dell'area PR senza link, 24 set).
   const [sonoManager, setSonoManager] = useState(false);
   const [eventi, setEventi] = useState<EventoPR[]>([]);
+  // Le stelle (30 set). Null finché 38_punti_pr.sql non è incollato:
+  // la scheda semplicemente non compare.
+  const [punti, setPunti] = useState<Punti | null>(null);
+  const [serataId, setSerataId] = useState<string | null>(null);
+  // Luka non ha punti (le sue vendite non contano): per vedere la
+  // scheda come la vedono i PR apre un'anteprima con numeri di esempio.
+  const [anteprima, setAnteprima] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errore, setErrore] = useState<string | null>(null);
 
@@ -82,13 +98,27 @@ export default function PrPage() {
         // Un errore qui non va nascosto dietro una lista vuota: prima
         // "nessuna serata" voleva dire tanto "non ce ne sono" quanto
         // "il database si è rifiutato di rispondere".
-        const { data, error: errEv } = await supabase.rpc("pr_eventi");
-        if (errEv) {
-          setErrore(errEv.message);
+        // I punti partono insieme alle serate, così la scheda non spunta
+        // dopo spingendo giù tutto. Un loro errore non ferma la pagina.
+        // Le vendite della direzione non danno punti: all'admin niente.
+        const [evRes, ptRes] = await Promise.all([
+          supabase.rpc("pr_eventi"),
+          s.sono_admin ? Promise.resolve(null) : supabase.rpc("pr_punti"),
+        ]);
+        if (evRes.error) {
+          setErrore(evRes.error.message);
           setLoading(false);
           return;
         }
-        setEventi(data ?? []);
+        const lista: EventoPR[] = evRes.data ?? [];
+        setEventi(lista);
+        if (ptRes && !ptRes.error && ptRes.data?.[0]) setPunti(ptRes.data[0] as Punti);
+        // La serata della scheda: la più vicina non ancora finita, con
+        // dodici ore di margine così durante la notte resta quella.
+        const vicina = lista.find(
+          (e) => new Date(e.starts_at).getTime() > Date.now() - 12 * 60 * 60 * 1000,
+        );
+        setSerataId(vicina?.event_id ?? null);
       }
       setLoading(false);
     })();
@@ -139,9 +169,66 @@ export default function PrPage() {
     );
   }
 
+  const serataVicina = eventi.find((e) => e.event_id === serataId) ?? null;
+
   return (
     <main className="flex-1 px-5 py-10">
       <div className="mx-auto w-full max-w-lg">
+        {/* Le stelle del PR, in cima (30 set). Solo i suoi numeri. */}
+        {punti && (
+          <div className="mb-6">
+            <ProfiloStelle
+              alias={punti.alias}
+              numero={punti.numero}
+              vendite={punti.vendite}
+              serata={
+                serataVicina
+                  ? {
+                      nome: serataVicina.nome,
+                      startsAt: serataVicina.starts_at,
+                      vendite: punti.per_serata?.[serataVicina.event_id] ?? 0,
+                      accento: accentoSerata(serataVicina.event_id),
+                    }
+                  : null
+              }
+            />
+          </div>
+        )}
+
+        {stato.sono_admin && (
+          <div className="mb-6">
+            <button
+              onClick={() => setAnteprima((a) => !a)}
+              className="w-full border border-dashed border-amber-300/40 px-4 py-2.5 text-left font-tech text-[10px] uppercase tracking-[0.2em] text-amber-300 transition-colors hover:border-amber-300"
+            >
+              {anteprima ? "chiudi l'anteprima ↑" : "★ come vede le sue stelle un pr →"}
+            </button>
+            {anteprima && (
+              <div className="mt-2">
+                <ProfiloStelle
+                  alias="Esempio"
+                  numero={null}
+                  vendite={47}
+                  serata={
+                    serataVicina
+                      ? {
+                          nome: serataVicina.nome,
+                          startsAt: serataVicina.starts_at,
+                          vendite: 12,
+                          accento: accentoSerata(serataVicina.event_id),
+                        }
+                      : null
+                  }
+                />
+                <p className="mt-2 text-[11px] leading-relaxed text-brand-gray">
+                  Numeri di esempio: 47 prevendite in tutto, 12 su questa serata. Ogni PR vede
+                  solo i suoi, in cima a questa pagina.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {stato.sono_admin && (
           <div className="mb-6 border border-brand-red/40 bg-brand-red/5 px-4 py-3">
             <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-red">

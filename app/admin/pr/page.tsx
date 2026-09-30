@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, dataLunga, giornoEData } from "@/lib/eventi";
 import { delegaPerLocale } from "@/lib/event";
 import { graficaBigliettoUrl } from "@/lib/biglietto";
+import { CinqueStelle } from "@/components/Stelle";
+import { ORDINALI, PUNTI_PER_VENDITA, SOGLIE_STELLE, fmtPunti, statoStelle } from "@/lib/punti";
 
 type EventoAdmin = {
   event_id: string;
@@ -419,6 +421,18 @@ type RigaManager = {
   consegnato: number;
 };
 
+/** I punti dei PR (38_punti_pr.sql): vendite valide, a pagamento. */
+type RigaPunti = {
+  pr_id: string;
+  alias: string;
+  nome: string | null;
+  numero: number | null;
+  /** Da sempre: fanno le stelle. */
+  vendite: number;
+  /** Solo la serata scelta qui sopra. */
+  vendite_serata: number;
+};
+
 type MovimentoAm = {
   id: string;
   quando: string;
@@ -452,6 +466,10 @@ export default function AdminPrPage() {
   const [scheda, setScheda] = useState<
     "pr" | "classifica" | "biglietti" | "registro" | "manager" | "prezzi" | "grafica"
   >("pr");
+  // Le stelle dei PR (30 set). Null finché 38_punti_pr.sql non è
+  // incollato: la classifica della serata va avanti come prima.
+  const [punti, setPunti] = useState<RigaPunti[] | null>(null);
+  const [vistaClassifica, setVistaClassifica] = useState<"serata" | "stelle">("serata");
   // Gli account manager: chi sono e quanti soldi hanno addosso adesso.
   const [managers, setManagers] = useState<RigaManager[]>([]);
   const [movAm, setMovAm] = useState<MovimentoAm[]>([]);
@@ -536,6 +554,10 @@ export default function AdminPrPage() {
     supabase
       .rpc("admin_da_ricevere", { p_event: id })
       .then(({ data }) => setDaRicevere(data?.[0] ?? null));
+    // E per i punti: finché 38_punti_pr.sql non è incollato niente stelle.
+    supabase
+      .rpc("admin_pr_punti", { p_event: id })
+      .then(({ data, error }) => setPunti(error ? null : ((data as RigaPunti[]) ?? [])));
 
     setPr(prRes.data ?? []);
     setFasce(fRes.data ?? []);
@@ -1307,6 +1329,14 @@ export default function AdminPrPage() {
   const migliore = classifica[0]?.vendute ?? 0;
   const vendutePr = pr.reduce((s, x) => s + x.vendute, 0);
   const prFermi = pr.filter((x) => x.vendute === 0).length;
+
+  // Le stelle: tutta la crew, da sempre. Per i premi serve sapere chi ha
+  // raggiunto ALMENO una certa stella, quindi i conteggi sono "almeno".
+  const puntiSerata = new Map((punti ?? []).map((x) => [x.pr_id, x.vendite_serata]));
+  const conPunti = (punti ?? []).filter((x) => x.vendite > 0);
+  const almeno = SOGLIE_STELLE.map(
+    (_, i) => (punti ?? []).filter((x) => statoStelle(x.vendite).stelle > i).length,
+  );
 
   return (
     <main className="flex-1 px-5 py-10">
@@ -2475,7 +2505,109 @@ export default function AdminPrPage() {
             tutti i PR della serata, non solo quelli che hanno venduto. */}
         {scheda === "classifica" && (
           <div className="mt-5">
-            {classifica.length === 0 ? (
+            {/* Due classifiche (30 set): la serata riparte da zero a ogni
+                evento, le stelle non si azzerano mai. */}
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              {(
+                [
+                  ["serata", "questa serata"],
+                  ["stelle", "stelle · da sempre"],
+                ] as const
+              ).map(([k, etichetta]) => (
+                <button
+                  key={k}
+                  onClick={() => setVistaClassifica(k)}
+                  className={`border py-2.5 font-tech text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                    vistaClassifica === k
+                      ? "border-brand-red bg-brand-red/10 text-white"
+                      : "border-white/15 text-brand-gray hover:text-white"
+                  }`}
+                >
+                  {etichetta}
+                </button>
+              ))}
+            </div>
+
+            {vistaClassifica === "stelle" ? (
+              punti === null ? (
+                <p className="border border-white/10 px-4 py-6 text-center text-[12px] leading-relaxed text-brand-gray">
+                  Le stelle compaiono quando è incollato{" "}
+                  <span className="text-white">supabase/38_punti_pr.sql</span> nel SQL Editor.
+                </p>
+              ) : (
+                <>
+                  <p className="text-[11px] leading-relaxed text-brand-gray">
+                    {PUNTI_PER_VENDITA} punti a prevendita, tutte le serate. Ogni PR vede solo i
+                    suoi: questa classifica la vedi solo tu.
+                  </p>
+                  <div className="mt-3 grid grid-cols-5 gap-2">
+                    {SOGLIE_STELLE.map((s, i) => (
+                      <div key={s} className="border border-white/10 px-1 py-3 text-center">
+                        <p
+                          className={`font-display text-2xl leading-none ${
+                            almeno[i] > 0 ? "text-white" : "text-white/30"
+                          }`}
+                        >
+                          {almeno[i]}
+                        </p>
+                        <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.1em] text-brand-red">
+                          {i + 1}ª ★
+                        </p>
+                        <p className="font-tech text-[8px] tabular-nums text-white/35">
+                          {fmtPunti(s)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                    quanti pr hanno preso almeno quella stella
+                  </p>
+
+                  {conPunti.length === 0 ? (
+                    <p className="mt-4 border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">
+                      Nessun PR ha ancora punti.
+                    </p>
+                  ) : (
+                    <div className="mt-4 flex flex-col gap-2">
+                      {conPunti.map((x, i) => {
+                        const st = statoStelle(x.vendite);
+                        return (
+                          <div key={x.pr_id} className="border border-white/10 px-4 py-3">
+                            <div className="flex items-baseline justify-between gap-3">
+                              <p className="min-w-0 truncate text-sm text-white">
+                                <span className="mr-2 font-tech text-[11px] text-brand-gray">
+                                  {i + 1}°
+                                </span>
+                                {x.alias}
+                                {x.nome && (
+                                  <span className="ml-2 text-[11px] text-brand-gray">{x.nome}</span>
+                                )}
+                              </p>
+                              <p className="flex-shrink-0 font-display text-2xl leading-none text-white">
+                                {fmtPunti(st.punti)}
+                              </p>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between gap-3">
+                              <CinqueStelle vendite={x.vendite} grandezza="w-4" />
+                              <p className="text-right font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                                {st.prossima === null
+                                  ? "tutte e cinque"
+                                  : `${ORDINALI[st.stelle]} a ${fmtPunti(st.prossima)} · mancano ${st.mancano}`}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {punti.length > conPunti.length && (
+                    <p className="mt-3 text-[11px] text-brand-gray">
+                      {punti.length - conPunti.length} PR ancora a zero punti.
+                    </p>
+                  )}
+                </>
+              )
+            ) : classifica.length === 0 ? (
               <p className="border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">
                 Nessun PR su questa serata: consegna qualche blocchetto dalla scheda PR.
               </p>
@@ -2532,6 +2664,8 @@ export default function AdminPrPage() {
                         </div>
 
                         <p className="mt-2 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                          {puntiSerata.has(x.pr_id) &&
+                            `${fmtPunti((puntiSerata.get(x.pr_id) ?? 0) * PUNTI_PER_VENDITA)} punti · `}
                           {x.entrate} entrate · {euro(x.dovuto)} generati ·{" "}
                           {x.mancante > 0 ? (
                             <span className="text-brand-red">{euro(x.mancante)} da portare</span>

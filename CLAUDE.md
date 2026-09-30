@@ -1,8 +1,28 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 26 settembre 2026
+> Ultimo aggiornamento: 30 settembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**LE STELLE DEI PR (30 set, `supabase/38_punti_pr.sql`, `lib/punti.ts`, `components/Stelle.tsx`).**
+Luka, con le vendite appena partite: *"assegnargli 10 punti per ogni vendita fatta... un ranking
+con stelline"*. Prima una prova grafica fuori dal sito (stelle / luci / tacche,
+https://claude.ai/artifact/SmC7R5RPGHNQp972jVStoU), poi la scelta: **stelle**, e *"le prime 3
+stelle valgono 10 prev ciascuna e poi 25 e 35 la quarta e quinta"* → stelle a **10 · 20 · 30 · 55
+· 90 vendite** (100 · 200 · 300 · 550 · 900 punti). **Regole decise da lui:** 10 punti subito, alla
+vendita (anche se il biglietto è ancora in attesa); annullato → i punti se ne vanno; classifica
+**per serata** + stelle **da sempre**, mai azzerate; **ogni PR vede solo i suoi numeri** — niente
+classifica, niente posizione ("poi vediamo"). Omaggi e vendite della direzione non danno punti
+(mia proposta, non contestata). **Nessun saldo nel database:** `pr_punti()` (il PR, solo le sue) e
+`admin_pr_punti(p_event)` (tutta la crew) contano ogni volta i `presales` con `pr_id` pieno,
+`stato <> 'annullata'` e `prezzo > 0`; punti a vendita e soglie stanno **solo** in `lib/punti.ts`.
+Dove si vede: scheda `ProfiloStelle` in cima a `/pr` (per l'admin c'è un'anteprima con numeri di
+esempio, chiusa di default), `PiuPunti` nella schermata "fatto" di `/pr/[evento]` (con "hai preso
+la terza stella!" quando scatta), e in `/admin/pr` → Classifica il doppio interruttore
+**questa serata / stelle · da sempre** (quanti PR hanno *almeno* ogni stella, per i premi).
+**Premi: da decidere** — nella scheda dei PR non se ne parla finché Luka non li sceglie.
+**PENDING Luka: incollare `supabase/38_punti_pr.sql`** — senza, la scheda del PR non compare e la
+Classifica lo dice; il resto del sito non se ne accorge.
 
 **Anche con chi si candida (26 set, stesso giorno).** Luka: *"anche chi si candida come PR devo
 poter avviare una chat per fargli domande"*. La conversazione è ora un componente condiviso,
