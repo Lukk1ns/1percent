@@ -21,8 +21,9 @@ esempio, chiusa di default), `PiuPunti` nella schermata "fatto" di `/pr/[evento]
 la terza stella!" quando scatta), e in `/admin/pr` → Classifica il doppio interruttore
 **questa serata / stelle · da sempre** (quanti PR hanno *almeno* ogni stella, per i premi).
 **Premi: da decidere** — nella scheda dei PR non se ne parla finché Luka non li sceglie.
-**PENDING Luka: incollare `supabase/38_punti_pr.sql`** — senza, la scheda del PR non compare e la
-Classifica lo dice; il resto del sito non se ne accorge.
+`supabase/38_punti_pr.sql` **incollato e verificato** il 30 set (da fuori `pr_punti` e
+`admin_pr_punti` rispondono "Non autorizzato", quindi esistono). Nello stesso controllo **tutti gli
+script dal 03 al 38 risultano dentro**: le note PENDING più in basso sono storia, non lavoro aperto.
 
 **Anche con chi si candida (26 set, stesso giorno).** Luka: *"anche chi si candida come PR devo
 poter avviare una chat per fargli domande"*. La conversazione è ora un componente condiviso,
