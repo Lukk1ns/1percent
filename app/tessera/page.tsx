@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
@@ -250,18 +251,46 @@ export default function TesseraPage() {
         </div>
       </div>
 
-      {/* ── Comandi ─────────────────────────────────────── */}
-      <div className="mt-5 flex w-full gap-2">
-        <button onClick={() => setGirata(!girata)} className="btn btn-primary flex-1">
-          {girata ? "← Gira" : "Gira: il QR →"}
+      {/* ── Comandi ─────────────────────────────────────────
+          Luka, 4 ott 2026: per un PR la cosa che conta da qui è vendere.
+          In grande le prevendite e la home; girare, mandare e salvare la
+          tessera restano, in piccolo. */}
+      {/* .btn sta fuori dai layer di Tailwind: la misura va data in style */}
+      <Link
+        href="/pr"
+        className="btn btn-primary mt-5 w-full"
+        style={{ fontSize: "1rem", padding: "1.2rem 1rem" }}
+      >
+        Vendi prevendite qui →
+      </Link>
+      <Link
+        href="/"
+        className="btn btn-outline mt-2 w-full"
+        style={{ fontSize: "0.9rem", padding: "1.05rem 1rem" }}
+      >
+        ← Torna alla home
+      </Link>
+      <div className="mt-3 flex w-full gap-2">
+        <button
+          onClick={() => setGirata(!girata)}
+          className="flex-1 border border-white/15 px-2 py-2 font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white"
+        >
+          {girata ? "← gira" : "gira: il qr"}
         </button>
-        <button onClick={condividi} className="btn btn-outline flex-1">
-          Manda il link
+        <button
+          onClick={condividi}
+          className="flex-1 border border-white/15 px-2 py-2 font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white"
+        >
+          manda il link
+        </button>
+        <button
+          onClick={salva}
+          disabled={salvando}
+          className="flex-1 border border-white/15 px-2 py-2 font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white disabled:opacity-40"
+        >
+          {salvando ? "preparo…" : salvata ? "salvata ✓" : "salva tessera"}
         </button>
       </div>
-      <button onClick={salva} disabled={salvando} className="btn btn-ghost mt-2 w-full">
-        {salvando ? "Preparo…" : salvata ? "Salvata ✓" : "Salva la tessera"}
-      </button>
 
       {/* ── Cosa vuol dire ──────────────────────────────── */}
       <div className="mt-8 w-full border-t border-white/5 pt-5">

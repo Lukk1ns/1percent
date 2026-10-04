@@ -4,6 +4,12 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**LA TESSERA DEL PR PORTA A VENDERE (4 ott, `/tessera`).** Luka, entrando come PR nuovo: i tre
+bottoni grandi (gira QR, manda link, salva tessera) *"non sono così importanti"*. Ora in grande
+**"Vendi prevendite qui →"** (`/pr`) e **"← Torna alla home"**; i tre di prima restano in una riga
+piccola sotto. ⚠️ `.btn` sta **fuori dai layer di Tailwind**, quindi batte le classi utility: per
+cambiarne misura o padding serve `style`, non `py-*`/`text-*`.
+
 **AVVISO AI PR SOPRA IL MODULO (4 ott, `/pr/[evento]`).** Luka: *"assicurati di ritirare i soldi
 prima di fare la prevendita, che non è rimborsabile ma si può cedere ad altri"*. Riquadro ambra in
 cima al modulo "Nuovo nominativo". Solo testo: **cambiare il nome su un biglietto già fatto oggi il
