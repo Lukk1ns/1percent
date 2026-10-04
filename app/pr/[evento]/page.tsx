@@ -761,6 +761,11 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
             </p>
           ) : (
             <form onSubmit={vendi} className="mt-4 flex flex-col gap-4">
+              {/* Luka, 4 ott 2026: i soldi prima, perché indietro non si torna. */}
+              <p className="border-l-2 border-amber-400/70 bg-amber-400/10 px-3 py-2 text-[12px] leading-snug text-amber-100">
+                ⚠️ <strong>Ritira i soldi prima di fare la prevendita.</strong> Non è
+                rimborsabile, ma si può cedere a un&apos;altra persona.
+              </p>
               <div className="flex gap-3">
                 <input
                   placeholder="nome"

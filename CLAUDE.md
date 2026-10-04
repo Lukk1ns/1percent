@@ -4,6 +4,11 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**AVVISO AI PR SOPRA IL MODULO (4 ott, `/pr/[evento]`).** Luka: *"assicurati di ritirare i soldi
+prima di fare la prevendita, che non è rimborsabile ma si può cedere ad altri"*. Riquadro ambra in
+cima al modulo "Nuovo nominativo". Solo testo: **cambiare il nome su un biglietto già fatto oggi il
+sito non lo sa fare** (nessuna funzione), quindi la cessione per ora si gestisce a voce/in porta.
+
 **LE DOMANDE DI CHI SI CANDIDA SONO 7 (4 ott, `lib/quiz.ts`).** Luka: la sesta diventa *"Dicci il
 tuo artista preferito che vorresti vedere"* (stesso id `c6`) e si aggiunge la settima **`c7`
 "Ultima domanda: per quale festa ti stai candidando?"**, **solo testo libero** — una prima versione
