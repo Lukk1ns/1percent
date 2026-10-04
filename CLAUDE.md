@@ -4,15 +4,11 @@
 
 ## ⚠️ Leggi prima di tutto
 
-**LE DOMANDE DI CHI SI CANDIDA SONO 7 (4 ott, `lib/quiz.ts`, `/candidatura`, `/admin/crew`).**
-Luka: la sesta diventa *"Dicci il tuo artista preferito che vorresti vedere"* (stesso id `c6`, quindi
-le risposte vecchie restano giuste) e si aggiunge la settima **`c7` "Ultima domanda: per quale festa
-ti stai candidando?"**. Le scelte sono le feste in programma, lette da `events_list` in
-`/candidatura` (`opzioniFesta`) + "Tutte, dove servo" + "scrivila tu". Una festa non svelata si vede
-come "Festa a sorpresa · DOM 18 OTT" (il nome dal server non arriva). L'id della scelta è
-`festa|<starts_at>|<testo>` (`leggiFesta`): il pannello mostra il testo e, approvando, **il menu
-"se entra, vende solo per" parte già sulla festa scelta** (abbinata per data con `admin_pr_eventi`).
-Nessuno script SQL: le risposte stanno già in `crew_answers` (jsonb).
+**LE DOMANDE DI CHI SI CANDIDA SONO 7 (4 ott, `lib/quiz.ts`).** Luka: la sesta diventa *"Dicci il
+tuo artista preferito che vorresti vedere"* (stesso id `c6`) e si aggiunge la settima **`c7`
+"Ultima domanda: per quale festa ti stai candidando?"**, **solo testo libero** — una prima versione
+con le feste in programma come scelte l'ha bocciata subito: *"no la possibilità di scegliere, solo
+una risposta di testo"*. Nessuno script SQL: le risposte stanno già in `crew_answers` (jsonb).
 
 **LA HOME MOSTRA LE PROSSIME DUE (4 ott, `app/page.tsx`).** Luka: con la domenica del 18 creata
 (nascosta fino al reveal) la home mostrava solo quella e Halloween spariva. Ora la home legge
