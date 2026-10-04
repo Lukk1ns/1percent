@@ -28,6 +28,8 @@ future e il solo limite erano i blocchetti. Ora c'è la tabella **`pr_serate`** 
 (`slug = 'halloween-2026'`) e a nient'altro; rieseguire lo script non rimette gli agganci tolti.
 Il sito regge anche senza lo script (agganci = tutto aperto come prima, approvazione senza serata).
 Sintassi SQL e PL/pgSQL controllata con `pglast` (parser di Postgres) prima della consegna.
+**Incollato da Luka il 4 ott alle 14:25**: 81 PR su 81 agganciati a Halloween; candidature in attesa
+non toccate (sono `role = 'public'`). Da fuori tutte le funzioni nuove esistono e rifiutano gli estranei.
 
 **LE STELLE DEI PR (30 set, `supabase/38_punti_pr.sql`, `lib/punti.ts`, `components/Stelle.tsx`).**
 Luka, con le vendite appena partite: *"assegnargli 10 punti per ogni vendita fatta... un ranking
