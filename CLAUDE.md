@@ -9,6 +9,10 @@ bottoni grandi (gira QR, manda link, salva tessera) *"non sono così importanti"
 **"Vendi prevendite qui →"** (`/pr`) e **"← Torna alla home"**; i tre di prima restano in una riga
 piccola sotto. ⚠️ `.btn` sta **fuori dai layer di Tailwind**, quindi batte le classi utility: per
 cambiarne misura o padding serve `style`, non `py-*`/`text-*`.
+**Il retro della tessera è il QR INVITO, non l'ingresso omaggio** (Luka li confondeva): ora il tasto
+grande dice **"↻ Gira la tessera · QR per invitare amici"**, la tessera si gira anche toccandola, il
+retro ha il titolo "QR per invitare" e il QR è più grande (230px, si stringe da solo sui telefoni
+piccoli). L'ingresso omaggio del PR resta nella pagina della serata (`/pr/[evento]`).
 
 **AVVISO AI PR SOPRA IL MODULO (4 ott, `/pr/[evento]`).** Luka: *"assicurati di ritirare i soldi
 prima di fare la prevendita, che non è rimborsabile ma si può cedere ad altri"*. Riquadro ambra in

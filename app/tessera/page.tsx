@@ -85,7 +85,7 @@ export default function TesseraPage() {
     if (!carta || !girata || !qrRef.current) return;
     const url = `${window.location.origin}/unisciti?ref=${carta.referral_code}${SOLO_SU_INVITO ? `&k=${CHIAVE_INVITO}` : ""}`;
     QRCode.toCanvas(qrRef.current, url, {
-      width: 200,
+      width: 230,
       margin: 2,
       color: { dark: "#000000", light: "#ffffff" },
     });
@@ -156,7 +156,8 @@ export default function TesseraPage() {
       {/* ── LA TESSERA ─────────────────────────────────── */}
       <div className="mt-5 w-full" style={{ perspective: "1200px" }}>
         <div
-          className="relative w-full transition-transform duration-700"
+          onClick={() => setGirata(!girata)}
+          className="relative w-full cursor-pointer transition-transform duration-700"
           style={{
             transformStyle: "preserve-3d",
             transform: girata ? "rotateY(180deg)" : "rotateY(0deg)",
@@ -234,14 +235,14 @@ export default function TesseraPage() {
             className="absolute inset-0 flex flex-col items-center justify-center gap-4 border border-brand-red/30 bg-[#080808] px-6"
             style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
-            <p className="font-tech text-[10px] uppercase tracking-[0.35em] text-brand-gray/70">
-              il tuo invito
+            <p className="font-display text-2xl uppercase leading-none text-white">
+              QR per invitare
             </p>
-            <div className="border border-brand-red/25 bg-black p-3">
-              <canvas ref={qrRef} />
+            <div className="max-w-full border border-brand-red/25 bg-black p-3">
+              <canvas ref={qrRef} className="block h-auto max-w-full" />
             </div>
-            <p className="text-center text-xs leading-relaxed text-brand-gray">
-              Chi lo inquadra si iscrive
+            <p className="text-center text-sm leading-relaxed text-brand-gray">
+              Fallo inquadrare a un amico: si iscrive
               <br />e resta <span className="text-white">attribuito a te</span>. Per sempre.
             </p>
             <p className="font-tech text-[11px] uppercase tracking-[0.3em] text-brand-red">
@@ -253,8 +254,8 @@ export default function TesseraPage() {
 
       {/* ── Comandi ─────────────────────────────────────────
           Luka, 4 ott 2026: per un PR la cosa che conta da qui è vendere.
-          In grande le prevendite e la home; girare, mandare e salvare la
-          tessera restano, in piccolo. */}
+          In grande le prevendite, il QR per invitare e la home; mandare il
+          link e salvare la tessera restano, in piccolo. */}
       {/* .btn sta fuori dai layer di Tailwind: la misura va data in style */}
       <Link
         href="/pr"
@@ -263,6 +264,15 @@ export default function TesseraPage() {
       >
         Vendi prevendite qui →
       </Link>
+      {/* Il retro della tessera è il QR invito (non l'ingresso omaggio, che
+          sta nella pagina della serata in /pr): il tasto lo dice. */}
+      <button
+        onClick={() => setGirata(!girata)}
+        className="btn btn-outline mt-2 w-full"
+        style={{ fontSize: "0.9rem", padding: "1.05rem 1rem" }}
+      >
+        {girata ? "↺ Rigira la tessera" : "↻ Gira la tessera · QR per invitare amici"}
+      </button>
       <Link
         href="/"
         className="btn btn-outline mt-2 w-full"
@@ -271,12 +281,6 @@ export default function TesseraPage() {
         ← Torna alla home
       </Link>
       <div className="mt-3 flex w-full gap-2">
-        <button
-          onClick={() => setGirata(!girata)}
-          className="flex-1 border border-white/15 px-2 py-2 font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white"
-        >
-          {girata ? "← gira" : "gira: il qr"}
-        </button>
         <button
           onClick={condividi}
           className="flex-1 border border-white/15 px-2 py-2 font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white"
