@@ -553,51 +553,61 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                 : "border-emerald-400/40 bg-emerald-400/5"
             }`}
           >
+            {/* Luka, 4 ott 2026: quanto deve portare va scritto in grande,
+                e subito sotto la regola, con le sue parole. */}
             <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
               i tuoi conti per questa serata
             </p>
 
-            <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3">
+            <p className="mt-4 font-tech text-[11px] uppercase tracking-[0.25em] text-white">
+              {Number(r.da_portare) > 0 ? "soldi da consegnare" : "soldi da consegnare: niente"}
+            </p>
+            <p
+              className={`mt-1 font-display leading-none ${
+                Number(r.da_portare) > 0 ? "text-brand-red" : "text-emerald-400"
+              }`}
+              style={{ fontSize: "clamp(3.5rem, 18vw, 5.5rem)" }}
+            >
+              {Number(r.da_portare).toFixed(0)}€
+            </p>
+            {Number(r.da_portare) <= 0 && Number(r.vendute) > 0 && (
+              <p className="mt-1 font-tech text-[11px] uppercase tracking-[0.2em] text-emerald-300">
+                sei a posto ✓
+              </p>
+            )}
+
+            <p className="mt-4 text-[15px] font-semibold leading-snug text-white">
+              Le prevendite non sono valide finché non consegni i soldi prima dell&apos;evento,
+              quando ti verrà indicato.
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-white/60">
+              Chi le ha comprate, in porta, non entra.
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-end gap-x-8 gap-y-3 border-t border-white/10 pt-4">
               <div>
-                <p className="font-display text-4xl leading-none text-white">{r.vendute}</p>
+                <p className="font-display text-2xl leading-none text-white">{r.vendute}</p>
                 <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
                   prevendite fatte
                 </p>
               </div>
               <div>
-                <p
-                  className={`font-display text-4xl leading-none ${
-                    Number(r.da_portare) > 0 ? "text-brand-red" : "text-emerald-400"
-                  }`}
-                >
-                  {Number(r.da_portare).toFixed(0)}€
-                </p>
-                <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-                  da consegnare
-                </p>
-              </div>
-              <div>
-                <p className="font-display text-4xl leading-none text-white">{r.residue}</p>
+                <p className="font-display text-2xl leading-none text-white">{r.residue}</p>
                 <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
                   ancora in mano
                 </p>
               </div>
+              {Number(r.consegnato) > 0 && (
+                <div>
+                  <p className="font-display text-2xl leading-none text-white">
+                    {Number(r.consegnato).toFixed(0)}€
+                  </p>
+                  <p className="mt-1 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
+                    già consegnati su {Number(r.dovuto).toFixed(0)}€
+                  </p>
+                </div>
+              )}
             </div>
-
-            {Number(r.consegnato) > 0 && (
-              <p className="mt-3 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
-                già consegnati {Number(r.consegnato).toFixed(0)}€ su{" "}
-                {Number(r.dovuto).toFixed(0)}€
-              </p>
-            )}
-
-            <p className="mt-4 border-t border-white/10 pt-3 text-[12px] leading-relaxed text-white/80">
-              <span className="text-white">Quando si consegna:</span> il giorno preciso te lo
-              comunichiamo noi, ma comunque <span className="text-white">prima della serata</span>.
-              Le prevendite che hai venduto e non hai ancora saldato{" "}
-              <span className="text-white">non vengono convalidate</span>: chi le ha comprate,
-              in porta, non entra.
-            </p>
           </div>
         )}
 

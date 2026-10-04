@@ -4,6 +4,13 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**I CONTI DEL PR: LA CIFRA IN GRANDE (4 ott, `/pr/[evento]`).** Luka: *"più grande, più visibile,
+quanti soldi deve portare"* e la frase *"finché non consegni i soldi prima dell'evento quando ti
+verrà indicato"*. Nel riquadro "i tuoi conti" ora c'è in testa **"soldi da consegnare"** con la
+cifra gigante (rossa, verde a zero con "sei a posto ✓"), sotto la regola: *"Le prevendite non sono
+valide finché non consegni i soldi prima dell'evento, quando ti verrà indicato"*; fatte, in mano e
+già consegnati scendono in piccolo.
+
 **LA TESSERA DEL PR PORTA A VENDERE (4 ott, `/tessera`).** Luka, entrando come PR nuovo: i tre
 bottoni grandi (gira QR, manda link, salva tessera) *"non sono così importanti"*. Ora in grande
 **"Vendi prevendite qui →"** (`/pr`) e **"← Torna alla home"**; i tre di prima restano in una riga
