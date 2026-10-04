@@ -6,7 +6,7 @@ import LedWall from "@/components/LedWall";
 import Locandina from "@/components/Locandina";
 import { Marquee } from "@/components/Marquee";
 import { createClient } from "@/lib/supabase/client";
-import { dataLunga, ora, type Evento } from "@/lib/eventi";
+import { dataCorta, dataLunga, ora, type Evento } from "@/lib/eventi";
 import {
   BRAND_AREA,
   BRAND_CLAIM,
@@ -71,12 +71,86 @@ function CountdownLed({ target, etichetta }: { target: Date; etichetta: string }
   );
 }
 
+/** "tra 27 giorni", "tra 5 ore": per il secondo evento basta una riga. */
+function traQuanto(iso: string): string {
+  const diff = new Date(iso).getTime() - Date.now();
+  if (diff <= 0) return "adesso";
+  const ore = Math.floor(diff / 3600000);
+  if (ore >= 48) return `tra ${Math.floor(ore / 24)} giorni`;
+  if (ore >= 24) return "tra 1 giorno";
+  if (ore >= 1) return `tra ${ore} ${ore === 1 ? "ora" : "ore"}`;
+  return `tra ${Math.max(1, Math.floor(diff / 60000))} minuti`;
+}
+
+/* ────────────────────────────────────────────────────────────
+   Il secondo evento in programma: sotto il primo, più piccolo.
+   Stesse regole: se non è ancora svelato si vedono solo data e
+   teaser, perché il nome dal server non arriva.
+   ──────────────────────────────────────────────────────────── */
+
+function EventoDopo({ ev }: { ev: Evento }) {
+  if (!ev.svelato) {
+    return (
+      <div className="grid grid-cols-[72px_1fr] items-center gap-4 sm:grid-cols-[88px_1fr]">
+        <div className="flex aspect-[9/16] items-center justify-center border border-brand-red/30 bg-black">
+          <span className="font-display text-xl text-brand-red">?</span>
+        </div>
+        <div className="min-w-0">
+          <p className="font-display text-3xl leading-none tracking-[0.06em] text-brand-red">
+            ?????
+          </p>
+          {ev.teaser && (
+            <p className="mt-2 text-sm leading-snug text-white/85">{ev.teaser}</p>
+          )}
+          <p className="mt-2 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
+            {dataLunga(ev.starts_at)} · si svela {traQuanto(ev.reveal_at)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <Link
+      href={`/eventi/${ev.slug}`}
+      className="group grid grid-cols-[72px_1fr] items-center gap-4 sm:grid-cols-[88px_1fr]"
+    >
+      {ev.cover_key ? (
+        <Locandina
+          coverKey={ev.cover_key}
+          coverV={ev.cover_v}
+          nome={ev.nome}
+          className="aspect-[9/16] w-full"
+          compatta
+        />
+      ) : (
+        <div className="aspect-[9/16] border border-white/10 bg-black" />
+      )}
+      <div className="min-w-0">
+        <p className="font-display text-xl uppercase leading-tight text-white transition-colors group-hover:text-brand-red sm:text-2xl">
+          {ev.nome}
+        </p>
+        <p className="mt-2 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
+          {dataCorta(ev.starts_at)} · {ora(ev.starts_at)}
+          {ev.locale ? ` · ${ev.locale}` : ""}
+        </p>
+        <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray/60">
+          si apre {traQuanto(ev.starts_at)} →
+        </p>
+      </div>
+    </Link>
+  );
+}
+
 /* ────────────────────────────────────────────────────────────
    La home: la parete LED del locale, e sotto la prossima festa
    ──────────────────────────────────────────────────────────── */
 
 export default function Home() {
-  const [evento, setEvento] = useState<Evento | null>(null);
+  // Le prossime feste in ordine di data: la prima in grande, la seconda
+  // sotto in piccolo (con due eventi vicini, la seconda non sparisce).
+  const [inProgramma, setInProgramma] = useState<Evento[]>([]);
+  const evento = inProgramma[0] ?? null;
+  const dopo = inProgramma[1] ?? null;
   const [dentro, setDentro] = useState<number | null>(null);
   const [ultimi, setUltimi] = useState<Membro[]>([]);
   // null = sto ancora controllando: evita di far lampeggiare "iscriviti"
@@ -116,8 +190,19 @@ export default function Home() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.rpc("next_event").then(({ data, error }) => {
-      if (!error && data) setEvento(data as Evento);
+    supabase.rpc("events_list").then(({ data, error }) => {
+      if (!error && Array.isArray(data)) {
+        setInProgramma(
+          (data as Evento[])
+            .filter((e) => !e.passato)
+            .sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
+        );
+        return;
+      }
+      // ripiego: almeno la prossima, come prima
+      supabase.rpc("next_event").then(({ data: una, error: err }) => {
+        if (!err && una) setInProgramma([una as Evento]);
+      });
     });
     supabase.rpc("member_count").then(({ data }) => {
       if (typeof data === "number") setDentro(data);
@@ -305,6 +390,13 @@ export default function Home() {
                   <CountdownLed target={new Date(svelato.starts_at)} etichetta="si apre tra" />
                 </div>
               </div>
+            </div>
+          )}
+
+          {dopo && (
+            <div className="mt-10 border-t border-white/10 pt-6">
+              <p className="led-label mb-4">e poi</p>
+              <EventoDopo ev={dopo} />
             </div>
           )}
 

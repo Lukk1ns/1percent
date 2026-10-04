@@ -4,6 +4,14 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**LA HOME MOSTRA LE PROSSIME DUE (4 ott, `app/page.tsx`).** Luka: con la domenica del 18 creata
+(nascosta fino al reveal) la home mostrava solo quella e Halloween spariva. Ora la home legge
+`events_list` (non più `next_event`, che resta solo come ripiego), prende le feste non passate in
+ordine di data: la prima in grande come prima, la seconda sotto **"e poi"** in piccolo
+(`EventoDopo`: locandina mini + nome + data + "si apre tra N giorni"; se non è svelata, `?????` +
+teaser + "si svela tra…"). `Locandina` ha la prop **`compatta`**: sulla sfocata solo il lucchetto,
+senza scritte né il tasto (un link dentro un link non è valido e a 80px non ci stava).
+
 **OGNI PR VENDE SOLO PER LE SERATE A CUI È AGGANCIATO (4 ott, `supabase/39_pr_per_serata.sql`).**
 Luka, prima di aggiungere altri eventi: *"per evitare di farli vendere prevendite sbagliato è bene
 che ogni PR abbia abilitato solo un evento... se uno vende per 2 o più eventi lo deve sapere a parte

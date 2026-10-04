@@ -13,6 +13,8 @@ type Props = {
   /** Nome dell'evento, per chi usa un lettore di schermo. */
   nome: string;
   className?: string;
+  /** In piccolo (es. il secondo evento in home): sopra la sfocata solo il lucchetto, niente scritte né tasti. */
+  compatta?: boolean;
 };
 
 /**
@@ -27,7 +29,7 @@ type Props = {
  * che ci fonde dentro il nome di chi la guarda. Se uno screenshot esce
  * prima del momento, dallo screenshot si risale a chi l'ha fatto.
  */
-export default function Locandina({ coverKey, coverV, nome, className = "" }: Props) {
+export default function Locandina({ coverKey, coverV, nome, className = "", compatta = false }: Props) {
   // `false` = il server l'ha negata (o non è arrivata): si resta sulla
   // sfocata col lucchetto. Finché è `null` si prova a mostrarla.
   const [nitida, setNitida] = useState<false | null>(null);
@@ -104,7 +106,15 @@ export default function Locandina({ coverKey, coverV, nome, className = "" }: Pr
         />
       )}
 
-      {nitida === false && (
+      {nitida === false && compatta && controllato && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+          <span className="text-lg" aria-hidden>
+            🔒
+          </span>
+        </div>
+      )}
+
+      {nitida === false && !compatta && (
         <>
           {controllato && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/45 px-5 text-center backdrop-blur-[2px]">
