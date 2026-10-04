@@ -128,7 +128,49 @@ export const CREW_QUESTIONS: QuizQuestion[] = [
   {
     id: "c6",
     type: "text",
-    text: "Ultima domanda: che artista vorresti vedere live da noi?",
+    text: "Dicci il tuo artista preferito che vorresti vedere",
     placeholder: "Evita quelli troppo troppo troppo famosi, purtroppo :)",
   },
+  {
+    // Le scelte sono le feste in programma e le aggiunge /candidatura
+    // (`opzioniFesta`): qui c'è solo "tutte". Luka, 4 ott 2026.
+    id: "c7",
+    type: "choice",
+    text: "Ultima domanda: per quale festa ti stai candidando?",
+    placeholder: "Se è un'altra, scrivila tu (facoltativo)",
+    options: [{ id: "tutte", text: "Tutte, dove servo" }],
+  },
 ];
+
+/**
+ * Le scelte della domanda c7: una per ogni festa in programma.
+ *
+ * L'id si porta dietro la data della festa e il testo che ha visto il
+ * candidato (`festa|<starts_at>|<testo>`): così il pannello lo legge anche
+ * fra mesi, e approvandolo propone già quella serata. Di una festa non
+ * ancora svelata il nome non lo sappiamo (il server non lo manda): si vede
+ * solo il giorno.
+ */
+export function opzioniFesta(
+  feste: { svelato: boolean; starts_at: string; nome?: string; passato?: boolean }[],
+): QuizOption[] {
+  const giorno = (iso: string) =>
+    new Date(iso)
+      .toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })
+      .replace(/\./g, "")
+      .toUpperCase();
+  return feste
+    .filter((f) => !f.passato)
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+    .map((f) => {
+      const testo = f.svelato && f.nome ? `${f.nome} · ${giorno(f.starts_at)}` : `Festa a sorpresa · ${giorno(f.starts_at)}`;
+      return { id: `festa|${f.starts_at}|${testo}`, text: testo };
+    });
+}
+
+/** Legge una scelta della c7: la data della festa e il testo visto dal candidato. */
+export function leggiFesta(id: string): { starts_at: string; testo: string } | null {
+  if (!id.startsWith("festa|")) return null;
+  const [, starts_at, ...resto] = id.split("|");
+  return { starts_at, testo: resto.join("|") };
+}
