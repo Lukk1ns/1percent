@@ -20,6 +20,9 @@ type Candidatura = {
   invitato_da: string | null;
 };
 
+// Le serate in programma: approvando un PR si sceglie su quale lavora.
+type SerataFutura = { event_id: string; nome: string; starts_at: string };
+
 type Membro = {
   id: string;
   member_number: number;
@@ -111,14 +114,26 @@ export default function AdminCrewPage() {
   // Con chi è aperta la chat (id del profilo): per fare domande a chi si
   // candida prima di decidere. La trova nei suoi Messaggi sul sito.
   const [chat, setChat] = useState<string | null>(null);
+  // Ogni PR vende solo per le serate a cui è agganciato (script 39):
+  // approvando si sceglie la sua. Di partenza la più vicina.
+  const [serate, setSerate] = useState<SerataFutura[]>([]);
+  const [serataScelta, setSerataScelta] = useState<Record<string, string>>({});
 
   async function carica() {
     const supabase = createClient();
-    const [reqRes, crewRes, membriRes] = await Promise.all([
+    const [reqRes, crewRes, membriRes, eventiRes] = await Promise.all([
       supabase.rpc("admin_crew_requests"),
       supabase.rpc("crew_count"),
       supabase.rpc("admin_crew_answers"),
+      supabase.rpc("admin_pr_eventi"),
     ]);
+    if (!eventiRes.error) {
+      setSerate(
+        ((eventiRes.data ?? []) as (SerataFutura & { passato: boolean })[])
+          .filter((e) => !e.passato)
+          .sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
+      );
+    }
 
     if (reqRes.error) {
       setErrore(
@@ -142,14 +157,28 @@ export default function AdminCrewPage() {
   }, []);
 
   async function decidi(c: Candidatura, approva: boolean) {
+    const serata = serataScelta[c.id] ?? serate[0]?.event_id;
+    const nomeSerata = serate.find((s) => s.event_id === serata)?.nome;
     const verbo = approva ? "Far entrare" : "Rifiutare";
-    if (!confirm(`${verbo} ${c.nome ?? c.alias} (${c.alias})?`)) return;
+    if (
+      !confirm(
+        `${verbo} ${c.nome ?? c.alias} (${c.alias})?` +
+          (approva && nomeSerata ? `\n\nPotrà vendere solo per: ${nomeSerata}` : ""),
+      )
+    )
+      return;
 
     setLavorando(c.id);
-    const { data, error } = await createClient().rpc(
+    const supabase = createClient();
+    let { data, error } = await supabase.rpc(
       approva ? "admin_approve_crew" : "admin_reject_crew",
-      { p_profile: c.id },
+      approva && serata ? { p_profile: c.id, p_event: serata } : { p_profile: c.id },
     );
+    // Finché supabase/39_pr_per_serata.sql non è incollato la funzione non
+    // conosce la serata: si approva come prima, senza.
+    if (approva && serata && error?.code === "PGRST202") {
+      ({ data, error } = await supabase.rpc("admin_approve_crew", { p_profile: c.id }));
+    }
     setLavorando(null);
     if (error) {
       setErrore(error.message);
@@ -165,8 +194,10 @@ export default function AdminCrewPage() {
       const n = Number(quanti ?? 0);
       alert(
         n > 0
-          ? `${c.nome ?? c.alias} è dentro, e gli ho già consegnato ${n} prevendite per ${serata}.`
-          : `${c.nome ?? c.alias} è dentro.\n\nBlocchetti non consegnati: o non c'è nessuna serata in programma, o ne aveva già per la prossima. Glieli dai tu da /admin/pr.`,
+          ? `${c.nome ?? c.alias} è dentro, agganciato a ${serata}: gli ho già consegnato ${n} prevendite.`
+          : serata
+          ? `${c.nome ?? c.alias} è dentro, agganciato a ${serata}.\n\nBlocchetti non consegnati (ne aveva già, o le prevendite di partenza sono a zero): glieli dai tu da /admin/pr.`
+          : `${c.nome ?? c.alias} è dentro.\n\nNon c'è nessuna serata in programma: quando la crei, agganciaglielo da /admin/pr.`,
       );
     }
     carica();
@@ -321,6 +352,31 @@ export default function AdminCrewPage() {
                   {c.email && <p className="text-[11px] text-brand-gray/60 break-all mb-4">{c.email}</p>}
 
                   <Risposte risposte={c.crew_answers} />
+
+                  {serate.length > 0 && (
+                    <label className="mt-5 block">
+                      <span className="mb-1 block text-[10px] uppercase tracking-widest text-brand-gray">
+                        se entra, vende solo per
+                      </span>
+                      <select
+                        value={serataScelta[c.id] ?? serate[0].event_id}
+                        onChange={(e) =>
+                          setSerataScelta((prec) => ({ ...prec, [c.id]: e.target.value }))
+                        }
+                        className="w-full border border-white/15 bg-black px-3 py-3 text-sm text-white outline-none focus:border-brand-red"
+                      >
+                        {serate.map((s) => (
+                          <option key={s.event_id} value={s.event_id}>
+                            {s.nome} ·{" "}
+                            {new Date(s.starts_at).toLocaleDateString("it-IT", {
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
 
                   <div className="flex gap-2 mt-5">
                     <button

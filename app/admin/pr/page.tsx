@@ -41,6 +41,8 @@ type RigaPR = {
   dovuto: number;
   consegnato: number;
   mancante: number;
+  /** agganciato a questa serata (supabase/39_pr_per_serata.sql). Mancante = script non incollato */
+  agganciato?: boolean;
 };
 
 type RigaIngresso = {
@@ -453,6 +455,11 @@ export default function AdminPrPage() {
   const [eventi, setEventi] = useState<EventoAdmin[]>([]);
   const [evento, setEvento] = useState<string>("");
   const [pr, setPr] = useState<RigaPR[]>([]);
+  // Le serate a cui è agganciato ogni PR: pr_id → event_id[]. Un PR vende
+  // solo lì (script 39). null = script non ancora incollato.
+  const [agganci, setAgganci] = useState<Record<string, string[]> | null>(null);
+  // I non agganciati a questa serata stanno chiusi in fondo alla lista.
+  const [mostraNonAgganciati, setMostraNonAgganciati] = useState(false);
   const [fasce, setFasce] = useState<Fascia[]>([]);
   const [biglietti, setBiglietti] = useState<BigliettoAdmin[]>([]);
   const [cruscotto, setCruscotto] = useState<Cruscotto | null>(null);
@@ -554,6 +561,18 @@ export default function AdminPrPage() {
     supabase
       .rpc("admin_da_ricevere", { p_event: id })
       .then(({ data }) => setDaRicevere(data?.[0] ?? null));
+    // Gli agganci PR ↔ serata (script 39): finché non c'è, niente bollini.
+    supabase.rpc("admin_pr_serate").then(({ data, error }) => {
+      if (error) {
+        setAgganci(null);
+        return;
+      }
+      const mappa: Record<string, string[]> = {};
+      for (const r of (data ?? []) as { pr_id: string; event_id: string }[]) {
+        (mappa[r.pr_id] ??= []).push(r.event_id);
+      }
+      setAgganci(mappa);
+    });
     // E per i punti: finché 38_punti_pr.sql non è incollato niente stelle.
     supabase
       .rpc("admin_pr_punti", { p_event: id })
@@ -735,8 +754,48 @@ export default function AdminPrPage() {
       window.alert("Non puoi ritirargliene più di quelle che ha ancora in mano.");
       return;
     }
+    if (data === "non_agganciato") {
+      window.alert(
+        "Questo PR non è agganciato a questa serata.\n\nAgganciaglielo prima (aprendo la sua riga), poi consegnagli le prevendite.",
+      );
+      return;
+    }
     await caricaEvento(evento);
     await carica();
+  }
+
+  // Aggancia o sgancia un PR da una serata: vende solo dove è agganciato.
+  async function aggancia(riga: RigaPR, eventId: string, on: boolean) {
+    const nomeSerata = eventi.find((e) => e.event_id === eventId)?.nome ?? "questa serata";
+    if (
+      !on &&
+      !window.confirm(
+        `Sganciare ${riga.alias} da ${nomeSerata}?\n\nNon potrà più vendere per quella serata. I biglietti che ha già venduto restano validi.`,
+      )
+    )
+      return;
+    setLavorando(true);
+    const { data, error } = await createClient().rpc("admin_pr_aggancia", {
+      p_pr: riga.pr_id,
+      p_event: eventId,
+      p_on: on,
+    });
+    setLavorando(false);
+    if (error) {
+      window.alert(
+        error.message.includes("admin_pr_aggancia")
+          ? "Manca un pezzo sul database: incolla supabase/39_pr_per_serata.sql nel SQL Editor."
+          : error.message,
+      );
+      return;
+    }
+    const inMano = Number(String(data ?? "").split(":")[1] ?? 0);
+    if (!on && inMano > 0) {
+      window.alert(
+        `${riga.alias} ha ancora ${inMano} prevendite in mano per ${nomeSerata}: non può più usarle, ritiragliele.`,
+      );
+    }
+    await caricaEvento(evento);
   }
 
   // Quanto ha portato: se il quadratino è vuoto vale "tutto quello che
@@ -822,10 +881,12 @@ export default function AdminPrPage() {
   // serve solo chi è a zero, così chi ne ha già non si ritrova il
   // doppio senza motivo.
   async function consegnaATutti() {
-    const aZero = pr.filter((x) => x.assegnate === 0).length;
+    // solo chi è agganciato a questa serata (gli altri qui non vendono)
+    const squadra = pr.filter((x) => x.agganciato !== false);
+    const aZero = squadra.filter((x) => x.assegnate === 0).length;
     const risposta = window.prompt(
       `Quante prevendite a testa?\n\n` +
-        `PR approvati: ${pr.length} · senza niente in mano per questa serata: ${aZero}.`,
+        `PR agganciati a questa serata: ${squadra.length} · senza niente in mano: ${aZero}.`,
       "5",
     );
     if (risposta === null) return;
@@ -835,10 +896,10 @@ export default function AdminPrPage() {
       return;
     }
     const soloAZero =
-      aZero === pr.length ||
+      aZero === squadra.length ||
       window.confirm(
         `Darle SOLO a chi è a zero (${aZero} PR)?\n\n` +
-          `OK = solo a loro · Annulla = a tutti e ${pr.length}, anche a chi ne ha già.`,
+          `OK = solo a loro · Annulla = a tutti e ${squadra.length}, anche a chi ne ha già.`,
       );
 
     setLavorando(true);
@@ -1295,7 +1356,7 @@ export default function AdminPrPage() {
   // La ricerca guarda alias, nome vero e numero di tessera. Il numero
   // si può scrivere come viene: 55, #55 o 0055.
   const cercato = cerca.trim().toLowerCase().replace(/^#/, "");
-  const prVisibili = cercato
+  const prTrovati = cercato
     ? pr.filter((x) => {
         const numero = x.numero ?? null;
         return (
@@ -1307,6 +1368,16 @@ export default function AdminPrPage() {
         );
       })
     : pr;
+  // In lista prima chi è agganciato a questa serata; gli altri, chiusi in
+  // fondo, si aprono a richiesta (o si trovano cercandoli).
+  const prAgganciati = prTrovati.filter((x) => x.agganciato !== false);
+  const prNonAgganciati = prTrovati.filter((x) => x.agganciato === false);
+  const prVisibili =
+    cercato || mostraNonAgganciati ? [...prAgganciati, ...prNonAgganciati] : prAgganciati;
+  // Le serate che si possono agganciare: quelle che devono ancora succedere.
+  const serateFuture = eventi
+    .filter((e) => !e.passato)
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   const attesaTotale = pr.reduce((s, x) => s + x.in_attesa, 0);
 
   // Un omaggio si riconosce dal prezzo: zero euro vuol dire che non c'è
@@ -1322,13 +1393,14 @@ export default function AdminPrPage() {
       ? Math.min(100, Math.round((Number(cruscotto.raccolto) / Number(cruscotto.incasso)) * 100))
       : 0;
 
-  // La classifica: **tutti** i PR della serata, anche quelli fermi a zero.
-  const classifica = [...pr].sort(
+  // La classifica: **tutti** i PR della serata, anche quelli fermi a zero
+  // (quelli agganciati; dei non agganciati solo chi ci ha venduto).
+  const classifica = pr.filter((x) => x.agganciato !== false || x.vendute > 0).sort(
     (a, b) => b.vendute - a.vendute || a.alias.localeCompare(b.alias),
   );
   const migliore = classifica[0]?.vendute ?? 0;
   const vendutePr = pr.reduce((s, x) => s + x.vendute, 0);
-  const prFermi = pr.filter((x) => x.vendute === 0).length;
+  const prFermi = classifica.filter((x) => x.vendute === 0).length;
 
   // Le stelle: tutta la crew, da sempre. Per i premi serve sapere chi ha
   // raggiunto ALMENO una certa stella, quindi i conteggi sono "almeno".
@@ -1855,8 +1927,22 @@ export default function AdminPrPage() {
               </button>
             </div>
 
-            {prVisibili.map((x) => (
-              <div key={x.pr_id} className="border border-white/10">
+            {agganci !== null && (
+              <p className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                agganciati a questa serata:{" "}
+                <span className="text-white">{pr.filter((x) => x.agganciato !== false).length}</span>{" "}
+                su {pr.length} PR · vendono solo qui
+              </p>
+            )}
+
+            {prVisibili.map((x, i) => (
+              <div key={x.pr_id}>
+                {x.agganciato === false && prVisibili[i - 1]?.agganciato !== false && (
+                  <p className="mb-2 mt-3 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                    non agganciati a questa serata · qui non vendono
+                  </p>
+                )}
+              <div className={`border ${x.agganciato === false ? "border-white/5 opacity-60" : "border-white/10"}`}>
                 <button
                   onClick={() => setAperto(aperto === x.pr_id ? null : x.pr_id)}
                   className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
@@ -1872,6 +1958,9 @@ export default function AdminPrPage() {
                       )}
                     </p>
                     <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                      {x.agganciato === false && (
+                        <span className="mr-2 text-brand-red">non agganciato</span>
+                      )}
                       {x.vendute}/{x.assegnate} vendute
                       {x.in_attesa > 0 && (
                         <span className="ml-2 text-amber-300">{x.in_attesa} in attesa</span>
@@ -1894,6 +1983,44 @@ export default function AdminPrPage() {
 
                 {aperto === x.pr_id && (
                   <div className="border-t border-white/10 px-4 py-4">
+                    {agganci !== null && (
+                      <div className="mb-4 border-b border-white/5 pb-4">
+                        <p className="mb-2 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                          vende per · tocca una serata per agganciarla o sganciarla
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {serateFuture.map((s) => {
+                            const si = (agganci[x.pr_id] ?? []).includes(s.event_id);
+                            return (
+                              <button
+                                key={s.event_id}
+                                disabled={lavorando}
+                                onClick={() => aggancia(x, s.event_id, !si)}
+                                className={`border px-3 py-2 text-left font-tech text-[10px] uppercase tracking-[0.1em] transition-colors disabled:opacity-40 ${
+                                  si
+                                    ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-200"
+                                    : "border-white/15 text-brand-gray hover:border-white/40 hover:text-white"
+                                }`}
+                              >
+                                {si ? "✓ " : "+ "}
+                                {s.nome}
+                                <span className="ml-1 text-white/40">
+                                  {new Date(s.starts_at).toLocaleDateString("it-IT", {
+                                    day: "numeric",
+                                    month: "short",
+                                  })}
+                                </span>
+                              </button>
+                            );
+                          })}
+                          {serateFuture.length === 0 && (
+                            <span className="text-[11px] text-brand-gray">
+                              Nessuna serata in programma.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
                         consegna
@@ -1901,7 +2028,12 @@ export default function AdminPrPage() {
                       {[5, 10, 20, 50].map((n) => (
                         <button
                           key={n}
-                          disabled={lavorando}
+                          disabled={lavorando || x.agganciato === false}
+                          title={
+                            x.agganciato === false
+                              ? "Non è agganciato a questa serata: agganciaglielo qui sopra"
+                              : undefined
+                          }
                           onClick={() => assegna(x.pr_id, n)}
                           className="border border-white/20 px-3 py-2 font-tech text-[10px] text-white transition-colors hover:border-brand-red disabled:opacity-40"
                         >
@@ -2029,7 +2161,19 @@ export default function AdminPrPage() {
                   </div>
                 )}
               </div>
+              </div>
             ))}
+
+            {!cercato && prNonAgganciati.length > 0 && (
+              <button
+                onClick={() => setMostraNonAgganciati((v) => !v)}
+                className="border border-white/10 px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:text-white"
+              >
+                {mostraNonAgganciati
+                  ? "nascondi i non agganciati"
+                  : `mostra i non agganciati a questa serata (${prNonAgganciati.length})`}
+              </button>
+            )}
 
             {pr.length === 0 && (
               <p className="border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">

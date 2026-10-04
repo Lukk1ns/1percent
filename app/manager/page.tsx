@@ -41,6 +41,8 @@ type Riga = {
   manager?: boolean;
   /** Sei tu: i tuoi incassi li porti tu alla direzione. */
   sono_io?: boolean;
+  /** Agganciato a questa serata dalla direzione: solo a loro si danno prevendite (script 39) */
+  agganciato?: boolean;
 };
 
 type Saldo = {
@@ -368,6 +370,9 @@ export default function ManagerPage() {
                           <p className="truncate text-[11px] text-brand-gray">{r.nome}</p>
                         )}
                         <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                          {r.agganciato === false && (
+                            <span className="mr-2 text-brand-red">non su questa serata</span>
+                          )}
                           {r.vendute} vendute · {r.in_mano} ancora in mano
                         </p>
                       </div>
@@ -457,6 +462,12 @@ export default function ManagerPage() {
                         <p className="mt-5 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
                           gli do altre prevendite
                         </p>
+                        {r.agganciato === false ? (
+                          <p className="mt-2 text-[12px] leading-relaxed text-brand-gray">
+                            Non lavora su questa serata: le prevendite qui non gliele puoi dare.
+                            Lo aggancia solo la direzione.
+                          </p>
+                        ) : (
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <input
                             inputMode="numeric"
@@ -473,6 +484,7 @@ export default function ManagerPage() {
                             consegna
                           </button>
                         </div>
+                        )}
 
                         <button
                           onClick={() => setAperto(null)}

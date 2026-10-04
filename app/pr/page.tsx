@@ -17,6 +17,8 @@ type EventoPR = {
   assegnate: number;
   vendute: number;
   residue: number;
+  /** false = non più agganciato a questa serata: si vedono i biglietti, non si vende (script 39) */
+  puo_vendere?: boolean;
 };
 
 type Stato = {
@@ -283,12 +285,12 @@ export default function PrPage() {
         {eventi.length === 0 ? (
           <div className="mt-8 border border-white/10 px-5 py-8 text-center">
             <p className="text-sm text-white">
-              {stato.sono_admin ? "Non c'è nessuna serata in archivio." : "Non hai ancora prevendite in mano."}
+              {stato.sono_admin ? "Non c'è nessuna serata in archivio." : "Non sei ancora agganciato a nessuna serata."}
             </p>
             <p className="mt-2 text-[12px] leading-relaxed text-brand-gray">
               {stato.sono_admin
                 ? "Creane una da /admin/eventi e comparirà qui."
-                : "Te le consegna Luka, serata per serata. Appena te ne dà, le trovi qui."}
+                : "Ogni PR vende solo per le serate a cui lo aggancia Luka. Appena ti aggancia, la trovi qui."}
             </p>
           </div>
         ) : (
@@ -358,12 +360,18 @@ export default function PrPage() {
                     "tocca per vendere" non la vedeva nessuno: un PR
                     l'ha detto esplicitamente, e ha ragione — su un
                     telefono, al buio, si cerca un rettangolo rosso. */}
-                <Link
-                  href={`/pr/${e.event_id}#nuovo`}
-                  className="mt-4 block bg-brand-red py-3.5 text-center text-[12px] font-semibold uppercase tracking-widest text-white"
-                >
-                  vendi prevendita
-                </Link>
+                {e.puo_vendere === false ? (
+                  <p className="mt-4 border border-white/10 px-3 py-3 text-center text-[11px] leading-relaxed text-brand-gray">
+                    Non vendi più per questa serata: qui restano solo i biglietti che hai già fatto.
+                  </p>
+                ) : (
+                  <Link
+                    href={`/pr/${e.event_id}#nuovo`}
+                    className="mt-4 block bg-brand-red py-3.5 text-center text-[12px] font-semibold uppercase tracking-widest text-white"
+                  >
+                    vendi prevendita
+                  </Link>
+                )}
                 {/* Sotto, spento: la stessa serata ma aperta in fondo,
                     dove c'è chi ha messo in lista. Sopra si vende,
                     sotto si controlla. */}

@@ -1,8 +1,33 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 30 settembre 2026
+> Ultimo aggiornamento: 4 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**OGNI PR VENDE SOLO PER LE SERATE A CUI È AGGANCIATO (4 ott, `supabase/39_pr_per_serata.sql`).**
+Luka, prima di aggiungere altri eventi: *"per evitare di farli vendere prevendite sbagliato è bene
+che ogni PR abbia abilitato solo un evento... se uno vende per 2 o più eventi lo deve sapere a parte
+ed essere sempre approvato... i PR di adesso tutti solo per Halloween... nella sezione dove sono
+elencati i PR devo potergli agganciare uno o più eventi"*. Prima un PR vedeva **tutte** le serate
+future e il solo limite erano i blocchetti. Ora c'è la tabella **`pr_serate`** (pr_id, event_id):
+- **il PR vede e vende solo dove è agganciato** (`pr_eventi` ha la colonna `puo_vendere`; una
+  serata da cui è stato sganciato resta in elenco solo se ci ha già venduto, a sola lettura);
+  `pr_vendi` risponde **`non_agganciato`**;
+- **niente blocchetti a chi non è agganciato**: `admin_pr_assegna` torna `non_agganciato`,
+  `admin_pr_consegna_tutti` serve solo gli agganciati, `am_consegna` rifiuta;
+- **gli agganci li tocca solo l'admin**, in `/admin/pr` → scheda PR: aprendo un PR ci sono le
+  serate future come bottoni (✓ agganciato / + aggancia), `admin_pr_aggancia(pr, event, on)`;
+  sganciando avvisa se ha ancora prevendite in mano. La lista mette in cima gli agganciati alla
+  serata scelta; gli altri stanno chiusi in fondo ("mostra i non agganciati");
+- **approvare un candidato = scegliere la sua serata** (`/admin/crew`, menu sopra "Fallo
+  entrare"): `admin_approve_crew(profile, event)` lo aggancia lì e ci mette le prevendite di
+  partenza. Tolto dalla crew (`admin_set_role(.., 'public')`) perde tutti gli agganci;
+- **gli account manager restano liberi su tutte le serate** (deciso da Luka): `_pr_agganciato()`
+  è vera per loro senza righe in tabella. L'admin vende sempre, come prima.
+**Partenza:** alla prima esecuzione (tabella vuota) tutta la crew viene agganciata a Halloween
+(`slug = 'halloween-2026'`) e a nient'altro; rieseguire lo script non rimette gli agganci tolti.
+Il sito regge anche senza lo script (agganci = tutto aperto come prima, approvazione senza serata).
+Sintassi SQL e PL/pgSQL controllata con `pglast` (parser di Postgres) prima della consegna.
 
 **LE STELLE DEI PR (30 set, `supabase/38_punti_pr.sql`, `lib/punti.ts`, `components/Stelle.tsx`).**
 Luka, con le vendite appena partite: *"assegnargli 10 punti per ogni vendita fatta... un ranking

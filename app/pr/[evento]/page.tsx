@@ -68,6 +68,8 @@ type EventoPR = {
   residue: number;
   /** Il modulo di delega scelto per questa serata. Se manca lo si indovina dal locale. */
   delega_url?: string | null;
+  /** false = non agganciato a questa serata: niente vendite (script 39) */
+  puo_vendere?: boolean;
 };
 
 const ANNO = new Date().getFullYear();
@@ -262,6 +264,8 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           finite: "Hai finito le prevendite che ti sono state date.",
           fascia_esaurita: "Questa fascia è esaurita.",
           dati_mancanti: "Servono nome e cognome.",
+          non_agganciato:
+            "Questa serata non è tra le tue: vendi solo per quelle a cui ti ha agganciato Luka.",
         }[res?.esito as string] ?? "Non è andata. Riprova.",
       );
       return;
@@ -330,6 +334,10 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   }
 
   // Appena venduto: la cosa da fare adesso è una sola, mandarlo su WhatsApp.
+  // Una serata non sua: non agganciato (o sganciato) da Luka. L'admin
+  // vende sempre. Se pr_eventi non la restituisce proprio, non è sua.
+  const nonMia = !r.senza_limite && (ev === null || ev.puo_vendere === false);
+
   if (appenaFatto) {
     const num = numeroWhatsapp(appenaFatto.telefono);
     const testo = messaggio(appenaFatto, ev?.nome ?? "la serata", quando, delegaPer(appenaFatto));
@@ -509,7 +517,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
             fare i nominativi sta in fondo alla pagina, sotto conti e
             avvisi: da telefono non lo trovava nessuno — un PR ha
             scritto "non trovo dove vendere le prevendite". */}
-        {!(r.residue <= 0 && !r.senza_limite) && r.vendite_on !== false && (
+        {!nonMia && !(r.residue <= 0 && !r.senza_limite) && r.vendite_on !== false && (
           <a
             href="#nuovo"
             className="mt-6 block bg-brand-red py-4 text-center text-sm font-semibold uppercase tracking-widest text-white"
@@ -736,7 +744,12 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
             Nuovo nominativo
           </p>
 
-          {r.residue <= 0 && !r.senza_limite ? (
+          {nonMia ? (
+            <p className="mt-3 text-sm leading-relaxed text-white">
+              Questa serata non è tra le tue: vendi solo per quelle a cui ti ha agganciato
+              Luka. Se pensi che sia un errore, scrivigli.
+            </p>
+          ) : r.residue <= 0 && !r.senza_limite ? (
             <p className="mt-3 text-sm leading-relaxed text-white">
               {r.assegnate === 0
                 ? "Per questa serata non ti hanno ancora dato prevendite: chiedile a Luka e qui sotto comparirà il modulo per fare i nominativi."
