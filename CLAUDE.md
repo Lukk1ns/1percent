@@ -4,6 +4,21 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**L'INGRESSO DEL PR HA UN NUMERO PER OGNI SERATA (5 ott, `supabase/40_ingresso_pr_per_serata.sql`).**
+Luka: l'ingresso omaggio a chi ha venduto **una** prevendita *"va bene per la domenica, ma per
+Halloween sono 10 mentre per LIL NAAY 5"*. Prima il numero era uno solo
+(`prevendite_config.ingresso_soglia`, script 30) e cambiarlo per una serata lo cambiava per tutte.
+Ora c'è la tabella **`pr_ingresso_soglie`** (event_id, soglia) e la funzione interna
+**`_ingresso_soglia(event)`** = numero della serata, se manca quello di serie, se manca 10.
+`pr_ingresso`, `admin_pr_ingressi` e `porta_checkin` (copiata dal 32, cambia solo la riga della
+soglia) leggono quella. Lo script rimette **quello di serie a 10** (le serate nuove non regalano
+l'ingresso a una prevendita senza che nessuno l'abbia deciso) e mette **DAY-OFF 1 · LIL NAAY 5 ·
+Halloween 10** con `on conflict do nothing` (rieseguirlo non cancella i numeri cambiati dopo).
+Nel pannello il riquadro in fondo è **"ingresso omaggio del PR · solo questa serata"**, col nome
+della serata scelta in alto: `admin_ingresso_soglia_serata` / `admin_set_ingresso_soglia_serata`.
+Senza lo script il pannello ripiega sul numero unico di prima. Sintassi controllata con `pglast`.
+**PENDING Luka: incollare `40_ingresso_pr_per_serata.sql`** (codice online dal 5 ott, commit d060e4b).
+
 **I CONTI DEL PR: LA CIFRA IN GRANDE (4 ott, `/pr/[evento]`).** Luka: *"più grande, più visibile,
 quanti soldi deve portare"* e la frase *"finché non consegni i soldi prima dell'evento quando ti
 verrà indicato"*. Nel riquadro "i tuoi conti" ora c'è in testa **"soldi da consegnare"** con la
