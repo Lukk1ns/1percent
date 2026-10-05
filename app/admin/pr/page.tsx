@@ -516,7 +516,8 @@ export default function AdminPrPage() {
   // Quante prevendite riceve un PR appena approvato, senza doverci
   // pensare. Sta nel database, qui si legge e si cambia.
   const [iniziali, setIniziali] = useState<string>("");
-  // L'ingresso omaggio dei PR: quante prevendite servono, e chi ce l'ha.
+  // L'ingresso omaggio dei PR: quante prevendite servono per la serata
+  // scelta (ognuna ha il suo numero), e chi ce l'ha.
   const [sogliaIngresso, setSogliaIngresso] = useState<string>("");
   const [ingressi, setIngressi] = useState<RigaIngresso[]>([]);
 
@@ -549,6 +550,15 @@ export default function AdminPrPage() {
     supabase
       .rpc("admin_pr_ingressi", { p_event: id })
       .then(({ data }) => setIngressi((data as RigaIngresso[]) ?? []));
+    // Il numero di questa serata. Finché 40_ingresso_pr_per_serata.sql
+    // non è incollato si legge quello unico di prima.
+    setSogliaIngresso("");
+    supabase
+      .rpc("admin_ingresso_soglia_serata", { p_event: id })
+      .then(async ({ data, error }) => {
+        if (error) ({ data } = await supabase.rpc("admin_ingresso_soglia"));
+        if (typeof data === "number") setSogliaIngresso(String(data));
+      });
 
     // Idem per i manager: finché 32_account_manager.sql non è incollato
     // queste due non esistono e la scheda lo dice.
@@ -618,12 +628,6 @@ export default function AdminPrPage() {
     }
 
     createClient()
-      .rpc("admin_ingresso_soglia")
-      .then(({ data }) => {
-        if (typeof data === "number") setSogliaIngresso(String(data));
-      });
-
-    createClient()
       .rpc("admin_blocchetti_iniziali")
       .then(({ data }) => {
         if (typeof data === "number") setIniziali(String(data));
@@ -684,13 +688,17 @@ export default function AdminPrPage() {
       window.alert("Serve un numero intero, anche zero.");
       return;
     }
-    const { error } = await createClient().rpc("admin_set_ingresso_soglia", { p_n: n });
+    const nome = eventi.find((e) => e.event_id === evento)?.nome ?? "questa serata";
+    const { error } = await createClient().rpc("admin_set_ingresso_soglia_serata", {
+      p_event: evento,
+      p_n: n,
+    });
     window.alert(
       error
-        ? error.message.includes("admin_set_ingresso_soglia")
-          ? "Manca un pezzo sul database: incolla supabase/30_ingresso_pr.sql nel SQL Editor."
+        ? error.message.includes("admin_set_ingresso_soglia_serata")
+          ? "Manca un pezzo sul database: incolla supabase/40_ingresso_pr_per_serata.sql nel SQL Editor."
           : error.message
-        : `Fatto: l'ingresso si accende a ${n} prevendite vendute.`,
+        : `Fatto: per ${nome} l'ingresso del PR si accende a ${n} prevendite vendute.`,
     );
     await caricaEvento(evento);
   }
@@ -2933,11 +2941,13 @@ export default function AdminPrPage() {
         <div className="mt-3 flex flex-col gap-3 border border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
-              ingresso omaggio del PR
+              ingresso omaggio del PR · solo questa serata
             </p>
+            {ev && <p className="mt-1 truncate text-sm text-white">{ev.nome}</p>}
             <p className="mt-1 text-[12px] leading-relaxed text-brand-gray/80">
               Il suo QR si accende da solo a questo numero di prevendite vendute, e lui
-              vede a che punto è. Le eccezioni le fai qui sotto, PR per PR.
+              vede a che punto è. Ogni serata ha il suo numero: per cambiare quello di
+              un&apos;altra, sceglila in alto. Le eccezioni le fai nella scheda PR, PR per PR.
             </p>
           </div>
           <div className="flex flex-shrink-0 items-center gap-2">
