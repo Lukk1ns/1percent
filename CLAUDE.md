@@ -1,6 +1,6 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 4 ottobre 2026
+> Ultimo aggiornamento: 5 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
 
@@ -32,7 +32,14 @@ tuo artista preferito che vorresti vedere"* (stesso id `c6`) e si aggiunge la se
 con le feste in programma come scelte l'ha bocciata subito: *"no la possibilità di scegliere, solo
 una risposta di testo"*. Nessuno script SQL: le risposte stanno già in `crew_answers` (jsonb).
 
-**LA HOME MOSTRA LE PROSSIME DUE (4 ott, `app/page.tsx`).** Luka: con la domenica del 18 creata
+**LA HOME MOSTRA LE PROSSIME TRE (5 ott, `app/page.tsx`).** Luka, creata la terza serata
+(LIL NAAY 24/10, oltre a DAY-OFF 18/10 e Halloween 31/10): *"solo il primo in evidenza più grande e
+gli altri due sotto ma nella stessa linea"*. Sotto **"e poi"** ora ci sono le **due** feste successive
+in `grid-cols-2`, anche sul telefono. `EventoDopo` cambia forma da sé: sul telefono la colonna è
+stretta (~170px), quindi locandina sopra a tutta colonna e scritte sotto; da `sm` in su torna
+locandina 88px di fianco al testo. La quarta e oltre restano solo in `/eventi`.
+
+**(storia) LA HOME MOSTRAVA LE PROSSIME DUE (4 ott, `app/page.tsx`).** Luka: con la domenica del 18 creata
 (nascosta fino al reveal) la home mostrava solo quella e Halloween spariva. Ora la home legge
 `events_list` (non più `next_event`, che resta solo come ripiego), prende le feste non passate in
 ordine di data: la prima in grande come prima, la seconda sotto **"e poi"** in piccolo

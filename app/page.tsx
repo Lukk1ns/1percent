@@ -83,7 +83,9 @@ function traQuanto(iso: string): string {
 }
 
 /* ────────────────────────────────────────────────────────────
-   Il secondo evento in programma: sotto il primo, più piccolo.
+   Gli eventi dopo il primo: sotto, due per riga, più piccoli.
+   Sul telefono la colonna è stretta, quindi la locandina sta sopra
+   e le scritte sotto; da tablet in su torna di fianco.
    Stesse regole: se non è ancora svelato si vedono solo data e
    teaser, perché il nome dal server non arriva.
    ──────────────────────────────────────────────────────────── */
@@ -91,12 +93,12 @@ function traQuanto(iso: string): string {
 function EventoDopo({ ev }: { ev: Evento }) {
   if (!ev.svelato) {
     return (
-      <div className="grid grid-cols-[72px_1fr] items-center gap-4 sm:grid-cols-[88px_1fr]">
+      <div className="grid content-start gap-3 sm:grid-cols-[88px_1fr] sm:items-center sm:gap-4">
         <div className="flex aspect-[9/16] items-center justify-center border border-brand-red/30 bg-black">
           <span className="font-display text-xl text-brand-red">?</span>
         </div>
         <div className="min-w-0">
-          <p className="font-display text-3xl leading-none tracking-[0.06em] text-brand-red">
+          <p className="font-display text-2xl leading-none tracking-[0.06em] text-brand-red sm:text-3xl">
             ?????
           </p>
           {ev.teaser && (
@@ -112,7 +114,7 @@ function EventoDopo({ ev }: { ev: Evento }) {
   return (
     <Link
       href={`/eventi/${ev.slug}`}
-      className="group grid grid-cols-[72px_1fr] items-center gap-4 sm:grid-cols-[88px_1fr]"
+      className="group grid content-start gap-3 sm:grid-cols-[88px_1fr] sm:items-center sm:gap-4"
     >
       {ev.cover_key ? (
         <Locandina
@@ -126,7 +128,7 @@ function EventoDopo({ ev }: { ev: Evento }) {
         <div className="aspect-[9/16] border border-white/10 bg-black" />
       )}
       <div className="min-w-0">
-        <p className="font-display text-xl uppercase leading-tight text-white transition-colors group-hover:text-brand-red sm:text-2xl">
+        <p className="font-display text-base uppercase leading-tight text-white transition-colors group-hover:text-brand-red sm:text-xl">
           {ev.nome}
         </p>
         <p className="mt-2 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
@@ -146,11 +148,11 @@ function EventoDopo({ ev }: { ev: Evento }) {
    ──────────────────────────────────────────────────────────── */
 
 export default function Home() {
-  // Le prossime feste in ordine di data: la prima in grande, la seconda
-  // sotto in piccolo (con due eventi vicini, la seconda non sparisce).
+  // Le prossime feste in ordine di data: la prima in grande, le due
+  // dopo sotto in piccolo, una di fianco all'altra.
   const [inProgramma, setInProgramma] = useState<Evento[]>([]);
   const evento = inProgramma[0] ?? null;
-  const dopo = inProgramma[1] ?? null;
+  const dopo = inProgramma.slice(1, 3);
   const [dentro, setDentro] = useState<number | null>(null);
   const [ultimi, setUltimi] = useState<Membro[]>([]);
   // null = sto ancora controllando: evita di far lampeggiare "iscriviti"
@@ -393,10 +395,14 @@ export default function Home() {
             </div>
           )}
 
-          {dopo && (
+          {dopo.length > 0 && (
             <div className="mt-10 border-t border-white/10 pt-6">
               <p className="led-label mb-4">e poi</p>
-              <EventoDopo ev={dopo} />
+              <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                {dopo.map((ev) => (
+                  <EventoDopo key={ev.starts_at} ev={ev} />
+                ))}
+              </div>
             </div>
           )}
 
