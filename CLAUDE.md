@@ -68,10 +68,15 @@ liberi su tutto, l'avrebbero vista); `omaggio_iscrivi` frena a **60/ora per rete
 telefoni). **`supabase/MALDITA_cancella_prove.sql`**: cancella le prove di Luka prima di pubblicare, si
 rifiuta sopra le 10 iscritte; tocca solo i presales `OMAGGIO DONNA`. Provati in locale (14/14).
 **PENDING Luka: incollare il 43**, provare, poi incollare `MALDITA_cancella_prove.sql` e pubblicare.
+**Modulo accorciato (6 ott sera, commit b783c1f).** Luka: *"metti solo anno di nascita... togli avvisatemi
+delle prossime... togli anche pagina IG"*. Ora: nome, cognome, **anno** (menu, dal 2010 in giù), WhatsApp,
+privacy. L'anno si manda come `AAAA-01-01`: il DB (invariato) ammette le nate **entro il 2010** e i doppioni
+si riconoscono su nome+cognome+anno. `p_instagram`/`p_promo` partono null/false (colonne restano).
+Informativa: dati solo per questa serata. Pill dell'1% e annuncio crew nascosti su `/maldita` (ac87a4c).
 **PENDING Luka:** scrivere i **posti** nel pannello · dare il **profilo Instagram** da
 taggare · far diventare **operatrice la cassiera** (sua email in `/admin/regali` → operatori).
 Verifica da fuori: `omaggio_info` con `{"p_slug":"maldita"}` → una riga = c'è, `PGRST202` = manca.
-**Dopo la serata:** cancellare i dati di chi non ha spuntato "avvisatemi" (lo promette l'informativa).
+**Dopo la serata:** i dati servono solo per questa serata (lo dice l'informativa): poi vanno cancellati.
 
 **OGNI PR HA UN NUMERO WHATSAPP, E LUKA GLI MANDA IL BENVENUTO (6 ott, `supabase/41_whatsapp_pr.sql`,
 `lib/whatsapp.ts`).** Luka: prima attivava lui ogni PR scrivendogli su WhatsApp, quindi *"avevo
