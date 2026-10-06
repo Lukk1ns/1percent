@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ICONA_180, ICONA_192 } from "@/lib/omaggio";
 
 /**
  * DONNA OMAGGIO · MALDITA, sabato 17 ottobre 2026 (script 42).
@@ -15,6 +16,8 @@ export const metadata: Metadata = {
   title: "MALDITA · Official Opening — Donna omaggio",
   description:
     "Sabato 17 ottobre al nuovo PAPI-ON. Ingresso omaggio per le ragazze che entrano entro le 00:30: prenota qui il tuo QR.",
+  icons: { icon: ICONA_192, apple: ICONA_180 },
+  appleWebApp: { title: "MALDITA", capable: true, statusBarStyle: "black-translucent" },
   openGraph: {
     title: "MALDITA · Official Opening — Donna omaggio",
     description: "Sabato 17 ottobre · PAPI-ON · omaggio entro le 00:30, posti limitati",

@@ -12,6 +12,11 @@ export const LOCANDINA_WEB = "/maldita/locandina.webp";
 /** Il file da scaricare per la storia: nome leggibile, qualità piena. */
 export const LOCANDINA_STORIA = "/maldita/locandina-maldita-papion.jpg";
 
+/** L'icona della "app" sulla schermata Home: PAPI-ON OPENING (scelta da Luka il 6 ott). */
+export const ICONA_180 = "/maldita/icona-180.png";
+export const ICONA_192 = "/maldita/icona-192.png";
+export const ICONA_512 = "/maldita/icona-512.png";
+
 export const INDIRIZZO_PAPION = "Via XX Settembre 289 · Roveredo in Piano (PN)";
 
 export type StatoRichiesta = "in_attesa" | "lista_attesa" | "approvata" | "rifiutata";

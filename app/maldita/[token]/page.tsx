@@ -5,6 +5,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import {
+  ICONA_180,
   INDIRIZZO_PAPION,
   LOCANDINA_STORIA,
   LOCANDINA_WEB,
@@ -339,7 +340,7 @@ export default function MiaPage({ params }: { params: Promise<{ token: string }>
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/maldita/apple-touch-icon.png"
+              src={ICONA_180}
               alt=""
               width={48}
               height={48}

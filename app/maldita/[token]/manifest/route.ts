@@ -1,3 +1,5 @@
+import { ICONA_192, ICONA_512 } from "@/lib/omaggio";
+
 /**
  * Il manifest della "app" di una ragazza: parte sempre dalla sua pagina.
  * Serve ad Android per offrire "Installa" e a tutti per nome e icona.
@@ -20,8 +22,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     background_color: "#000000",
     theme_color: "#000000",
     icons: [
-      { src: "/maldita/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/maldita/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: ICONA_192, sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: ICONA_512, sizes: "512x512", type: "image/png", purpose: "any" },
     ],
   };
 
