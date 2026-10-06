@@ -22,6 +22,16 @@ a tutte e offrire uno shot a sorpresa** in cambio della locandina nelle storie I
   **sorpresa** accesa mostra lo shot, il tasto per scaricare la locandina
   (`locandina-maldita-papion.jpg`) e, una volta dentro, **"il barista conferma lo shot"** (uno a testa,
   `omaggio_shot` lo dà solo a chi ha il QR già usato in porta).
+- **La pagina personale si mette sulla schermata Home (6 ott, commit 3291a25).** Luka: *"non si può
+  dirgli di aggiungerla alla Home? così ce l'hanno lì con la luce del colore giusto"*. `[token]/layout.tsx`
+  ha `generateMetadata` con icona propria (`public/maldita/apple-touch-icon.png`, Armando + OPENING), nome
+  **MALDITA** e un **manifest per ragazza** (`/maldita/<token>/manifest`, `start_url` = la sua pagina, token
+  validato `^[0-9a-f]{20}$`). Riquadro con le istruzioni giuste per telefono (iPhone: Condividi → Aggiungi;
+  Android: `beforeinstallprompt` o menu ⋮; dentro Instagram/FB/TikTok: apri nel browser), nascosto se è già
+  installata. **Luce** dello stato (gialla attesa, verde confermata/dentro, rossa scaduto). **Senza campo**:
+  ultima copia in `localStorage` (`maldita_mia_<token>`) + `public/sw-maldita.js` (scope `/maldita/`,
+  network-first come `sw-porta.js`). La conferma non promette più un WhatsApp. ⚠️ La luce cambia quando
+  la apre: **non suona**. Con l'approvazione automatica il QR c'è subito e l'invio non serve.
 - **`/admin/maldita`** (tile in dashboard): numeri, interruttore iscrizioni, posti, **modo "a mano"
   o "automatica"** (approvata appena si iscrive finché ci sono posti; passando ad automatica
   riempie subito i posti con chi aspetta), "riempi i posti liberi in ordine d'arrivo", elenco con
