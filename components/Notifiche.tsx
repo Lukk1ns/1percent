@@ -75,6 +75,8 @@ export function Notifiche() {
   const showPokes = !pathname?.startsWith("/membri") && pokes > 0;
 
   if (!showInbox && !showPokes) return null;
+  // Sulla pagina dedicata di MALDITA niente pill dell'1% (Luka, 6 ott)
+  if (pathname?.startsWith("/maldita")) return null;
 
   const pillBase =
     "flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-white border bg-black/85 backdrop-blur-sm animate-fade-up";

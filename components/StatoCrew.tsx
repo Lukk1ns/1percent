@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 /** Chiave del ricordo: un annuncio a testa, non a ogni pagina aperta. */
@@ -24,6 +24,7 @@ const VISTO = "crew_approvazione_vista";
  */
 export function StatoCrew() {
   const router = useRouter();
+  const pathname = usePathname();
   const [alias, setAlias] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,6 +63,9 @@ export function StatoCrew() {
   }, [chiudi, router]);
 
   if (!alias) return null;
+  // La pagina di MALDITA è staccata dall'1%: l'annuncio aspetta la
+  // prossima pagina del sito (il "visto" non si segna, quindi non si perde).
+  if (pathname?.startsWith("/maldita")) return null;
 
   return (
     <div
