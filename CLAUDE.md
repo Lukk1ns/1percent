@@ -73,6 +73,10 @@ delle prossime... togli anche pagina IG"*. Ora: nome, cognome, **anno** (menu, d
 privacy. L'anno si manda come `AAAA-01-01`: il DB (invariato) ammette le nate **entro il 2010** e i doppioni
 si riconoscono su nome+cognome+anno. `p_instagram`/`p_promo` partono null/false (colonne restano).
 Informativa: dati solo per questa serata. Pill dell'1% e annuncio crew nascosti su `/maldita` (ac87a4c).
+**Icona della app = PAPI-ON OPENING (6 ott, commit 8dfc0db)**, mandata da Luka: ritaglio 960/1080 centrato
+(logo e OPENING più grandi, lontani dagli angoli iOS) → `public/maldita/icona-180|192|512.png`, costanti
+`ICONA_*` in `lib/omaggio.ts`. Ora anche `/maldita` (pubblica) ha icona e nome MALDITA, non l'1%. Chi aveva
+già messo l'icona vecchia (Armando) la deve togliere e rimettere: iOS non aggiorna le icone già sulla Home.
 **PENDING Luka:** scrivere i **posti** nel pannello · dare il **profilo Instagram** da
 taggare · far diventare **operatrice la cassiera** (sua email in `/admin/regali` → operatori).
 Verifica da fuori: `omaggio_info` con `{"p_slug":"maldita"}` → una riga = c'è, `PGRST202` = manca.
