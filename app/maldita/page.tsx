@@ -62,11 +62,28 @@ export default function MalditaPage() {
       .then(({ data }) => {
         setInfo((data?.[0] as Info) ?? null);
         setLetto(true);
+        let salvato: string | null = null;
         try {
-          setMio(localStorage.getItem(CHIAVE_MIA));
+          salvato = localStorage.getItem(CHIAVE_MIA);
         } catch {
           // niente memoria (navigazione privata): pazienza
         }
+        if (!salvato) return;
+        // "Hai già prenotato" solo se quella prenotazione esiste ancora
+        // (dopo la pulizia delle prove sul telefono di Luka restava)
+        createClient()
+          .rpc("omaggio_mia", { p_token: salvato })
+          .then(({ data: mia, error }) => {
+            if (error) return;
+            if (mia?.[0]) setMio(salvato);
+            else {
+              try {
+                localStorage.removeItem(CHIAVE_MIA);
+              } catch {
+                // pazienza
+              }
+            }
+          });
       });
   }, []);
 
