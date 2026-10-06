@@ -26,6 +26,8 @@ export type BigliettoLocale = {
   under16: boolean;
   minorenne: boolean;
   pr_alias: string;
+  /** Dopo quest'ora non fa entrare (omaggio donna, script 42). Null = tutta la sera. */
+  valido_fino?: string | null;
 };
 
 export type ScansioneOffline = { token: string; quando: string };
@@ -97,6 +99,7 @@ export type EsitoLocale =
   | "gia_usato"
   | "non_pagato"
   | "sconosciuto"
+  | "scaduto"
   | "senza_lista";
 
 /**
@@ -113,6 +116,11 @@ export function validaOffline(
   if (!b) return { esito: "sconosciuto" };
 
   if (b.stato === "usata") return { esito: "gia_usato", biglietto: b };
+
+  // Come in rete: scaduto non passa e non si brucia (l'ora è quella del telefono)
+  if (b.valido_fino && Date.now() > new Date(b.valido_fino).getTime()) {
+    return { esito: "scaduto", biglietto: b };
+  }
 
   const eraInAttesa = b.stato === "in_attesa";
 

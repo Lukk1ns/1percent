@@ -338,6 +338,13 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {[
             {
+              href: "/admin/maldita",
+              emoji: "💃",
+              titolo: "Donna omaggio 17/10",
+              cosa: "MALDITA: prenotazioni delle ragazze, posti, approvazioni, WhatsApp",
+              acceso: true,
+            },
+            {
               href: "/admin/eventi",
               emoji: "📅",
               titolo: "Eventi",
@@ -425,6 +432,7 @@ export default function AdminDashboardPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           {[
             ["/admin/pr", "Prevendite e PR"],
+            ["/admin/maldita", "Donna omaggio 17/10"],
             ["/admin/porta", "Porta"],
             ["/admin/scan", "Estrazione premi"],
             ["/admin/eventi", "Eventi"],

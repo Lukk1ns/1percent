@@ -29,6 +29,8 @@ type Esito = {
     | "annullato"
     | "altra_serata"
     | "sconosciuto"
+    // omaggio donna dopo le 00:30 (script 42): non passa, paga
+    | "scaduto"
     // il pass del PR: passa solo se ha fatto i suoi numeri
     | "pr_ok"
     | "pr_non_attivo";
@@ -222,7 +224,7 @@ export default function PortaPage() {
           under16: loc.biglietto?.under16 ?? null,
           pr_alias: loc.biglietto?.pr_alias ?? null,
           evento: null,
-          entrata_at: null,
+          entrata_at: loc.esito === "scaduto" ? (loc.biglietto?.valido_fino ?? null) : null,
           presale_id: null,
         };
         setInCoda(daMandare());
@@ -247,7 +249,7 @@ export default function PortaPage() {
             under16: loc.biglietto?.under16 ?? null,
             pr_alias: loc.biglietto?.pr_alias ?? null,
             evento: null,
-            entrata_at: null,
+            entrata_at: loc.esito === "scaduto" ? (loc.biglietto?.valido_fino ?? null) : null,
             presale_id: null,
           };
           setInCoda(daMandare());
@@ -762,6 +764,7 @@ function Risposta({
     non_pagato: { sfondo: "bg-amber-400", testo: "NON PAGATO", colore: "text-black" },
     annullato: { sfondo: "bg-brand-red", testo: "ANNULLATO", colore: "text-white" },
     altra_serata: { sfondo: "bg-amber-400", testo: "ALTRA SERATA", colore: "text-black" },
+    scaduto: { sfondo: "bg-brand-red", testo: "SCADUTO", colore: "text-white" },
     sconosciuto: { sfondo: "bg-neutral-700", testo: "NON È UN BIGLIETTO", colore: "text-white" },
     // Verde come un biglietto valido, ma la scritta dice che è uno
     // della crew: in porta si capisce chi sta entrando e con che
@@ -801,6 +804,14 @@ function Risposta({
       {esito.esito === "altra_serata" && esito.evento && (
         <p className="mt-4 max-w-xs text-sm opacity-90">
           Questo biglietto è per <strong>{esito.evento}</strong>, non per stasera.
+        </p>
+      )}
+
+      {esito.esito === "scaduto" && (
+        <p className="mt-4 max-w-[26ch] text-sm leading-relaxed">
+          L&apos;omaggio valeva fino alle{" "}
+          <strong>{esito.entrata_at ? ora(esito.entrata_at) : "00:30"}</strong>. Adesso
+          l&apos;ingresso si paga.
         </p>
       )}
 
