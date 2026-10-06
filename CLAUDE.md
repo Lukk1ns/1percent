@@ -77,6 +77,10 @@ Informativa: dati solo per questa serata. Pill dell'1% e annuncio crew nascosti 
 (logo e OPENING più grandi, lontani dagli angoli iOS) → `public/maldita/icona-180|192|512.png`, costanti
 `ICONA_*` in `lib/omaggio.ts`. Ora anche `/maldita` (pubblica) ha icona e nome MALDITA, non l'1%. Chi aveva
 già messo l'icona vecchia (Armando) la deve togliere e rimettere: iOS non aggiorna le icone già sulla Home.
+**Anteprima del link orizzontale (6 ott, commit 7edf95b):** Luka: *"si vede male, è in formato storia e
+rimane tutto vuoto ai lati"*. `public/maldita/anteprima-maldita.jpg` 1200×630, composta con Chrome headless da
+un HTML (fondo = locandina sfocata, locandina a sinistra, a destra DONNA OMAGGIO / ENTRO LE 00:30 in Anton).
+Nome file nuovo; le app tengono in memoria l'anteprima di un link: per vederla subito, link con `?ig` in fondo.
 **PENDING Luka:** scrivere i **posti** nel pannello · dare il **profilo Instagram** da
 taggare · far diventare **operatrice la cassiera** (sua email in `/admin/regali` → operatori).
 Verifica da fuori: `omaggio_info` con `{"p_slug":"maldita"}` → una riga = c'è, `PGRST202` = manca.
