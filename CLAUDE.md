@@ -62,6 +62,12 @@ a tutte e offrire uno shot a sorpresa** in cambio della locandina nelle storie I
 nessuna notifica e nessun WhatsApp di conferma — *"si devono aggiornare loro"*: la pagina dice «attendi
 l'approvazione · ricontrolla tu questa pagina»; **il primo messaggio che parte è quello dello shot** (tab
 di serie nel pannello, contiene già il link alla pagina). Testo dello shot e cassiera: da fare più avanti.
+**43 (6 ott, `supabase/43_maldita_staccata.sql`):** `_pr_agganciato` è **falsa per ogni serata con una
+lista omaggio** → né PR né account manager vedono/vendono/ricevono blocchetti su MALDITA (prima i manager,
+liberi su tutto, l'avrebbero vista); `omaggio_iscrivi` frena a **60/ora per rete** (era 10: CGNAT dei
+telefoni). **`supabase/MALDITA_cancella_prove.sql`**: cancella le prove di Luka prima di pubblicare, si
+rifiuta sopra le 10 iscritte; tocca solo i presales `OMAGGIO DONNA`. Provati in locale (14/14).
+**PENDING Luka: incollare il 43**, provare, poi incollare `MALDITA_cancella_prove.sql` e pubblicare.
 **PENDING Luka:** scrivere i **posti** nel pannello · dare il **profilo Instagram** da
 taggare · far diventare **operatrice la cassiera** (sua email in `/admin/regali` → operatori).
 Verifica da fuori: `omaggio_info` con `{"p_slug":"maldita"}` → una riga = c'è, `PGRST202` = manca.
