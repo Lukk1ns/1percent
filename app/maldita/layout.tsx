@@ -21,7 +21,16 @@ export const metadata: Metadata = {
   openGraph: {
     title: "MALDITA · Official Opening — Donna omaggio",
     description: "Sabato 17 ottobre · PAPI-ON · omaggio entro le 00:30, posti limitati",
-    images: [{ url: "/maldita/og.jpg", width: 1200, height: 630 }],
+    // Orizzontale apposta (Luka, 6 ott): la locandina verticale nel riquadro
+    // dell'anteprima restava piccola col vuoto ai lati.
+    images: [
+      {
+        url: "/maldita/anteprima-maldita.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Donna omaggio entro le 00:30 — MALDITA Official Opening, sabato 17 ottobre al PAPI-ON",
+      },
+    ],
   },
 };
 
