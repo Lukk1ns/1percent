@@ -4,6 +4,55 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**DONNA OMAGGIO · MALDITA 17/10 — PAGINA DEDICATA (6 ott, `supabase/42_omaggio_donne.sql`, commit 961ce92).**
+Luka, per l'apertura del nuovo PAPI-ON (sab 17 ott, MALDITA · OFFICIAL OPENING): *"diamo solo TOT
+posti omaggio a donne che entrano entro le 00:30 facendosi scannerizzare... una cosa staccata
+dedicata... un servizio che unpercento.it fa per la serata del 17... qui non ci sono PR né
+prevendite né eccezioni"*. Decisioni sue: **posti li decide lui** (dal pannello), **16+**,
+**00:30 senza tolleranza**, iscrizioni **fino a venerdì 16 alle 23:59**, scansiona **la cassiera**
+(serve che sia operatrice), approvazione **con tutte le opzioni**, e la possibilità di **scrivere
+a tutte e offrire uno shot a sorpresa** in cambio della locandina nelle storie IG.
+- **`/maldita`** (pubblica, grafica della serata = `public/maldita/`, locandina v5 dai Download,
+  niente 1%: fondo nero sopra il Backdrop, niente tasto "indietro" in `Torna.tsx`): modulo nome,
+  cognome, data di nascita (3 menu), WhatsApp (regola `_numero_whatsapp` del 41), Instagram
+  facoltativo, privacy obbligatoria (titolare QFB) + "avvisatemi delle prossime" facoltativa.
+  Campo trappola contro i programmi, e nel DB max 10 iscrizioni l'ora dalla stessa rete.
+- **`/maldita/<token>`** (pagina personale, noindex): in attesa / lista d'attesa / non confermata /
+  QR con "valido solo entro le 00:30" / "sei entrata alle…". Si aggiorna ogni 20s. Con la
+  **sorpresa** accesa mostra lo shot, il tasto per scaricare la locandina
+  (`locandina-maldita-papion.jpg`) e, una volta dentro, **"il barista conferma lo shot"** (uno a testa,
+  `omaggio_shot` lo dà solo a chi ha il QR già usato in porta).
+- **`/admin/maldita`** (tile in dashboard): numeri, interruttore iscrizioni, posti, **modo "a mano"
+  o "automatica"** (approvata appena si iscrive finché ci sono posti; passando ad automatica
+  riempie subito i posti con chi aspetta), "riempi i posti liberi in ordine d'arrivo", elenco con
+  filtri, ricerca, **azioni in blocco** (solo sulle righe visibili), messaggi WhatsApp **1 · conferma
+  col QR** e **2 · sorpresa shot** (testi modificabili con `{nome}` `{link}` `{tag}`, tasto
+  "prossima → apri WhatsApp" che segna da solo `conferma_at`/`sorpresa_at`), CSV per Excel.
+  ⚠️ WhatsApp senza API: **un messaggio = un tocco** (wa.me), per centinaia di ragazze è lavoro.
+- **Database:** `omaggio_liste` (slug `maldita`, `posti` null = da decidere, `modo`, `chiude_at`,
+  `valido_fino`, testi) e `omaggio_richieste` (stati `in_attesa`/`lista_attesa`/`approvata`/
+  `rifiutata`, unico per telefono). Approvare = **omaggio vero in `presales`** (prezzo 0, `pr_id`
+  null, `tier_label 'OMAGGIO DONNA'`) con la colonna nuova **`presales.valido_fino`**. Lucchetto
+  per lista (`pg_advisory_xact_lock`) contro i posti sforati. Stesso numero + stessi dati → le
+  ridà la sua pagina; dati diversi → `numero_usato` (nessuno ruba il QR di un'altra col numero).
+  La serata è creata **non pubblicata** (`maldita-official-opening-17-ottobre`, locale PAPI_ON):
+  non compare nell'1%, compare in porta.
+- **Porta:** `porta_checkin` (copiata dal 40) risponde **`scaduto`** dopo `valido_fino` e **non
+  brucia** il biglietto; `porta_lista` porta `valido_fino` (cambiata forma: drop + create), così
+  anche offline `validaOffline` dice SCADUTO (con l'ora del telefono). Schermata rossa "SCADUTO ·
+  l'omaggio valeva fino alle 00:30, adesso l'ingresso si paga".
+- **Provato:** script su un Postgres locale con finto Supabase — **53 controlli su 53** (guardia,
+  orari Roma, 16 anni al giorno esatto, doppioni, posti, lista d'attesa, auto, porta, scaduto,
+  shot, rifiuta/attesa, chiusura, freno anti-raffica); pagine fotografate a 390px con dati finti.
+  ⚠️ Gotcha visto qui: in `globals.css` **`img { height: auto }` è fuori dai layer** e batte `h-24`:
+  per le misure di un'immagine usare `style`. E `riempi i {n} posti … d&apos;arrivo` perdeva lo
+  spazio dopo `{n}`: con un'entità HTML nella stessa riga meglio una template string.
+**PENDING Luka: incollare `42_omaggio_donne.sql`** (il 40 e il 41 sono già dentro; se mancassero,
+lo script si ferma da solo) · scrivere i **posti** nel pannello · dare il **profilo Instagram** da
+taggare · far diventare **operatrice la cassiera** (sua email in `/admin/regali` → operatori).
+Verifica da fuori: `omaggio_info` con `{"p_slug":"maldita"}` → una riga = c'è, `PGRST202` = manca.
+**Dopo la serata:** cancellare i dati di chi non ha spuntato "avvisatemi" (lo promette l'informativa).
+
 **OGNI PR HA UN NUMERO WHATSAPP, E LUKA GLI MANDA IL BENVENUTO (6 ott, `supabase/41_whatsapp_pr.sql`,
 `lib/whatsapp.ts`).** Luka: prima attivava lui ogni PR scrivendogli su WhatsApp, quindi *"avevo
 sempre una conversazione aperta con ogni PR"*; con le candidature dal sito *"potrebbe esserci un pr
