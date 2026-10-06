@@ -57,8 +57,12 @@ a tutte e offrire uno shot a sorpresa** in cambio della locandina nelle storie I
   ⚠️ Gotcha visto qui: in `globals.css` **`img { height: auto }` è fuori dai layer** e batte `h-24`:
   per le misure di un'immagine usare `style`. E `riempi i {n} posti … d&apos;arrivo` perdeva lo
   spazio dopo `{n}`: con un'entità HTML nella stessa riga meglio una template string.
-**PENDING Luka: incollare `42_omaggio_donne.sql`** (il 40 e il 41 sono già dentro; se mancassero,
-lo script si ferma da solo) · scrivere i **posti** nel pannello · dare il **profilo Instagram** da
+**`42_omaggio_donne.sql` INCOLLATO e verificato il 6 ott sera** (da fuori: `omaggio_info` dà la riga, le
+`admin_*` dicono Non autorizzato, `_omaggio_approva` 42501, tabella illeggibile). **Decisione Luka (6 ott):**
+nessuna notifica e nessun WhatsApp di conferma — *"si devono aggiornare loro"*: la pagina dice «attendi
+l'approvazione · ricontrolla tu questa pagina»; **il primo messaggio che parte è quello dello shot** (tab
+di serie nel pannello, contiene già il link alla pagina). Testo dello shot e cassiera: da fare più avanti.
+**PENDING Luka:** scrivere i **posti** nel pannello · dare il **profilo Instagram** da
 taggare · far diventare **operatrice la cassiera** (sua email in `/admin/regali` → operatori).
 Verifica da fuori: `omaggio_info` con `{"p_slug":"maldita"}` → una riga = c'è, `PGRST202` = manca.
 **Dopo la serata:** cancellare i dati di chi non ha spuntato "avvisatemi" (lo promette l'informativa).
