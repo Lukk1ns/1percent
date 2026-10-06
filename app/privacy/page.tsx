@@ -63,7 +63,9 @@ export default function PrivacyPage() {
         <p>
           Raccogliamo i seguenti dati, forniti volontariamente al momento della
           registrazione: alias (pseudonimo), avatar selezionato, risposte al quiz,
-          indirizzo email e/o numero di telefono (opzionali). I dati sono memorizzati
+          indirizzo email e/o numero di telefono (opzionali). Chi si candida allo staff
+          fornisce anche nome e numero WhatsApp: li vedono solo la direzione e chi gestisce le prevendite, per
+          contattarlo. I dati sono memorizzati
           su server Supabase (EU-West, Irlanda) con misure di sicurezza adeguate.
         </p>
 

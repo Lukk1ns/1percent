@@ -19,6 +19,8 @@ export type Bozza = {
   crewRequest: boolean;
   /** nome vero, chiesto solo a chi si candida */
   nome: string | null;
+  /** numero WhatsApp, chiesto solo a chi si candida (script 41) */
+  telefono?: string | null;
   /** dove rimandarlo appena è dentro: chi arriva dalle foto torna alle foto */
   next?: string | null;
 };
@@ -34,7 +36,7 @@ export type Questionari = {
 
 export type Esito =
   | { ok: true; membro: unknown }
-  | { ok: false; messaggio: string; campo?: "alias" | "email" };
+  | { ok: false; messaggio: string; campo?: "alias" | "email" | "telefono" };
 
 export async function registraMembro(
   bozza: Bozza,
@@ -46,7 +48,7 @@ export async function registraMembro(
     const { error: signInError } = await supabase.auth.signInAnonymously();
     if (signInError) throw signInError;
 
-    const { data, error } = await supabase.rpc("join_public", {
+    const dati = {
       p_alias: bozza.alias,
       p_avatar_id: bozza.avatarId,
       p_nome: bozza.nome,
@@ -56,10 +58,34 @@ export async function registraMembro(
       p_referral_code: bozza.refCode,
       p_crew_request: bozza.crewRequest,
       p_crew_answers: risposte.staff ?? null,
-    });
+    };
+    // Il numero viaggia solo con le candidature. Finché lo script 41 non
+    // è incollato la funzione non lo conosce: si iscrive lo stesso, e il
+    // numero glielo chiederà il sito quando apre "Le tue prevendite".
+    let { data, error } = await supabase.rpc(
+      "join_public",
+      bozza.crewRequest && bozza.telefono ? { ...dati, p_telefono: bozza.telefono } : dati,
+    );
+    if (error?.code === "PGRST202" && bozza.crewRequest) {
+      ({ data, error } = await supabase.rpc("join_public", dati));
+    }
 
     if (error) {
       const m = error.message ?? "";
+      if (m.includes("numero_non_valido")) {
+        return {
+          ok: false,
+          messaggio: "Il numero WhatsApp non è giusto. Controllalo (se non è italiano, col prefisso +).",
+          campo: "telefono",
+        };
+      }
+      if (m.includes("numero_gia_usato")) {
+        return {
+          ok: false,
+          messaggio: "Questo numero WhatsApp è già di un altro iscritto.",
+          campo: "telefono",
+        };
+      }
       if (m.includes("iscrizioni_chiuse")) {
         return { ok: false, messaggio: "Le iscrizioni sono chiuse. Riaprono al prossimo evento." };
       }

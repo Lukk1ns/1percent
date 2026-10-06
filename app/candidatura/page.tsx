@@ -47,7 +47,7 @@ export default function CandidaturaPage() {
       error={errore}
       loadingLabel="registriamo la tua candidatura…"
       errorAction={
-        errore.includes("alias") || errore.includes("email") ? (
+        errore.includes("alias") || errore.includes("email") || errore.includes("numero") ? (
           <button
             onClick={() => router.push("/unisciti")}
             className="text-xs uppercase tracking-widest text-white border border-white/20 px-4 py-2"

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { CREW_QUESTIONS } from "@/lib/quiz";
 import { ConversazioneDirezione } from "@/components/ConversazioneDirezione";
+import { apriWhatsapp, messaggioBenvenutoPR, mostraNumero } from "@/lib/whatsapp";
 
 type RisposteCrew = Record<string, string | { text?: string; tag?: string }> | null;
 
@@ -18,6 +19,8 @@ type Candidatura = {
   crew_request_at: string;
   crew_answers: RisposteCrew;
   invitato_da: string | null;
+  /** il numero WhatsApp (script 41); manca a chi si è candidato prima */
+  telefono?: string | null;
 };
 
 // Le serate in programma: approvando un PR si sceglie su quale lavora.
@@ -31,6 +34,27 @@ type Membro = {
   email: string | null;
   crew_since: string | null;
   crew_answers: RisposteCrew;
+  // Script 41: senza, questi campi non arrivano proprio.
+  telefono?: string | null;
+  /** quando Luka gli ha mandato il benvenuto su WhatsApp */
+  whatsapp_scritto_at?: string | null;
+  /** le serate (non passate) a cui è agganciato, già in frase */
+  serate?: string | null;
+};
+
+/** Il nome con cui lo saluta il messaggio: il primo del nome vero. */
+function nomeBreve(x: { nome: string | null; alias: string }): string {
+  return x.nome?.trim().split(/\s+/)[0] || x.alias;
+}
+
+/** Appena approvato: il riquadro col tasto del benvenuto. */
+type AppenaEntrato = {
+  id: string;
+  chi: string;
+  saluto: string;
+  info: string;
+  telefono: string | null;
+  serata: string | null;
 };
 
 /** Traduce una risposta grezza nel testo leggibile della domanda corrispondente. */
@@ -118,6 +142,10 @@ export default function AdminCrewPage() {
   // approvando si sceglie la sua. Di partenza la più vicina.
   const [serate, setSerate] = useState<SerataFutura[]>([]);
   const [serataScelta, setSerataScelta] = useState<Record<string, string>>({});
+  // Il benvenuto su WhatsApp (6 ott): appena approvato, e la lista di chi
+  // non ha ancora ricevuto niente. Con ogni PR una chat aperta, come prima.
+  const [appenaEntrato, setAppenaEntrato] = useState<AppenaEntrato | null>(null);
+  const [senzaNumeroAperti, setSenzaNumeroAperti] = useState(false);
 
   async function carica() {
     const supabase = createClient();
@@ -192,13 +220,53 @@ export default function AdminCrewPage() {
     if (approva && typeof data === "string") {
       const [, quanti, serata] = data.split(":");
       const n = Number(quanti ?? 0);
+      setAppenaEntrato({
+        id: c.id,
+        chi: c.nome ?? c.alias,
+        saluto: nomeBreve(c),
+        telefono: c.telefono ?? null,
+        serata: serata || nomeSerata || null,
+        info:
+          n > 0
+            ? `Agganciato a ${serata}: gli ho già consegnato ${n} prevendite.`
+            : serata
+            ? `Agganciato a ${serata}. Blocchetti non consegnati (ne aveva già, o le prevendite di partenza sono a zero): glieli dai tu da /admin/pr.`
+            : `Non c'è nessuna serata in programma: quando la crei, agganciaglielo da /admin/pr.`,
+      });
+    }
+    carica();
+  }
+
+  /** Apre la chat col benvenuto già scritto, e lo segna come scritto. */
+  async function mandaBenvenuto(id: string, telefono: string, saluto: string, serate: string | null) {
+    apriWhatsapp(telefono, messaggioBenvenutoPR(saluto, serate));
+    await createClient().rpc("admin_whatsapp_scritto", { p_profile: id, p_scritto: true });
+    carica();
+  }
+
+  /** Per chi ha già una chat aperta con Luka: lo toglie dalla lista senza scrivergli. */
+  async function segnaScritto(id: string, scritto: boolean) {
+    await createClient().rpc("admin_whatsapp_scritto", { p_profile: id, p_scritto: scritto });
+    carica();
+  }
+
+  /** Numero sbagliato, o dato a voce: lo mette Luka. */
+  async function correggiNumero(m: Membro) {
+    const nuovo = prompt(`Numero WhatsApp di ${m.nome ?? m.alias}:`, m.telefono ?? "");
+    if (nuovo === null || !nuovo.trim()) return;
+    const { error } = await createClient().rpc("admin_set_numero", {
+      p_profile: m.id,
+      p_numero: nuovo,
+    });
+    if (error) {
       alert(
-        n > 0
-          ? `${c.nome ?? c.alias} è dentro, agganciato a ${serata}: gli ho già consegnato ${n} prevendite.`
-          : serata
-          ? `${c.nome ?? c.alias} è dentro, agganciato a ${serata}.\n\nBlocchetti non consegnati (ne aveva già, o le prevendite di partenza sono a zero): glieli dai tu da /admin/pr.`
-          : `${c.nome ?? c.alias} è dentro.\n\nNon c'è nessuna serata in programma: quando la crei, agganciaglielo da /admin/pr.`,
+        error.message.includes("numero_gia_usato")
+          ? "Questo numero è già di un altro iscritto."
+          : error.message.includes("numero_non_valido")
+          ? "Numero non valido. Se non è italiano, mettilo col prefisso (+385…)."
+          : error.message,
       );
+      return;
     }
     carica();
   }
@@ -237,6 +305,16 @@ export default function AdminCrewPage() {
   const candidatureVisibili = candidature.filter(corrisponde);
   const membriVisibili = membri.filter(corrisponde);
 
+  // Da scrivere su WhatsApp: chi della crew non ha ancora avuto il
+  // benvenuto. Prima chi ha il numero (i nuovi in cima), poi chi non l'ha
+  // ancora messo: glielo chiede il sito quando apre "Le tue prevendite".
+  // Senza lo script 41 i campi non arrivano e la sezione non c'è.
+  const conNumeri = membri.some((m) => "telefono" in m);
+  const daScrivere = membriVisibili
+    .filter((m) => conNumeri && !m.whatsapp_scritto_at && m.telefono)
+    .sort((a, b) => (b.crew_since ?? "").localeCompare(a.crew_since ?? ""));
+  const senzaNumero = membriVisibili.filter((m) => conNumeri && !m.telefono);
+
   return (
     <main className="flex-1 px-5 py-8 max-w-2xl mx-auto w-full">
       <button
@@ -254,6 +332,53 @@ export default function AdminCrewPage() {
       {errore && (
         <div className="border border-brand-red/40 bg-brand-red/5 px-4 py-3 mb-6">
           <p className="text-brand-red text-xs leading-relaxed">{errore}</p>
+        </div>
+      )}
+
+      {/* Appena entrato: la cosa da fare adesso è una sola, il benvenuto. */}
+      {appenaEntrato && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 px-5">
+          <div className="w-full max-w-sm border border-emerald-400/50 bg-black px-5 py-6">
+            <p className="font-tech text-[10px] uppercase tracking-[0.35em] text-emerald-400">
+              è dentro
+            </p>
+            <p className="mt-2 font-display text-3xl uppercase leading-none text-white">
+              {appenaEntrato.chi}
+            </p>
+            <p className="mt-3 text-xs leading-relaxed text-brand-gray">{appenaEntrato.info}</p>
+
+            {appenaEntrato.telefono ? (
+              <>
+                <button
+                  onClick={() => {
+                    const a = appenaEntrato;
+                    setAppenaEntrato(null);
+                    mandaBenvenuto(a.id, a.telefono!, a.saluto, a.serata);
+                  }}
+                  className="mt-6 w-full bg-emerald-500 py-4 text-sm font-semibold uppercase tracking-widest text-black"
+                >
+                  Mandagli il benvenuto su WhatsApp
+                </button>
+                <p className="mt-2 text-center text-[11px] text-brand-gray">
+                  {mostraNumero(appenaEntrato.telefono)} · il messaggio spiega come funziona,
+                  lo puoi ritoccare prima di mandarlo
+                </p>
+              </>
+            ) : (
+              <p className="mt-6 border border-amber-400/40 bg-amber-400/5 px-4 py-3 text-[11px] leading-relaxed text-white/80">
+                Non ha lasciato il numero: si è candidato prima che fosse obbligatorio. Glielo
+                chiede il sito appena apre &quot;Le tue prevendite&quot;, e poi lo trovi qui in{" "}
+                <span className="text-white">da scrivere su WhatsApp</span>.
+              </p>
+            )}
+
+            <button
+              onClick={() => setAppenaEntrato(null)}
+              className="mt-3 w-full border border-white/15 py-3 text-[10px] uppercase tracking-widest text-brand-gray hover:text-white"
+            >
+              {appenaEntrato.telefono ? "dopo (resta nella lista da scrivere)" : "ok"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -310,13 +435,104 @@ export default function AdminCrewPage() {
         )}
       </div>
 
+      {/* Da scrivere su WhatsApp */}
+      {conNumeri && (daScrivere.length > 0 || senzaNumero.length > 0) && (
+        <div className="mb-10">
+          <p className="text-xs uppercase tracking-widest text-emerald-400 mb-1">
+            Da scrivere su WhatsApp ({daScrivere.length})
+          </p>
+          <p className="text-[10px] text-brand-gray/40 uppercase tracking-widest mb-4">
+            Il tasto apre la chat col benvenuto già scritto · &quot;già in chat&quot; se gli hai
+            già scritto tu
+          </p>
+
+          {daScrivere.length === 0 ? (
+            <p className="text-brand-gray/50 text-sm py-6 text-center border border-white/5">
+              Hai scritto a tutti quelli che hanno lasciato il numero.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {daScrivere.map((m) => (
+                <div key={m.id} className="border border-emerald-400/30 px-4 py-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="min-w-0 truncate text-sm text-white">
+                      {m.nome ?? m.alias}
+                      <span className="ml-2 font-mono text-xs text-brand-gray/50">
+                        #{String(m.member_number).padStart(4, "0")}
+                      </span>
+                    </p>
+                    <span className="flex-shrink-0 text-[11px] text-brand-gray">
+                      {mostraNumero(m.telefono)}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 truncate text-[11px] text-brand-gray/60">
+                    {m.alias}
+                    {m.serate ? ` · ${m.serate}` : " · nessuna serata agganciata"}
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => mandaBenvenuto(m.id, m.telefono!, nomeBreve(m), m.serate ?? null)}
+                      className="flex-1 bg-emerald-500 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-black"
+                    >
+                      Benvenuto su WhatsApp
+                    </button>
+                    <button
+                      onClick={() => segnaScritto(m.id, true)}
+                      className="border border-white/15 px-3 py-2.5 text-[10px] uppercase tracking-widest text-brand-gray hover:text-white"
+                    >
+                      già in chat ✓
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {senzaNumero.length > 0 && (
+            <div className="mt-3 border border-white/5">
+              <button
+                onClick={() => setSenzaNumeroAperti((a) => !a)}
+                className="flex w-full items-center justify-between px-4 py-3 text-left text-[10px] uppercase tracking-widest text-brand-gray hover:text-white"
+              >
+                <span>Non hanno ancora messo il numero ({senzaNumero.length})</span>
+                <span>{senzaNumeroAperti ? "−" : "+"}</span>
+              </button>
+              {senzaNumeroAperti && (
+                <div className="border-t border-white/5 px-4 py-3">
+                  <p className="mb-3 text-[11px] leading-relaxed text-brand-gray">
+                    Non vendono finché non lo scrivono: glielo chiede il sito appena aprono
+                    &quot;Le tue prevendite&quot;. Se te l&apos;hanno dato a voce, mettilo tu.
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {senzaNumero.map((m) => (
+                      <div key={m.id} className="flex items-center justify-between gap-3 py-1">
+                        <p className="min-w-0 truncate text-xs text-white">
+                          {m.nome ?? m.alias}
+                          <span className="ml-2 text-brand-gray/50">{m.alias}</span>
+                        </p>
+                        <button
+                          onClick={() => correggiNumero(m)}
+                          className="flex-shrink-0 text-[10px] uppercase tracking-widest text-brand-gray hover:text-white"
+                        >
+                          metti numero
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Candidature in attesa */}
       <div className="mb-10">
         <p className="text-xs uppercase tracking-widest text-brand-gray mb-1">
           Candidature in attesa ({candidature.length})
         </p>
         <p className="text-[10px] text-brand-gray/40 uppercase tracking-widest mb-4">
-          Nessuno viene avvisato in automatico — a chi ti interessa scrivi tu
+          Se lo fai entrare, il sito ti prepara il benvenuto da mandargli su WhatsApp
         </p>
 
         {candidatureVisibili.length === 0 ? (
@@ -349,7 +565,19 @@ export default function AdminCrewPage() {
                     {c.gender && ` · ${c.gender}`}
                     {c.invitato_da && ` · portato da ${c.invitato_da}`}
                   </p>
-                  {c.email && <p className="text-[11px] text-brand-gray/60 break-all mb-4">{c.email}</p>}
+                  {c.email && <p className="text-[11px] text-brand-gray/60 break-all mb-1">{c.email}</p>}
+                  {c.telefono ? (
+                    <button
+                      onClick={() => apriWhatsapp(c.telefono!)}
+                      className="mb-4 text-[11px] text-emerald-400 hover:text-emerald-300"
+                    >
+                      {mostraNumero(c.telefono)} · apri la chat WhatsApp →
+                    </button>
+                  ) : (
+                    <p className="mb-4 text-[11px] text-brand-gray/40">
+                      nessun numero: si è candidato prima che fosse obbligatorio
+                    </p>
+                  )}
 
                   <Risposte risposte={c.crew_answers} />
 
@@ -455,7 +683,42 @@ export default function AdminCrewPage() {
                 {espanso && (
                   <div className="px-4 pb-4 pt-1 border-t border-white/5">
                     {m.email && (
-                      <p className="text-[11px] text-brand-gray/60 mb-4 break-all">{m.email}</p>
+                      <p className="text-[11px] text-brand-gray/60 mb-1 break-all">{m.email}</p>
+                    )}
+                    {conNumeri && (
+                      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+                        {m.telefono ? (
+                          <button
+                            onClick={() => apriWhatsapp(m.telefono!)}
+                            className="text-emerald-400 hover:text-emerald-300"
+                          >
+                            {mostraNumero(m.telefono)} · chat WhatsApp →
+                          </button>
+                        ) : (
+                          <span className="text-brand-gray/50">nessun numero</span>
+                        )}
+                        <button
+                          onClick={() => correggiNumero(m)}
+                          className="uppercase tracking-widest text-[10px] text-brand-gray hover:text-white"
+                        >
+                          {m.telefono ? "correggi" : "metti numero"}
+                        </button>
+                        {m.whatsapp_scritto_at ? (
+                          <button
+                            onClick={() => segnaScritto(m.id, false)}
+                            title="rimettilo nella lista da scrivere"
+                            className="text-brand-gray/50 hover:text-white"
+                          >
+                            benvenuto mandato il{" "}
+                            {new Date(m.whatsapp_scritto_at).toLocaleDateString("it-IT", {
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </button>
+                        ) : (
+                          m.telefono && <span className="text-amber-300">da scrivere</span>
+                        )}
+                      </div>
                     )}
                     <Risposte risposte={m.crew_answers} />
                     <div className="mt-5 flex flex-wrap gap-2">

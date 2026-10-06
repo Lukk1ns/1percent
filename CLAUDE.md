@@ -1,8 +1,41 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 5 ottobre 2026
+> Ultimo aggiornamento: 6 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**OGNI PR HA UN NUMERO WHATSAPP, E LUKA GLI MANDA IL BENVENUTO (6 ott, `supabase/41_whatsapp_pr.sql`,
+`lib/whatsapp.ts`).** Luka: prima attivava lui ogni PR scrivendogli su WhatsApp, quindi *"avevo
+sempre una conversazione aperta con ogni PR"*; con le candidature dal sito *"potrebbe esserci un pr
+con cui non ho contatto diretto"*. Ora:
+- **chi si candida allo staff lascia il numero WhatsApp** (obbligatorio, `/unisciti` sotto il nome
+  vero); `join_public` ha `p_telefono` in fondo (default null, la firma vecchia è droppata) e lo
+  valida solo per le candidature. Il numero sta in **`profiles.phone`** (colonna del primo giorno,
+  mai riempita) sempre come `+` e cifre: regola **`_numero_whatsapp()` nel DB = `normalizzaNumero()`
+  in `lib/whatsapp.ts`**, se si cambia una si cambia l'altra (3xx senza prefisso → +39; 0… senza
+  prefisso → rifiutato, si chiede il +). Un numero non può stare su due profili;
+- **senza numero il PR non vende**: trigger `presales_serve_numero` (before insert su `presales`,
+  scatta solo se `pr_id = auth.uid()` e il profilo non ha `phone`) → `serve_numero`. Non tocca
+  `pr_vendi` (resta quella del 39), direzione e omaggi passano. Su `/pr` chi non ha il numero vede
+  prima `components/ChiediNumero.tsx` (`pr_mio_numero` / `set_mio_numero`), una volta sola;
+  `/pr/[evento]` su `serve_numero` rimanda a `/pr`. **Decisione Luka: i PR già dentro NON si
+  riapprovano**, scrivono il numero e continuano;
+- **il benvenuto su WhatsApp** (`messaggioBenvenutoPR`, testo in `lib/whatsapp.ts`): in
+  `/admin/crew` approvando esce il riquadro "è dentro" col tasto verde che apre `wa.me` col
+  messaggio già scritto (serata + come funziona: link `/pr`, Rientra con la mail, soldi prima,
+  biglietto su WhatsApp, consegna soldi, non rimborsabile ma cedibile, punti e stelle). In cima alla
+  pagina **"Da scrivere su WhatsApp"**: la crew col numero a cui Luka non ha ancora scritto
+  (`profiles.whatsapp_scritto_at`, segnato da `admin_whatsapp_scritto`), con "già in chat ✓" per
+  chi aveva già una chat; sotto, chiusi, quelli che il numero non l'hanno ancora messo, con "metti
+  numero" (`admin_set_numero`, anche "correggi" nella scheda di ognuno). **Non blocca nessuno**: è
+  il promemoria di Luka. Cambiare numero azzera "scritto". Le candidature mostrano il numero col
+  link alla chat, per fargli domande prima di decidere.
+`admin_crew_requests` e `admin_crew_answers` cambiano forma (droppate e rifatte; la seconda porta
+anche `serate` = nomi delle serate agganciate non passate). Il sito regge senza lo script (niente
+blocco, niente lista, l'iscrizione riprova senza numero su `PGRST202`). Privacy: una riga sui dati
+dei candidati. Sintassi controllata con `pglast`.
+**PENDING Luka: incollare `41_whatsapp_pr.sql`** (verifica da fuori: `pr_mio_numero` con la anon
+key → "Non autorizzato"/null = c'è, `PGRST202` = manca).
 
 **L'INGRESSO DEL PR HA UN NUMERO PER OGNI SERATA (5 ott, `supabase/40_ingresso_pr_per_serata.sql`).**
 Luka: l'ingresso omaggio a chi ha venduto **una** prevendita *"va bene per la domenica, ma per

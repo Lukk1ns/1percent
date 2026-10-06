@@ -13,6 +13,7 @@ import {
 } from "@/lib/event";
 import { createClient } from "@/lib/supabase/client";
 import { type Bozza } from "@/lib/registrazione";
+import { normalizzaNumero } from "@/lib/whatsapp";
 
 // Schermata mostrata quando le iscrizioni sono chiuse (interruttore admin)
 /** Porta chiusa a chi non ha il link di nessuno. */
@@ -143,6 +144,8 @@ function JoinForm() {
   // così "sicuro come cliente?" compare solo se lo sceglie davvero lui.
   const [scelto, setScelto] = useState(!SOLO_STAFF || dalleFoto);
   const [nome, setNome] = useState("");
+  // Il numero WhatsApp: se entra, Luka gli scrive lì (6 ott).
+  const [telefono, setTelefono] = useState("");
   const [entrando, setEntrando] = useState(false);
 
   function validate() {
@@ -178,6 +181,14 @@ function JoinForm() {
       setAliasError("Per candidarti serve il tuo nome vero.");
       return false;
     }
+    if (vuoleStaff && !normalizzaNumero(telefono)) {
+      setAliasError(
+        telefono.trim()
+          ? "Il numero WhatsApp non è giusto. Se non è italiano, mettilo col prefisso (+385…)."
+          : "Per candidarti serve il tuo numero WhatsApp.",
+      );
+      return false;
+    }
     if (!consent) {
       setAliasError("Devi accettare la privacy policy per continuare.");
       return false;
@@ -201,6 +212,7 @@ function JoinForm() {
       refCode: refCode || null,
       crewRequest: vuoleStaff,
       nome: vuoleStaff ? nome.trim() : null,
+      telefono: vuoleStaff ? normalizzaNumero(telefono) : null,
       next,
     };
 
@@ -437,6 +449,24 @@ function JoinForm() {
                 {alias.trim() ? alias.trim().toLowerCase() : "il tuo alias"}
               </span>
               .
+            </p>
+
+            <input
+              type="tel"
+              inputMode="tel"
+              placeholder="il tuo numero WhatsApp"
+              value={telefono}
+              maxLength={20}
+              onChange={(e) => {
+                setTelefono(e.target.value);
+                setAliasError("");
+              }}
+              className="input-line mt-6 text-base"
+              autoComplete="tel"
+            />
+            <p className="text-xs text-brand-gray leading-relaxed mt-3">
+              Se entri, <span className="text-white">ti scriviamo lì</span> per dirtelo e
+              spiegarti come funziona. Anche questo non compare sul sito.
             </p>
           </div>
         )}

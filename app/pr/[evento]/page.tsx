@@ -240,6 +240,11 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
     setSalvando(false);
 
     if (error) {
+      // Senza numero WhatsApp non si vende (script 41): torna a /pr, che glielo chiede.
+      if (error.message?.includes("serve_numero")) {
+        router.replace("/pr");
+        return;
+      }
       setEsito(error.message);
       return;
     }

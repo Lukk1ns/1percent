@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, dataLunga, giornoEData } from "@/lib/eventi";
 import { ProfiloStelle } from "@/components/Stelle";
+import { ChiediNumero } from "@/components/ChiediNumero";
 
 type EventoPR = {
   event_id: string;
@@ -60,6 +61,8 @@ export default function PrPage() {
   const [anteprima, setAnteprima] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errore, setErrore] = useState<string | null>(null);
+  // Senza numero WhatsApp il PR non vende (script 41): prima lo scrive.
+  const [serveNumero, setServeNumero] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -103,10 +106,13 @@ export default function PrPage() {
         // I punti partono insieme alle serate, così la scheda non spunta
         // dopo spingendo giù tutto. Un loro errore non ferma la pagina.
         // Le vendite della direzione non danno punti: all'admin niente.
-        const [evRes, ptRes] = await Promise.all([
+        // Il numero: un errore (script 41 non incollato) non blocca nessuno.
+        const [evRes, ptRes, numRes] = await Promise.all([
           supabase.rpc("pr_eventi"),
           s.sono_admin ? Promise.resolve(null) : supabase.rpc("pr_punti"),
+          s.sono_admin ? Promise.resolve(null) : supabase.rpc("pr_mio_numero"),
         ]);
+        if (numRes && !numRes.error && !numRes.data) setServeNumero(true);
         if (evRes.error) {
           setErrore(evRes.error.message);
           setLoading(false);
@@ -170,6 +176,8 @@ export default function PrPage() {
       </main>
     );
   }
+
+  if (serveNumero) return <ChiediNumero onFatto={() => setServeNumero(false)} />;
 
   const serataVicina = eventi.find((e) => e.event_id === serataId) ?? null;
 
