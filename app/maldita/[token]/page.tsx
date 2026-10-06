@@ -32,6 +32,25 @@ type Mia = {
   shot_at: string | null;
 };
 
+/** Dove il telefono tiene l'ultima copia: in fila il campo va e viene. */
+const COPIA = (t: string) => `maldita_mia_${t}`;
+
+type Telefono = "ios" | "android" | "altro";
+
+type RichiestaInstallazione = Event & { prompt: () => Promise<void> };
+
+function chiTelefono(): { tipo: Telefono; dentroApp: boolean; installata: boolean } {
+  if (typeof window === "undefined") return { tipo: "altro", dentroApp: false, installata: false };
+  const ua = navigator.userAgent;
+  const tipo: Telefono = /iPhone|iPad|iPod/.test(ua) ? "ios" : /Android/.test(ua) ? "android" : "altro";
+  // Dentro Instagram, Facebook o TikTok "Aggiungi a Home" non c'è
+  const dentroApp = /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Snapchat/i.test(ua);
+  const installata =
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  return { tipo, dentroApp, installata };
+}
+
 /**
  * La pagina personale: il link è l'indirizzo, nessuna iscrizione.
  *
@@ -48,16 +67,48 @@ export default function MiaPage({ params }: { params: Promise<{ token: string }>
   const [adesso, setAdesso] = useState(() => Date.now());
   const [copiato, setCopiato] = useState(false);
   const [shotErr, setShotErr] = useState<string | null>(null);
+  // senza rete si mostra l'ultima copia salvata, e si dice di quando è
+  const [copiaDel, setCopiaDel] = useState<string | null>(null);
+  const [senzaRete, setSenzaRete] = useState(false);
+  // il telefono non cambia mentre la pagina è aperta: si legge una volta
+  const [tel] = useState(chiTelefono);
+  const [installa, setInstalla] = useState<RichiestaInstallazione | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
     let vivo = true;
     async function leggi() {
-      const { data } = await supabase.rpc("omaggio_mia", { p_token: token });
+      const { data, error } = await supabase.rpc("omaggio_mia", { p_token: token });
       if (!vivo) return;
-      setM((data?.[0] as Mia) ?? null);
+      if (error) {
+        // Niente rete: l'ultima copia, così il QR si mostra lo stesso
+        try {
+          const c = JSON.parse(localStorage.getItem(COPIA(token)) ?? "null");
+          if (c?.m) {
+            setM(c.m as Mia);
+            setCopiaDel(c.at as string);
+          } else setSenzaRete(true);
+        } catch {
+          setSenzaRete(true);
+        }
+        setLetto(true);
+        setAdesso(Date.now());
+        return;
+      }
+      const riga = (data?.[0] as Mia) ?? null;
+      setM(riga);
+      setCopiaDel(null);
+      setSenzaRete(false);
       setLetto(true);
       setAdesso(Date.now());
+      if (riga) {
+        try {
+          localStorage.setItem(COPIA(token), JSON.stringify({ m: riga, at: new Date().toISOString() }));
+          localStorage.setItem("maldita_mio_token", token);
+        } catch {
+          // memoria piena o vietata: la pagina va lo stesso, con la rete
+        }
+      }
     }
     leggi();
     const t = setInterval(leggi, 20000);
@@ -66,6 +117,20 @@ export default function MiaPage({ params }: { params: Promise<{ token: string }>
       clearInterval(t);
     };
   }, [token]);
+
+  // La pagina si apre anche senza campo (public/sw-maldita.js), e su
+  // Android il browser offre "Installa" solo se qualcuno lo chiede.
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw-maldita.js", { scope: "/maldita/" }).catch(() => {});
+    }
+    const prendi = (e: Event) => {
+      e.preventDefault();
+      setInstalla(e as RichiestaInstallazione);
+    };
+    window.addEventListener("beforeinstallprompt", prendi);
+    return () => window.removeEventListener("beforeinstallprompt", prendi);
+  }, []);
 
   useEffect(() => {
     if (!canvasRef.current || !m?.qr) return;
@@ -115,6 +180,17 @@ export default function MiaPage({ params }: { params: Promise<{ token: string }>
     );
   }
 
+  if (!m && senzaRete) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+        <p className="font-display text-3xl uppercase text-white">Senza connessione</p>
+        <p className="mt-3 max-w-xs text-sm text-white/60">
+          Non riesco a collegarmi. Riprova appena hai campo: la pagina si aggiorna da sola.
+        </p>
+      </main>
+    );
+  }
+
   if (!m) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
@@ -159,18 +235,50 @@ export default function MiaPage({ params }: { params: Promise<{ token: string }>
         {m.nome} {m.cognome}
       </h1>
 
+      {/* LA LUCE: lo stato in un colore, si capisce senza leggere */}
+      <Luce
+        colore={
+          entrata || (m.stato === "approvata" && !scaduto)
+            ? "verde"
+            : scaduto
+              ? "rossa"
+              : m.stato === "rifiutata"
+                ? "spenta"
+                : "gialla"
+        }
+        testo={
+          entrata
+            ? "sei dentro"
+            : scaduto
+              ? "scaduto"
+              : m.stato === "approvata"
+                ? "confermata"
+                : m.stato === "lista_attesa"
+                  ? "lista d'attesa"
+                  : m.stato === "rifiutata"
+                    ? "non confermata"
+                    : "in attesa di conferma"
+        }
+      />
+
+      {copiaDel && (
+        <p className="mt-3 border border-white/15 px-3 py-2 text-[11px] text-white/60">
+          Senza campo: ti mostro la copia salvata alle {oraRoma(copiaDel)}. Si aggiorna appena torna la rete.
+        </p>
+      )}
+
       {/* LO STATO */}
       {m.stato === "in_attesa" && (
         <Riquadro colore="ambra" titolo="Prenotazione ricevuta">
-          Ora la confermiamo noi. Quando è confermata il tuo QR compare <strong>qui, su questa pagina</strong>,
-          e ti scriviamo su WhatsApp. <strong>Salva questo link</strong> per ritrovarla.
+          Ora la confermiamo noi. Quando è confermata la luce diventa <strong>verde</strong> e il tuo QR
+          compare <strong>qui, su questa pagina</strong>. Mettila sulla schermata Home per ritrovarla al volo.
         </Riquadro>
       )}
 
       {m.stato === "lista_attesa" && (
         <Riquadro colore="ambra" titolo="Sei in lista d'attesa">
-          I posti omaggio sono tutti assegnati. Se se ne libera uno il QR compare qui e ti scriviamo su
-          WhatsApp. <strong>Salva questo link.</strong>
+          I posti omaggio sono tutti assegnati. Se se ne libera uno la luce diventa <strong>verde</strong> e il
+          QR compare qui. Mettila sulla schermata Home per ritrovarla al volo.
         </Riquadro>
       )}
 
@@ -220,6 +328,59 @@ export default function MiaPage({ params }: { params: Promise<{ token: string }>
               <li>· Il QR vale per te sola e una volta sola: uno screenshot girato a un&apos;amica non la fa entrare.</li>
               {m.minorenne && <li>· Hai meno di 18 anni: il documento te lo chiediamo di sicuro.</li>}
             </ul>
+          )}
+        </section>
+      )}
+
+      {!tel.installata && !entrata && m.stato !== "rifiutata" && tel.tipo !== "altro" && (
+        <section className="mt-5 border border-white/20 bg-white/[0.04] px-4 py-4">
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/maldita/apple-touch-icon.png"
+              alt=""
+              width={48}
+              height={48}
+              style={{ width: 48, height: 48 }}
+              className="shrink-0 rounded-[11px]"
+            />
+            <div>
+              <p className="font-display text-xl uppercase leading-none text-white">Mettila sulla schermata Home</p>
+              <p className="mt-1 text-[12px] leading-snug text-white/65">
+                Diventa un&apos;icona come un&apos;app: in fila la apri al volo, anche col campo scarso.
+              </p>
+            </div>
+          </div>
+
+          {tel.dentroApp ? (
+            <p className="mt-3 text-[13px] leading-relaxed text-white/85">
+              Sei dentro Instagram: tocca <strong>•••</strong> in alto a destra e poi{" "}
+              <strong>«Apri nel browser»</strong>
+              {tel.tipo === "ios" ? " (Safari)" : ""}. Da lì la aggiungi alla schermata Home.
+            </p>
+          ) : tel.tipo === "ios" ? (
+            <p className="mt-3 text-[13px] leading-relaxed text-white/85">
+              Tocca{" "}
+              <span className="inline-flex translate-y-[3px] items-center" aria-label="Condividi">
+                <IconaCondividi />
+              </span>{" "}
+              <strong>Condividi</strong> nella barra di Safari, poi <strong>«Aggiungi alla schermata Home»</strong>.
+            </p>
+          ) : installa ? (
+            <button
+              onClick={async () => {
+                await installa.prompt();
+                setInstalla(null);
+              }}
+              className="mt-3 w-full bg-white px-4 py-3.5 font-display text-lg uppercase text-black"
+            >
+              Aggiungi alla schermata Home
+            </button>
+          ) : (
+            <p className="mt-3 text-[13px] leading-relaxed text-white/85">
+              Tocca <strong>⋮</strong> in alto a destra, poi <strong>«Aggiungi a schermata Home»</strong> (o{" "}
+              <strong>«Installa app»</strong>).
+            </p>
           )}
         </section>
       )}
@@ -283,6 +444,35 @@ export default function MiaPage({ params }: { params: Promise<{ token: string }>
         <p className="mt-1 text-[11px] text-white/40">{INDIRIZZO_PAPION}</p>
       </footer>
     </main>
+  );
+}
+
+function Luce({ colore, testo }: { colore: "verde" | "gialla" | "rossa" | "spenta"; testo: string }) {
+  const c = {
+    verde: { pallino: "#34d399", alone: "rgba(52,211,153,0.75)", scritta: "text-emerald-300" },
+    gialla: { pallino: "#fbbf24", alone: "rgba(251,191,36,0.7)", scritta: "text-amber-200" },
+    rossa: { pallino: "#e0181f", alone: "rgba(224,24,31,0.75)", scritta: "text-[#ff8a8e]" },
+    spenta: { pallino: "#6b6b6b", alone: "transparent", scritta: "text-white/50" },
+  }[colore];
+  return (
+    <div className="mt-3 inline-flex items-center gap-2.5 border border-white/12 bg-white/[0.03] px-3 py-2">
+      <span
+        className={`block h-3.5 w-3.5 rounded-full ${colore === "gialla" ? "animate-pulse" : ""}`}
+        style={{ background: c.pallino, boxShadow: `0 0 12px 3px ${c.alone}` }}
+        aria-hidden
+      />
+      <span className={`font-tech text-[11px] uppercase tracking-[0.2em] ${c.scritta}`}>{testo}</span>
+    </div>
+  );
+}
+
+/** L'icona "Condividi" di Safari: quadrato aperto con la freccia in su. */
+function IconaCondividi() {
+  return (
+    <svg width="18" height="20" viewBox="0 0 18 20" fill="none" stroke="#4da3ff" strokeWidth="1.8" aria-hidden>
+      <path d="M9 13V1.5M5 5l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6 8H3.5A1.5 1.5 0 0 0 2 9.5v8A1.5 1.5 0 0 0 3.5 19h11a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 8H12" strokeLinecap="round" />
+    </svg>
   );
 }
 

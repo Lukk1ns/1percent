@@ -154,7 +154,7 @@ export default function MalditaPage() {
         </h1>
         <p className="mt-3 text-sm text-white/80">
           Entri gratis se arrivi <strong className="text-white">entro le {info ? oraRoma(info.valido_fino) : "00:30"}</strong>.
-          Prenoti qui, ti confermiamo e ricevi il tuo QR.
+          Prenoti qui e, quando ti confermiamo, il tuo QR compare sulla tua pagina.
         </p>
       </section>
 
@@ -164,7 +164,7 @@ export default function MalditaPage() {
           ["solo ragazze", `dai ${info?.eta_min ?? 16} anni in su`],
           [`entro le ${info ? oraRoma(info.valido_fino) : "00:30"}`, "dopo si paga, senza eccezioni"],
           ["documento vero", "in mano, non la foto"],
-          ["posti limitati", "conferma su WhatsApp"],
+          ["posti limitati", "conferma sulla tua pagina"],
         ].map(([titolo, sotto]) => (
           <li key={titolo} className="border border-white/12 bg-white/[0.03] px-3 py-3">
             <p className="font-display text-lg uppercase leading-none text-white">{titolo}</p>
@@ -261,7 +261,7 @@ export default function MalditaPage() {
             </div>
           </Campo>
 
-          <Campo etichetta="numero whatsapp" classe="mt-3" nota="ti confermiamo qui la prenotazione">
+          <Campo etichetta="numero whatsapp" classe="mt-3" nota="per scriverti se serve">
             <input
               value={telefono}
               onChange={(e) => setTelefono(e.target.value)}
