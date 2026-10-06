@@ -52,15 +52,6 @@ type Richiesta = {
 type Filtro = "da_decidere" | "lista_attesa" | "approvata" | "rifiutata" | "tutte";
 type Messaggio = "conferma" | "sorpresa";
 
-/** Anni compiuti il giorno della serata. */
-function eta(nascita: string, serata: string): number {
-  const n = new Date(nascita + "T12:00:00");
-  const s = new Date(serata);
-  let a = s.getFullYear() - n.getFullYear();
-  if (s.getMonth() < n.getMonth() || (s.getMonth() === n.getMonth() && s.getDate() < n.getDate())) a--;
-  return a;
-}
-
 function quando(iso: string): string {
   return new Date(iso).toLocaleString("it-IT", {
     day: "numeric",
@@ -243,13 +234,11 @@ export default function AdminMalditaPage() {
   }
 
   function scaricaCsv() {
-    const intest = ["nome", "cognome", "nascita", "eta", "whatsapp", "instagram", "stato", "iscritta", "entrata", "shot", "avvisi prossime serate"];
-    const serata = "2026-10-17T22:00:00Z";
+    const intest = ["nome", "cognome", "anno di nascita", "whatsapp", "stato", "iscritta", "entrata", "shot"];
     const righeCsv = righe.map((r) =>
       [
-        r.nome, r.cognome, r.nascita, eta(r.nascita, serata), r.telefono, r.instagram ? "@" + r.instagram : "",
+        r.nome, r.cognome, r.nascita.slice(0, 4), r.telefono,
         r.stato, quando(r.created_at), r.entrata_at ? oraRoma(r.entrata_at) : "", r.shot_at ? oraRoma(r.shot_at) : "",
-        r.promo ? "si" : "no",
       ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
         .join(";"),
@@ -261,8 +250,6 @@ export default function AdminMalditaPage() {
     a.click();
     URL.revokeObjectURL(a.href);
   }
-
-  const serataIso = "2026-10-17T22:00:00Z";
 
   const visibili = useMemo(() => {
     const q = cerca.trim().toLowerCase();
@@ -507,7 +494,7 @@ export default function AdminMalditaPage() {
         <input
           value={cerca}
           onChange={(e) => setCerca(e.target.value)}
-          placeholder="cerca nome, instagram o numero"
+          placeholder="cerca nome o numero"
           className="mt-3 w-full border border-white/15 bg-black/40 px-3 py-2.5 text-[15px] text-white outline-none focus:border-brand-red"
         />
 
@@ -573,7 +560,7 @@ export default function AdminMalditaPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] font-semibold text-white">
                   {r.nome} {r.cognome}{" "}
-                  <span className="font-normal text-white/50">· {eta(r.nascita, serataIso)} anni</span>
+                  <span className="font-normal text-white/50">· {r.nascita.slice(0, 4)}</span>
                 </p>
                 <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[12px] text-white/55">
                   <button onClick={() => apriWhatsapp(r.telefono)} className="underline decoration-white/30 underline-offset-2">

@@ -24,7 +24,7 @@ export const ERRORI_ISCRIZIONE: Record<string, string> = {
   nome_sbagliato: "Controlla nome e cognome: solo lettere, come sul documento.",
   numero_sbagliato:
     "Il numero WhatsApp non va. Scrivilo intero; se non è italiano mettici davanti il prefisso (es. +385…).",
-  data_sbagliata: "Controlla la data di nascita.",
+  data_sbagliata: "Controlla l'anno di nascita.",
   troppo_giovane: "L'ingresso omaggio è dai 16 anni in su.",
   instagram_sbagliato: "Il nome Instagram non va: solo lettere, numeri, punti e trattini bassi.",
   gia_registrata: "Risulti già prenotata con un altro numero: vale una prenotazione a testa.",
@@ -70,8 +70,3 @@ export function giornoOraRoma(iso: string): string {
   });
   return `${giorno} alle ${oraRoma(iso)}`;
 }
-
-export const MESI = [
-  "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
-  "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
-];

@@ -9,7 +9,6 @@ import {
   ERRORI_ISCRIZIONE,
   INDIRIZZO_PAPION,
   LOCANDINA_WEB,
-  MESI,
   SLUG_MALDITA,
   giornoOraRoma,
   oraRoma,
@@ -43,13 +42,9 @@ export default function MalditaPage() {
 
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
-  const [giorno, setGiorno] = useState("");
-  const [mese, setMese] = useState("");
   const [anno, setAnno] = useState("");
   const [telefono, setTelefono] = useState("");
-  const [instagram, setInstagram] = useState("");
   const [privacy, setPrivacy] = useState(false);
-  const [promo, setPromo] = useState(false);
   const [trappola, setTrappola] = useState("");
   const [informativa, setInformativa] = useState(false);
 
@@ -103,14 +98,14 @@ export default function MalditaPage() {
       return;
     }
     if (!nome.trim() || !cognome.trim()) return setErrore("Scrivi nome e cognome.");
-    if (!giorno || !mese || !anno) return setErrore("Scegli la tua data di nascita.");
+    if (!anno) return setErrore("Scegli il tuo anno di nascita.");
     if (!normalizzaNumero(telefono)) return setErrore(ERRORI_ISCRIZIONE.numero_sbagliato);
     if (!privacy) return setErrore(ERRORI_ISCRIZIONE.privacy);
 
-    const nascita = `${anno}-${mese.padStart(2, "0")}-${giorno.padStart(2, "0")}`;
-    // 31 febbraio e simili: la data deve esistere
-    const prova = new Date(`${nascita}T12:00:00`);
-    if (prova.getDate() !== Number(giorno)) return setErrore("Questa data non esiste: controllala.");
+    // Solo l'anno (Luka, 6 ott: "tanto alla porta controllano i documenti").
+    // Si salva come 1° gennaio: il database ammette chi è nata entro il
+    // 2010, cioè la regola "16 anni" fatta sull'anno.
+    const nascita = `${anno}-01-01`;
 
     setInvio(true);
     const { data, error } = await createClient().rpc("omaggio_iscrivi", {
@@ -119,8 +114,8 @@ export default function MalditaPage() {
       p_cognome: cognome,
       p_nascita: nascita,
       p_telefono: telefono,
-      p_instagram: instagram || null,
-      p_promo: promo,
+      p_instagram: null,
+      p_promo: false,
       p_privacy: privacy,
     });
     setInvio(false);
@@ -255,27 +250,13 @@ export default function MalditaPage() {
             </Campo>
           </div>
 
-          <Campo etichetta="data di nascita" classe="mt-3">
-            <div className="grid grid-cols-[1fr_1.6fr_1.3fr] gap-2">
-              <select value={giorno} onChange={(e) => setGiorno(e.target.value)} className={INPUT} aria-label="giorno">
-                <option value="">giorno</option>
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((g) => (
-                  <option key={g} value={String(g)}>{g}</option>
-                ))}
-              </select>
-              <select value={mese} onChange={(e) => setMese(e.target.value)} className={INPUT} aria-label="mese">
-                <option value="">mese</option>
-                {MESI.map((m, i) => (
-                  <option key={m} value={String(i + 1)}>{m}</option>
-                ))}
-              </select>
-              <select value={anno} onChange={(e) => setAnno(e.target.value)} className={INPUT} aria-label="anno">
-                <option value="">anno</option>
-                {anni.map((a) => (
-                  <option key={a} value={String(a)}>{a}</option>
-                ))}
-              </select>
-            </div>
+          <Campo etichetta="anno di nascita" classe="mt-3">
+            <select value={anno} onChange={(e) => setAnno(e.target.value)} className={INPUT} aria-label="anno di nascita">
+              <option value="">scegli l&apos;anno</option>
+              {anni.map((a) => (
+                <option key={a} value={String(a)}>{a}</option>
+              ))}
+            </select>
           </Campo>
 
           <Campo etichetta="numero whatsapp" classe="mt-3" nota="per scriverti se serve">
@@ -288,21 +269,6 @@ export default function MalditaPage() {
               placeholder="347 123 4567"
               className={INPUT}
             />
-          </Campo>
-
-          <Campo etichetta="instagram · facoltativo" classe="mt-3">
-            <div className="flex items-stretch">
-              <span className="flex items-center border border-r-0 border-white/15 bg-white/[0.04] px-3 text-white/50">@</span>
-              <input
-                value={instagram}
-                onChange={(e) => setInstagram(e.target.value.replace(/^@/, ""))}
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                placeholder="il tuo profilo"
-                className={`${INPUT} min-w-0 flex-1`}
-              />
-            </div>
           </Campo>
 
           {/* Nascosto alle persone, visibile ai programmi che compilano tutto */}
@@ -340,10 +306,9 @@ export default function MalditaPage() {
           {informativa && (
             <div className="mt-3 border-l-2 border-[#e0181f] bg-white/[0.03] px-3 py-3 text-[11px] leading-relaxed text-white/65">
               Titolare: <strong className="text-white">QFB SRL</strong> (PAPI-ON), P.IVA 01920690938.
-              Nome, cognome, data di nascita, WhatsApp e Instagram servono solo a gestire il tuo
-              ingresso omaggio a MALDITA del 17 ottobre e a scriverti su WhatsApp per questa
-              serata. Se spunti la casella qui sotto, anche per avvisarti delle prossime serate del
-              PAPI-ON. Non li diamo a nessun altro. Puoi chiederne la cancellazione quando vuoi
+              Nome, cognome, anno di nascita e WhatsApp servono solo a gestire il tuo ingresso
+              omaggio a MALDITA del 17 ottobre e a scriverti su WhatsApp per questa serata, e li
+              teniamo solo per il tempo che serve a questo. Non li diamo a nessun altro. Puoi chiederne la cancellazione quando vuoi
               scrivendo a papionthebeach22@gmail.com.{" "}
               <Link href="/privacy" className="underline underline-offset-2">
                 Privacy completa
@@ -351,18 +316,6 @@ export default function MalditaPage() {
               .
             </div>
           )}
-
-          <label className="mt-3 flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              checked={promo}
-              onChange={(e) => setPromo(e.target.checked)}
-              className="mt-0.5 h-5 w-5 shrink-0 accent-[#e0181f]"
-            />
-            <span className="text-[12px] leading-relaxed text-white/60">
-              Avvisatemi su WhatsApp anche delle prossime serate del PAPI-ON. <em>(facoltativo)</em>
-            </span>
-          </label>
 
           {errore && (
             <p role="alert" className="mt-4 border border-[#e0181f]/60 bg-[#e0181f]/10 px-3 py-2.5 text-[13px] text-white">
