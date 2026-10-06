@@ -100,7 +100,7 @@ export default function AdminMalditaPage() {
   const [cerca, setCerca] = useState("");
   const [scelte, setScelte] = useState<Set<string>>(new Set());
   const [lavoro, setLavoro] = useState(false);
-  const [msgTab, setMsgTab] = useState<Messaggio>("conferma");
+  const [msgTab, setMsgTab] = useState<Messaggio>("sorpresa");
   const [mostraScritte, setMostraScritte] = useState(false);
 
   const carica = useCallback(async (anche_impostazioni = false) => {
@@ -628,11 +628,15 @@ export default function AdminMalditaPage() {
       {/* I MESSAGGI */}
       <section className="mt-10 border border-white/10 px-4 py-5">
         <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">messaggi whatsapp · alle approvate</p>
+        <p className="mt-2 text-[12px] leading-relaxed text-white/60">
+          L&apos;approvazione la controllano loro sulla pagina (luce verde): non serve avvisarle. Il primo
+          messaggio è quello dello shot, e dentro c&apos;è già il link alla loro pagina col QR.
+        </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {(
             [
-              ["conferma", "1 · Conferma col QR"],
-              ["sorpresa", "2 · Sorpresa shot"],
+              ["sorpresa", "Shot · il primo messaggio"],
+              ["conferma", "Conferma QR · facoltativo"],
             ] as const
           ).map(([v, t]) => (
             <button

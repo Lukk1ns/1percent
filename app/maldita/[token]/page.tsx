@@ -257,7 +257,7 @@ export default function MiaPage({ params }: { params: Promise<{ token: string }>
                   ? "lista d'attesa"
                   : m.stato === "rifiutata"
                     ? "non confermata"
-                    : "in attesa di conferma"
+                    : "attendi l'approvazione"
         }
       />
 
@@ -269,16 +269,18 @@ export default function MiaPage({ params }: { params: Promise<{ token: string }>
 
       {/* LO STATO */}
       {m.stato === "in_attesa" && (
-        <Riquadro colore="ambra" titolo="Prenotazione ricevuta">
-          Ora la confermiamo noi. Quando è confermata la luce diventa <strong>verde</strong> e il tuo QR
-          compare <strong>qui, su questa pagina</strong>. Mettila sulla schermata Home per ritrovarla al volo.
+        <Riquadro colore="ambra" titolo="Attendi l'approvazione">
+          La tua richiesta è arrivata. <strong>Non ti avvisiamo noi: ricontrolla tu questa pagina.</strong>{" "}
+          Quando la luce diventa <strong>verde</strong> sei dentro e il tuo QR compare qui. Mettila sulla
+          schermata Home, così la ritrovi al volo.
         </Riquadro>
       )}
 
       {m.stato === "lista_attesa" && (
         <Riquadro colore="ambra" titolo="Sei in lista d'attesa">
-          I posti omaggio sono tutti assegnati. Se se ne libera uno la luce diventa <strong>verde</strong> e il
-          QR compare qui. Mettila sulla schermata Home per ritrovarla al volo.
+          I posti omaggio sono tutti assegnati. <strong>Ricontrolla tu questa pagina:</strong> se se ne libera
+          uno la luce diventa <strong>verde</strong> e il QR compare qui. Mettila sulla schermata Home, così la
+          ritrovi al volo.
         </Riquadro>
       )}
 

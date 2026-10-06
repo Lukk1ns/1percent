@@ -154,7 +154,7 @@ export default function MalditaPage() {
         </h1>
         <p className="mt-3 text-sm text-white/80">
           Entri gratis se arrivi <strong className="text-white">entro le {info ? oraRoma(info.valido_fino) : "00:30"}</strong>.
-          Prenoti qui e, quando ti confermiamo, il tuo QR compare sulla tua pagina.
+          Prenoti qui, poi ricontrolli la tua pagina: quando è approvata compare il tuo QR.
         </p>
       </section>
 
