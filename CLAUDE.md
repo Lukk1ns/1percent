@@ -34,8 +34,8 @@ con cui non ho contatto diretto"*. Ora:
 anche `serate` = nomi delle serate agganciate non passate). Il sito regge senza lo script (niente
 blocco, niente lista, l'iscrizione riprova senza numero su `PGRST202`). Privacy: una riga sui dati
 dei candidati. Sintassi controllata con `pglast`.
-**PENDING Luka: incollare `41_whatsapp_pr.sql`** (verifica da fuori: `pr_mio_numero` con la anon
-key → "Non autorizzato"/null = c'è, `PGRST202` = manca).
+**`41_whatsapp_pr.sql` incollato da Luka il 6 ott** (insieme al 40): da fuori tutte le funzioni nuove
+esistono e rifiutano la chiave anon (`42501`), `join_public` risponde con `p_telefono`.
 
 **L'INGRESSO DEL PR HA UN NUMERO PER OGNI SERATA (5 ott, `supabase/40_ingresso_pr_per_serata.sql`).**
 Luka: l'ingresso omaggio a chi ha venduto **una** prevendita *"va bene per la domenica, ma per
@@ -50,7 +50,7 @@ Halloween 10** con `on conflict do nothing` (rieseguirlo non cancella i numeri c
 Nel pannello il riquadro in fondo è **"ingresso omaggio del PR · solo questa serata"**, col nome
 della serata scelta in alto: `admin_ingresso_soglia_serata` / `admin_set_ingresso_soglia_serata`.
 Senza lo script il pannello ripiega sul numero unico di prima. Sintassi controllata con `pglast`.
-**PENDING Luka: incollare `40_ingresso_pr_per_serata.sql`** (codice online dal 5 ott, commit d060e4b).
+**`40_ingresso_pr_per_serata.sql` incollato da Luka il 6 ott** (verificato da fuori).
 
 **I CONTI DEL PR: LA CIFRA IN GRANDE (4 ott, `/pr/[evento]`).** Luka: *"più grande, più visibile,
 quanti soldi deve portare"* e la frase *"finché non consegni i soldi prima dell'evento quando ti
