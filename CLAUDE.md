@@ -1,8 +1,32 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 6 ottobre 2026
+> Ultimo aggiornamento: 7 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**UN PR SI AGGIUNGE A MANO DAL PANNELLO (7 ott, `components/NuovoPR.tsx`, commit b8e763d). NESSUNO SCRIPT.**
+Luka: *"dalla dashboard aggiungere io direttamente un pr nuovo e automaticamente attivarlo con
+prevendite mandandogli il messaggio direttamente... senza dirgli di iscriversi dal sito e fare tutto
+il percorso"*. In `/admin/crew`, in cima, **"+ Aggiungi un PR a mano"**: nome e cognome, WhatsApp, **mail
+(obbligatoria: è quella con cui entra)**, alias facoltativo (vuoto → `marco.r`, col numerino se preso:
+niente nome intero sul Muro), serata. **"Crea e attiva"** → stesso riquadro "è dentro" dell'approvazione,
+col tasto del benvenuto.
+- **Come lo crea senza service key:** un client Supabase **a parte** (`persistSession: false`,
+  `storageKey: "pr-a-mano"`, non tocca la sessione di Luka) fa `signInAnonymously` e chiama `join_public`
+  come una candidatura (`p_crew_answers = {a_mano: <data>}` = il segno, letto da `aMano()` nella pagina:
+  la scheda dice "aggiunto a mano, niente questionario"); poi Luka, col suo client, `admin_approve_crew`
+  sulla serata → agganci + prevendite di partenza identici all'approvazione normale.
+- **Mail già sul sito** (cliente o candidato) → conferma e **si promuove quel profilo**
+  (`admin_set_numero` + `admin_approve_crew`), niente doppioni. Già PR → lo dice e si ferma.
+- **Il PR entra** da `/login?next=/pr` con la mail e il codice: `link_email_account` riattacca il profilo
+  al suo accesso. ⚠️ **Prima con `next` il collegamento veniva saltato** (sia `/login` col codice sia
+  `/auth/callback`): al primo accesso un PR arrivava su `/pr` come uno sconosciuto. Ora lo fanno tutti e
+  due prima di andare (non per `/admin`). Vale anche per i PR iscritti normalmente che rientrano da `/pr`.
+- **Benvenuto:** `messaggioBenvenutoPR(nome, serate, emailAMano)` — col terzo parametro aggiunge
+  "COME ENTRI (una volta sola)" con la mail e il link; anche dalla lista "Da scrivere su WhatsApp".
+- **WhatsApp senza API: il messaggio non parte da solo**, si apre già scritto e Luka preme invio.
+- Provato: `join_public` dal vivo col client usa e getta e un numero finto → `numero_non_valido`
+  (firma giusta, niente salvato); modulo fotografato; build ok; chunk nuovo online.
 
 **DONNA OMAGGIO · MALDITA 17/10 — PAGINA DEDICATA (6 ott, `supabase/42_omaggio_donne.sql`, commit 961ce92).**
 Luka, per l'apertura del nuovo PAPI-ON (sab 17 ott, MALDITA · OFFICIAL OPENING): *"diamo solo TOT
