@@ -158,6 +158,9 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   const [copiato, setCopiato] = useState(false);
   // Il pass del PR: esiste per serata e si accende con le vendite.
   const [ingresso, setIngresso] = useState<Ingresso | null>(null);
+  // Senza campo (in porta capita): niente rimando al login, e il pass
+  // dall'ultima copia sul telefono.
+  const [senzaRete, setSenzaRete] = useState(false);
   const qrRef = useRef<HTMLCanvasElement>(null);
   // Le vendite che contano per le stelle, prima e dopo l'ultima vendita:
   // la differenza è il "+10 punti" della schermata "fatto".
@@ -166,10 +169,13 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
 
   const carica = useCallback(async () => {
     const supabase = createClient();
+    // La sessione salvata sul telefono, non quella chiesta al server:
+    // senza campo getUser() torna vuoto e mandava al login un PR che
+    // voleva solo mostrare il suo pass in porta.
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
       router.replace(`/login?next=/pr/${evento}`);
       return;
     }
@@ -185,7 +191,26 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
     ]);
     setPuntiVendite(ptRes.error ? null : (ptRes.data?.[0]?.vendite ?? null));
 
+    const copiaPass = `pr_ingresso_${evento}`;
+    // Un errore senza codice è la rete, non il database.
+    if (rRes.error && !rRes.error.code) {
+      try {
+        const c = JSON.parse(localStorage.getItem(copiaPass) ?? "null") as Ingresso | null;
+        if (c) setIngresso((prima) => prima ?? c);
+      } catch {}
+      setSenzaRete(true);
+      setLoading(false);
+      return;
+    }
+    setSenzaRete(false);
+
     if (rRes.error) {
+      // Non lo riconosce come PR: quasi sempre è un accesso non ancora
+      // ricollegato al profilo. /pr lo ricollega o gli dice come rientrare.
+      if (rRes.error.message?.includes("Non autorizzato")) {
+        router.replace("/pr");
+        return;
+      }
       setErrore(rRes.error.message);
       setLoading(false);
       return;
@@ -193,8 +218,14 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
 
     // Il pass non fa parte del blocco di sopra: se manca lo script
     // non deve portarsi dietro il resto della pagina.
-    const { data: ing } = await supabase.rpc("pr_ingresso", { p_event: evento });
-    setIngresso((ing?.[0] as Ingresso) ?? null);
+    const { data: ing, error: errIng } = await supabase.rpc("pr_ingresso", { p_event: evento });
+    if (!errIng) {
+      const pass = (ing?.[0] as Ingresso) ?? null;
+      setIngresso(pass);
+      try {
+        if (pass) localStorage.setItem(copiaPass, JSON.stringify(pass));
+      } catch {}
+    }
 
     const mio = (evRes.data ?? []).find((x: EventoPR) => x.event_id === evento) ?? null;
     setEv(mio);
@@ -218,7 +249,9 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
       margin: 2,
       color: { dark: "#000000", light: "#ffffff" },
     });
-  }, [ingresso?.token]);
+    // Il canvas rinasce a ogni cambio di schermata (dopo una vendita,
+    // senza rete): con il solo token il riquadro restava bianco.
+  }, [ingresso?.token, loading, senzaRete, appenaFatto]);
 
   async function vendi(e: React.FormEvent, forza = false) {
     e.preventDefault();
@@ -302,6 +335,38 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
     return (
       <main className="flex flex-1 items-center justify-center">
         <div className="font-display text-6xl text-brand-red animate-pulse-glow">1%</div>
+      </main>
+    );
+  }
+
+  // Senza campo e niente da mostrare: almeno il pass, se c'è la copia.
+  if (senzaRete && !r) {
+    const passBuono = ingresso && ingresso.attivo && !ingresso.usato_at;
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+        <h1 className="mb-3 text-xl font-semibold text-white">Niente connessione</h1>
+        <p className="max-w-xs text-sm leading-relaxed text-brand-gray">
+          Spostati dove prende e riprova. Le prevendite si fanno solo con la rete.
+        </p>
+        {passBuono && (
+          <div className="mt-8 flex flex-col items-center">
+            <p className="mb-3 font-tech text-[10px] uppercase tracking-[0.3em] text-emerald-400">
+              il tuo ingresso · ultima copia
+            </p>
+            <div className="bg-white p-2">
+              <canvas ref={qrRef} className="block" />
+            </div>
+          </div>
+        )}
+        <button
+          onClick={() => {
+            setLoading(true);
+            carica();
+          }}
+          className="btn btn-primary mt-8"
+        >
+          Riprova
+        </button>
       </main>
     );
   }

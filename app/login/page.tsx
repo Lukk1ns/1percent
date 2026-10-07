@@ -113,7 +113,11 @@ function LoginForm() {
       // pannello entra la prima volta proprio da /login?next=/pr, e senza
       // questo arrivava sulle prevendite come uno sconosciuto. Per chi ha
       // già il suo profilo risponde "sì" e non tocca niente.
-      if (!next.startsWith("/admin")) await supabase.rpc("link_email_account");
+      // L'admin no, come sotto: il suo accesso non si attacca a un profilo.
+      if (!next.startsWith("/admin")) {
+        const { data: admin } = await supabase.rpc("is_admin");
+        if (!admin) await supabase.rpc("link_email_account");
+      }
       router.replace(next);
       return;
     }

@@ -63,16 +63,43 @@ export default function PrPage() {
   const [errore, setErrore] = useState<string | null>(null);
   // Senza numero WhatsApp il PR non vende (script 41): prima lo scrive.
   const [serveNumero, setServeNumero] = useState(false);
+  // Una sessione senza profilo dietro: glielo si dice e lo si fa
+  // rientrare, invece di un "area riservata" muto da cui non esce.
+  // `email` null = accesso anonimo rimasto orfano (iscritto da Safari,
+  // poi rientrato dall'app: il profilo è andato con l'app).
+  const [senzaProfilo, setSenzaProfilo] = useState<{ email: string | null } | null>(null);
 
   useEffect(() => {
     (async () => {
       const supabase = createClient();
+      // La sessione salvata sul telefono: senza campo getUser() torna
+      // vuoto e mandava al login chi era già dentro.
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) {
         router.replace("/login?next=/pr");
         return;
+      }
+
+      let { data: st, error: errSt } = await supabase.rpc("prevendite_stato");
+
+      // Entrato con la mail ma il profilo è ancora sull'accesso di prima
+      // (iscritto da Safari e rientrato dall'app, telefono nuovo, PR
+      // aggiunto a mano): lo si riattacca qui. Prima di oggi chi entrava
+      // da /login?next=/pr restava così, e da questa pagina non usciva:
+      // "area riservata", con la sessione aperta e nessuna strada.
+      const ok = (x: typeof st) => Boolean(x?.[0]?.sono_pr || x?.[0]?.sono_admin);
+      if (!errSt && !ok(st)) {
+        const { data: mio } = await supabase.rpc("my_profile");
+        if (!mio || (Array.isArray(mio) && mio.length === 0)) {
+          const { data: ritrovato } = user.email
+            ? await supabase.rpc("link_email_account")
+            : { data: false };
+          if (ritrovato) ({ data: st, error: errSt } = await supabase.rpc("prevendite_stato"));
+          else setSenzaProfilo({ email: user.email ?? null });
+        }
       }
 
       // Se lo script del ruolo non è incollato la chiamata fallisce:
@@ -81,7 +108,12 @@ export default function PrPage() {
         .rpc("is_account_manager")
         .then(({ data }) => setSonoManager(Boolean(data)));
 
-      const { data: st, error: errSt } = await supabase.rpc("prevendite_stato");
+      if (errSt && !errSt.code) {
+        // Un errore senza codice è la rete, non il database.
+        setErrore("Niente connessione: spostati dove prende e riapri la pagina.");
+        setLoading(false);
+        return;
+      }
       if (errSt) {
         setErrore(
           "Il modulo prevendite non è ancora installato sul database. " +
@@ -144,6 +176,39 @@ export default function PrPage() {
     return (
       <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <p className="max-w-sm text-sm leading-relaxed text-brand-gray">{errore}</p>
+      </main>
+    );
+  }
+
+  // Il sito non sa chi è: mail sbagliata (quasi sempre si era iscritto
+  // con un'altra) o un accesso vecchio. Esce e rientra con la sua mail.
+  if (!stato?.sono_pr && senzaProfilo) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+        <div className="mb-6 font-display text-6xl text-brand-red">%</div>
+        <h1 className="mb-3 text-xl font-semibold text-white">
+          {senzaProfilo.email ? "Mail sbagliata?" : "Rientra"}
+        </h1>
+        <p className="max-w-xs text-sm leading-relaxed text-brand-gray">
+          {senzaProfilo.email ? (
+            <>
+              Sei entrato con <span className="break-all text-white">{senzaProfilo.email}</span>,
+              ma nessun iscritto ha questa mail. Rientra con quella con cui ti sei iscritto, o con
+              quella che ti ha scritto Luka.
+            </>
+          ) : (
+            <>Su questo telefono il sito non ti riconosce più. Rientra con la tua mail: ti arriva un codice.</>
+          )}
+        </p>
+        <button
+          onClick={async () => {
+            await createClient().auth.signOut();
+            router.replace("/login?next=/pr");
+          }}
+          className="btn btn-primary mt-8"
+        >
+          {senzaProfilo.email ? "Rientra con un'altra mail →" : "Rientra con la mail →"}
+        </button>
       </main>
     );
   }

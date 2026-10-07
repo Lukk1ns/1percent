@@ -45,16 +45,40 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [b, setB] = useState<Biglietto | null>(null);
   const [caricato, setCaricato] = useState(false);
+  // La prima lettura non è arrivata (niente campo): non è "non trovato".
+  const [senzaRete, setSenzaRete] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
     let vivo = true;
+    // L'ultima copia buona, sul telefono: in porta il campo va e viene, e
+    // prima un aggiornamento fallito (ogni 20s) cancellava il QR e
+    // scriveva "biglietto non trovato" proprio davanti a chi scansiona.
+    // Il QR è il token stesso, quindi si disegna anche senza rete.
+    const chiave = `biglietto_${token}`;
 
     async function leggi() {
-      const { data } = await supabase.rpc("biglietto", { p_token: token });
+      const { data, error } = await supabase.rpc("biglietto", { p_token: token });
       if (!vivo) return;
-      setB(data?.[0] ?? null);
+      if (error) {
+        // Rete o server: resta quello che c'è a schermo, o l'ultima copia.
+        let copia: Biglietto | null = null;
+        try {
+          copia = JSON.parse(localStorage.getItem(chiave) ?? "null") as Biglietto | null;
+        } catch {}
+        setB((prima) => prima ?? copia);
+        setSenzaRete(true);
+        setCaricato(true);
+        return;
+      }
+      const letto = (data?.[0] as Biglietto | undefined) ?? null;
+      setB(letto);
+      setSenzaRete(false);
       setCaricato(true);
+      try {
+        if (letto) localStorage.setItem(chiave, JSON.stringify(letto));
+        else localStorage.removeItem(chiave);
+      } catch {}
     }
 
     leggi();
@@ -80,6 +104,19 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
     return (
       <main className="flex flex-1 items-center justify-center">
         <div className="font-display text-6xl text-brand-red animate-pulse-glow">1%</div>
+      </main>
+    );
+  }
+
+  if (!b && senzaRete) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+        <div className="mb-6 font-display text-6xl text-brand-red">%</div>
+        <h1 className="mb-3 text-xl font-semibold text-white">Niente connessione</h1>
+        <p className="max-w-xs text-sm text-brand-gray">
+          Il biglietto non si è caricato: spostati dove prende e riapri questo link. Riprovo da
+          solo ogni 20 secondi.
+        </p>
       </main>
     );
   }

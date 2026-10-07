@@ -46,7 +46,8 @@ export async function GET(request: Request) {
       }
       // Prima della pagina chiesta si ritrova il profilo dalla mail (vedi
       // /login): al primo accesso di un PR aggiunto a mano serve qui.
-      await supabase.rpc("link_email_account");
+      const { data: admin } = await supabase.rpc("is_admin");
+      if (!admin) await supabase.rpc("link_email_account");
       return NextResponse.redirect(new URL(next, url.origin));
     }
 

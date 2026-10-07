@@ -58,6 +58,9 @@ export default function PassPage() {
   const [loading, setLoading] = useState(true);
   const [mine, setMine] = useState<MyPrize | null>(null);
   const [justWon, setJustWon] = useState(false);
+  // Dentro al locale il campo va e viene: senza rete si mostra l'ultima
+  // copia del QR invece di rimandare all'iscrizione chi è già dentro.
+  const [senzaRete, setSenzaRete] = useState(false);
   const drawnRef = useRef(false);
 
   // Carica profilo + pass, poi controlla di continuo se è stato estratto un premio
@@ -79,18 +82,38 @@ export default function PassPage() {
     }
 
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      // La sessione salvata sul telefono: getUser() chiede al server, e
+      // senza campo tornava vuoto.
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { router.replace("/unisciti"); return; }
 
-      const [{ data: profile }, { data: pass }] = await Promise.all([
+      const [pRes, qRes] = await Promise.all([
         supabase.from("profiles").select("alias,avatar_id,member_number").eq("id", user.id).single(),
         supabase.from("passes").select("qr_token").eq("profile_id", user.id).single(),
       ]);
-
-      if (!profile || !pass) { router.replace("/unisciti"); return; }
       if (stopped) return;
 
-      setPassData({ ...profile, qr_token: pass.qr_token } as PassData);
+      const copia = `pass_${user.id}`;
+      // Un errore senza codice è la rete, non il database.
+      if ((pRes.error && !pRes.error.code) || (qRes.error && !qRes.error.code)) {
+        try {
+          const c = JSON.parse(localStorage.getItem(copia) ?? "null") as PassData | null;
+          if (c) setPassData(c);
+        } catch {}
+        setSenzaRete(true);
+        setLoading(false);
+        interval = setInterval(checkPrize, 3000);
+        return;
+      }
+
+      const profile = pRes.data;
+      const pass = qRes.data;
+      if (!profile || !pass) { router.replace("/unisciti"); return; }
+
+      const dati = { ...profile, qr_token: pass.qr_token } as PassData;
+      setPassData(dati);
+      try { localStorage.setItem(copia, JSON.stringify(dati)); } catch {}
       setLoading(false);
       await checkPrize();
       if (stopped) return;
@@ -120,7 +143,16 @@ export default function PassPage() {
     );
   }
 
-  if (!passData) return null;
+  if (!passData) {
+    return senzaRete ? (
+      <main className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <h1 className="mb-3 text-xl font-semibold text-white">Niente connessione</h1>
+        <p className="max-w-xs text-sm text-brand-gray">
+          Spostati dove prende e riapri la pagina.
+        </p>
+      </main>
+    ) : null;
+  }
 
   const avatar = getAvatar(passData.avatar_id);
   const memberNum = `#${String(passData.member_number).padStart(4, "0")}`;
