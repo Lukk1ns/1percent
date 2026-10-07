@@ -4,6 +4,25 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**GIRO DI CONTROLLO PR E UTENTI (7 ott, commit dca3f5f).** Luka, dopo il buco del rientro con `next`:
+*"non ce ne sono altri per i pr e gli utenti?"*.
+- **Le 251 chiamate `rpc(...)` del sito provate sul database vero** (GET = transazione in sola lettura,
+  nessuna scrittura; `PGRST202` = nome/parametri sbagliati): **0 sbagliate**. Mancano solo `signups_open`
+  / `admin_set_signups` (`iscrizioni.sql`, mai incollato, voluto). Nessuna funzione dà dati a un anonimo.
+- **`/pr` si ripara da sola:** sessione senza profilo → `link_email_account`; se non trova niente
+  dice "Mail sbagliata?" (con la mail usata) o "Rientra" (anonimo orfano: iscritto da Safari, poi
+  rientrato dall'app) col tasto che esce e porta a `/login?next=/pr`. Prima: "area riservata" senza
+  uscita. `/pr/[evento]` su "Non autorizzato" rimanda a `/pr`.
+- **⚠️ Il biglietto del cliente spariva in porta:** la pagina si rilegge ogni 20s e a un giro senza
+  campo faceva `setB(null)` → "Biglietto non trovato" e niente QR. Ora un errore tiene quello a schermo,
+  copia in `localStorage` (`biglietto_<token>`), "Niente connessione" solo se non c'è mai stato.
+- **Senza campo niente rimandi a login/iscrizione:** `/pr`, `/pr/[evento]`, `/pass` usano
+  `getSession()` (telefono) e non `getUser()` (server). Pass del PR (`pr_ingresso_<evento>`) e QR dello
+  stand (`pass_<id>`) dall'ultima copia. **Regola: errore con `code` vuoto = rete** (postgrest-js),
+  con codice = database. Il QR del pass PR non resta più bianco dopo una vendita (deps del canvas).
+- Gli avvisi del linter `set-state-in-effect` / `impure function` in login, crew, pr/[evento], pass
+  **c'erano già**: non sono di questo giro.
+
 **UN PR SI AGGIUNGE A MANO DAL PANNELLO (7 ott, `components/NuovoPR.tsx`, commit b8e763d). NESSUNO SCRIPT.**
 Luka: *"dalla dashboard aggiungere io direttamente un pr nuovo e automaticamente attivarlo con
 prevendite mandandogli il messaggio direttamente... senza dirgli di iscriversi dal sito e fare tutto
