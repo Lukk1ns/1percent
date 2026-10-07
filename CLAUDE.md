@@ -15,7 +15,7 @@ Provato su Postgres finto (PGlite): **18/18** (prima del 44 fallisce come dal vi
 manager, importi e cancellazioni restano vietati, si può rieseguire).
 **REGOLA: ogni tabella nuova che punta a `profiles` nasce con `on update cascade`** (o si riesegue il 44),
 e se ha un trigger anti-modifica deve lasciar passare il cambio di persona.
-**PENDING Luka: incollare il 44.** Poi chi vedeva "Mail sbagliata?" riapre "Le tue prevendite" e basta.
+**`44` INCOLLATO da Luka il 7 ott (controllo finale = 0).** Chi vedeva "Mail sbagliata?" riapre "Le tue prevendite" e basta. (Al primo tentativo aveva incollato per sbaglio `supabase-tavoli.sql` del gestionale nell'1%: errore `mio_ruolo()`, tutto annullato, niente rimasto: verificato.)
 
 **GIRO DI CONTROLLO PR E UTENTI (7 ott, commit dca3f5f).** Luka, dopo il buco del rientro con `next`:
 *"non ce ne sono altri per i pr e gli utenti?"*.
