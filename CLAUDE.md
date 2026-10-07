@@ -4,6 +4,19 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**I PR NON RIENTRAVANO PIÙ (7 ott, `supabase/44_rientro_tabelle_nuove.sql`).** Luka: *"ho pr che dicono
+che non riescono ad entrare più, che il sito non li riconosce"*. Stesso buco del 24, rinato: le tabelle
+nate **dopo** il 24 avevano chiavi verso `profiles` **senza `on update cascade`** — `pr_serate` (39, ogni
+PR ha una riga da quando sono tutti su Halloween), `account_managers` e `am_movimenti` (32),
+`direzione_messaggi` (37). `link_email_account()` cambia l'id del profilo → Postgres rifiuta → `/pr` dice
+"Mail sbagliata?" anche con la mail giusta. In più `am_movimenti` aveva il blocco "niente modifiche" che
+fermava anche la cascata: ora lascia passare **solo** il cambio di persona (`am_id`/`da_pr`), come il 25.
+Provato su Postgres finto (PGlite): **18/18** (prima del 44 fallisce come dal vivo, dopo rientrano PR e
+manager, importi e cancellazioni restano vietati, si può rieseguire).
+**REGOLA: ogni tabella nuova che punta a `profiles` nasce con `on update cascade`** (o si riesegue il 44),
+e se ha un trigger anti-modifica deve lasciar passare il cambio di persona.
+**PENDING Luka: incollare il 44.** Poi chi vedeva "Mail sbagliata?" riapre "Le tue prevendite" e basta.
+
 **GIRO DI CONTROLLO PR E UTENTI (7 ott, commit dca3f5f).** Luka, dopo il buco del rientro con `next`:
 *"non ce ne sono altri per i pr e gli utenti?"*.
 - **Le 251 chiamate `rpc(...)` del sito provate sul database vero** (GET = transazione in sola lettura,
