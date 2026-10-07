@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { CREW_QUESTIONS } from "@/lib/quiz";
 import { ConversazioneDirezione } from "@/components/ConversazioneDirezione";
 import { apriWhatsapp, messaggioBenvenutoPR, mostraNumero } from "@/lib/whatsapp";
+import { NuovoPR } from "@/components/NuovoPR";
 
 type RisposteCrew = Record<string, string | { text?: string; tag?: string }> | null;
 
@@ -55,7 +56,15 @@ type AppenaEntrato = {
   info: string;
   telefono: string | null;
   serata: string | null;
+  /** aggiunto a mano (7 ott): il benvenuto gli dice con che mail entrare */
+  email?: string | null;
 };
+
+/** Aggiunto a mano dal pannello: la data sta in `crew_answers.a_mano`. */
+function aMano(r: RisposteCrew): string | null {
+  const v = r?.a_mano;
+  return typeof v === "string" ? v : null;
+}
 
 /** Traduce una risposta grezza nel testo leggibile della domanda corrispondente. */
 function leggiRisposta(
@@ -94,6 +103,16 @@ function leggiRisposta(
 function Risposte({ risposte }: { risposte: RisposteCrew }) {
   if (!risposte) {
     return <p className="text-xs text-brand-gray/50">Nessuna risposta registrata.</p>;
+  }
+  const quando = aMano(risposte);
+  if (quando) {
+    return (
+      <p className="text-xs text-brand-gray/50">
+        Aggiunto a mano dal pannello il{" "}
+        {new Date(quando).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}: niente
+        questionario.
+      </p>
+    );
   }
   return (
     <div className="flex flex-col gap-4">
@@ -238,8 +257,14 @@ export default function AdminCrewPage() {
   }
 
   /** Apre la chat col benvenuto già scritto, e lo segna come scritto. */
-  async function mandaBenvenuto(id: string, telefono: string, saluto: string, serate: string | null) {
-    apriWhatsapp(telefono, messaggioBenvenutoPR(saluto, serate));
+  async function mandaBenvenuto(
+    id: string,
+    telefono: string,
+    saluto: string,
+    serate: string | null,
+    emailAMano?: string | null,
+  ) {
+    apriWhatsapp(telefono, messaggioBenvenutoPR(saluto, serate, emailAMano));
     await createClient().rpc("admin_whatsapp_scritto", { p_profile: id, p_scritto: true });
     carica();
   }
@@ -335,6 +360,15 @@ export default function AdminCrewPage() {
         </div>
       )}
 
+      {/* Un PR nuovo senza iscrizione né domande: lo crea e lo attiva Luka. */}
+      <NuovoPR
+        serate={serate}
+        onFatto={(pr) => {
+          setAppenaEntrato(pr);
+          carica();
+        }}
+      />
+
       {/* Appena entrato: la cosa da fare adesso è una sola, il benvenuto. */}
       {appenaEntrato && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 px-5">
@@ -353,7 +387,7 @@ export default function AdminCrewPage() {
                   onClick={() => {
                     const a = appenaEntrato;
                     setAppenaEntrato(null);
-                    mandaBenvenuto(a.id, a.telefono!, a.saluto, a.serata);
+                    mandaBenvenuto(a.id, a.telefono!, a.saluto, a.serata, a.email);
                   }}
                   className="mt-6 w-full bg-emerald-500 py-4 text-sm font-semibold uppercase tracking-widest text-black"
                 >
@@ -471,7 +505,15 @@ export default function AdminCrewPage() {
                   </p>
                   <div className="mt-3 flex gap-2">
                     <button
-                      onClick={() => mandaBenvenuto(m.id, m.telefono!, nomeBreve(m), m.serate ?? null)}
+                      onClick={() =>
+                        mandaBenvenuto(
+                          m.id,
+                          m.telefono!,
+                          nomeBreve(m),
+                          m.serate ?? null,
+                          aMano(m.crew_answers) ? m.email : null,
+                        )
+                      }
                       className="flex-1 bg-emerald-500 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-black"
                     >
                       Benvenuto su WhatsApp

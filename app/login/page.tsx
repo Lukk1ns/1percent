@@ -109,6 +109,11 @@ function LoginForm() {
     }
 
     if (next) {
+      // Prima si ritrova il profilo dalla mail: un PR aggiunto a mano dal
+      // pannello entra la prima volta proprio da /login?next=/pr, e senza
+      // questo arrivava sulle prevendite come uno sconosciuto. Per chi ha
+      // già il suo profilo risponde "sì" e non tocca niente.
+      if (!next.startsWith("/admin")) await supabase.rpc("link_email_account");
       router.replace(next);
       return;
     }
