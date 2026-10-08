@@ -33,6 +33,8 @@ type Fascia = {
   countdown_on: boolean;
   /** Quanto è piena la fascia, da mostrare al PR. Niente numeri: solo questa. */
   percentuale: number | null;
+  /** Spenta da Luka (script 45): ai PR non arriva, all'admin sì e qui si scarta. */
+  nascosta?: boolean;
 };
 
 type Biglietto = {
@@ -230,9 +232,15 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
     const mio = (evRes.data ?? []).find((x: EventoPR) => x.event_id === evento) ?? null;
     setEv(mio);
     setR(rRes.data?.[0] ?? null);
-    setFasce(fRes.data ?? []);
+    // Una fascia nascosta non si vende più, nemmeno dalla direzione.
+    const vendibili = ((fRes.data ?? []) as Fascia[]).filter((x) => !x.nascosta);
+    setFasce(vendibili);
     setBiglietti(bRes.data ?? []);
-    setFascia((f) => f || (fRes.data?.[0]?.id ?? ""));
+    // Preselezionata solo se è l'unica: con UOMO e DONNA allo stesso prezzo
+    // chi vende di fretta lascerebbe la prima, e non si saprebbe più chi è chi.
+    setFascia((f) =>
+      vendibili.some((x) => x.id === f) ? f : vendibili.length === 1 ? vendibili[0].id : "",
+    );
     setLoading(false);
   }, [evento, router]);
 
@@ -276,6 +284,13 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
       // Senza numero WhatsApp non si vende (script 41): torna a /pr, che glielo chiede.
       if (error.message?.includes("serve_numero")) {
         router.replace("/pr");
+        return;
+      }
+      // Pagina aperta da prima che Luka spegnesse la fascia (script 45):
+      // si rileggono i prezzi, così il bottone vecchio sparisce.
+      if (error.message?.includes("fascia_nascosta")) {
+        setEsito("Questa fascia non c'è più. Scegli fra quelle qui sopra e rifai il biglietto.");
+        await carica();
         return;
       }
       setEsito(error.message);
@@ -327,6 +342,8 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
     setCognome("");
     setAnno("");
     setTelefono("");
+    // La fascia si sceglie a ogni biglietto, come il nome.
+    if (fasce.length > 1) setFascia("");
     setCopiato(false);
     await carica();
   }

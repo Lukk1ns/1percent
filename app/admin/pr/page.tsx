@@ -64,6 +64,8 @@ type Fascia = {
   stock: number | null;
   rimaste: number | null;
   vendute: number | null;
+  /** Spenta ai PR (script 45): i suoi biglietti restano, di nuovi non ne nascono. */
+  nascosta?: boolean;
 };
 
 type BigliettoAdmin = {
@@ -1071,11 +1073,45 @@ export default function AdminPrPage() {
     await caricaEvento(evento);
   }
 
+  /** La fascia sparisce dalla vendita ma i biglietti già fatti restano dove sono. */
+  async function nascondiFascia(f: Fascia) {
+    const nascondi = !f.nascosta;
+    if (
+      !window.confirm(
+        nascondi
+          ? `Nascondere ${f.label} ai PR?\n\n` +
+              `Sparisce dalla pagina di vendita (anche dalla tua) e non se ne possono più fare.\n` +
+              `I biglietti già fatti restano validi e contati qui.`
+          : `Rimettere in vendita ${f.label}?`,
+      )
+    )
+      return;
+    setLavorando(true);
+    const supabase = createClient();
+    const { error } = await supabase.rpc("admin_tier_nascondi", {
+      p_tier: f.id,
+      p_nascosta: nascondi,
+    });
+    setLavorando(false);
+    if (error) {
+      window.alert(
+        error.code === "PGRST202"
+          ? "Manca lo script 45_fascia_nascosta.sql su Supabase."
+          : error.message,
+      );
+      return;
+    }
+    await caricaEvento(evento);
+  }
+
   async function eliminaFascia(id: string) {
     const supabase = createClient();
     const { data } = await supabase.rpc("admin_tier_elimina", { p_id: id });
     if (data === "in_uso") {
-      window.alert("Ci sono già biglietti venduti su questa fascia: non si può togliere.");
+      window.alert(
+        "Ci sono già biglietti venduti su questa fascia: non si può togliere.\n\n" +
+          "Se non vuoi che se ne facciano altre, usa «nascondi ai pr».",
+      );
       return;
     }
     await caricaEvento(evento);
@@ -1340,6 +1376,9 @@ export default function AdminPrPage() {
     await caricaEvento(evento);
     await carica();
   }
+
+  // Una fascia nascosta ai PR non ha avvisi da far partire.
+  const avvisabili = perFascia.filter((f) => !fasce.find((x) => x.id === f.id)?.nascosta);
 
   if (autorizzato === null) {
     return (
@@ -1809,7 +1848,7 @@ export default function AdminPrPage() {
           <div className="mt-6">
             {/* I tasti delle ultime prevendite: è l'unico modo in cui un PR
                 viene a sapere che si sta chiudendo, e lo sa in percentuale. */}
-            {perFascia.length > 0 && (
+            {avvisabili.length > 0 && (
               <div className="mt-3 border border-white/10 px-4 py-4">
                 <p className="font-tech text-[9px] uppercase tracking-[0.2em] text-brand-gray">
                   avviso ai pr
@@ -1821,7 +1860,7 @@ export default function AdminPrPage() {
                   ultime {config?.soglia ?? 13}, anche mentre dormi.
                 </p>
                 <div className="mt-3 flex flex-col gap-2">
-                  {perFascia.map((f) => {
+                  {avvisabili.map((f) => {
                     const acceso = f.countdown_on || f.countdown_auto;
                     return (
                       <button
@@ -2200,22 +2239,37 @@ export default function AdminPrPage() {
                   className="flex items-center justify-between gap-3 border border-white/10 px-4 py-3"
                 >
                   <div>
-                    <p className="text-sm text-white">{f.label}</p>
+                    <p className={`text-sm ${f.nascosta ? "text-brand-gray line-through" : "text-white"}`}>
+                      {f.label}
+                    </p>
                     <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
                       {euro(f.price)}
-                      {f.countdown_on
+                      {f.nascosta
+                        ? ` · nascosta ai pr · ${f.vendute ?? 0} già fatte`
+                        : f.countdown_on
                         ? ` · countdown acceso, ne restano ${Math.max(f.rimaste ?? 0, 0)}`
                         : f.stock !== null
                           ? ` · tetto ${f.stock}, ne restano ${Math.max(f.rimaste ?? 0, 0)}`
                           : " · senza tetto"}
                     </p>
                   </div>
-                  <button
-                    onClick={() => eliminaFascia(f.id)}
-                    className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray hover:text-brand-red"
-                  >
-                    togli
-                  </button>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <button
+                      disabled={lavorando}
+                      onClick={() => nascondiFascia(f)}
+                      className={`font-tech text-[10px] uppercase tracking-[0.15em] disabled:opacity-40 ${
+                        f.nascosta ? "text-amber-300 hover:text-white" : "text-brand-gray hover:text-white"
+                      }`}
+                    >
+                      {f.nascosta ? "rimetti in vendita" : "nascondi ai pr"}
+                    </button>
+                    <button
+                      onClick={() => eliminaFascia(f.id)}
+                      className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray hover:text-brand-red"
+                    >
+                      togli
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

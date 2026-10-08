@@ -1,8 +1,24 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 7 ottobre 2026
+> Ultimo aggiornamento: 8 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**FASCIA NASCOSTA AI PR (8 ott, `supabase/45_fascia_nascosta.sql`).** Luka sulla serata di Nabi aveva fatto
+una fascia unica **UOMO-DONNA 15 €** (stesso prezzo) e così non sapeva chi è uomo e chi donna; 29 biglietti già
+fatti, *"va bene così"*, ma da ora vuole UOMO 15 e DONNA 15 e la vecchia **disattivata e sparita**. Non si poteva:
+`admin_tier_elimina` risponde `in_uso` e un tetto = vendute fa partire l'avviso rosso "finite, paga in cassa".
+- Colonna **`event_tiers.nascosta`** + `admin_tier_nascondi(tier, bool)`; in `/admin/pr` → Prezzi ogni fascia ha
+  **"nascondi ai pr" / "rimetti in vendita"** (barrata, con "N già fatte"); niente tasto "ultime 13" per lei.
+- **`pr_fasce` ultima definizione = il 45** (era il 18): colonna in più `nascosta`; ai PR/manager la fascia
+  nascosta non arriva, all'admin sì e `/pr/[evento]` la scarta (non la vende nemmeno la direzione).
+- Trigger **`presales_fascia_nascosta`** (before insert, come il 41): biglietto nuovo su fascia nascosta →
+  `fascia_nascosta`, per tutti; la pagina lo dice e rilegge i prezzi. I biglietti già fatti non cambiano.
+- **La fascia non si preseleziona più se ce n'è più d'una**, e dopo ogni vendita si azzera: con UOMO/DONNA allo
+  stesso prezzo chi va di fretta lascerebbe la prima e il dato sarebbe falso.
+- Provato su PGlite **12/12** (rieseguibile, guardia admin, PR vede 2 fasce, 29 vecchi contati, rifiuto, omaggi
+  senza fascia passano, rimessa in vendita). Il sito regge senza script (niente si nasconde, il tasto dice cosa manca).
+**PENDING Luka: incollare il 45**, poi in Prezzi: aggiungere UOMO 15 e DONNA 15 e "nascondi ai pr" su UOMO-DONNA.
 
 **I PR NON RIENTRAVANO PIÙ (7 ott, `supabase/44_rientro_tabelle_nuove.sql`).** Luka: *"ho pr che dicono
 che non riescono ad entrare più, che il sito non li riconosce"*. Stesso buco del 24, rinato: le tabelle
