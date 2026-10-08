@@ -18,7 +18,7 @@ fatti, *"va bene così"*, ma da ora vuole UOMO 15 e DONNA 15 e la vecchia **disa
   stesso prezzo chi va di fretta lascerebbe la prima e il dato sarebbe falso.
 - Provato su PGlite **12/12** (rieseguibile, guardia admin, PR vede 2 fasce, 29 vecchi contati, rifiuto, omaggi
   senza fascia passano, rimessa in vendita). Il sito regge senza script (niente si nasconde, il tasto dice cosa manca).
-**`45` INCOLLATO da Luka l’8 ott (verificato da fuori).** La serata è "DAY-OFF La Domenica Pomeriggio con NABI", fascia "Uomo e Donna". PENDING Luka: in Prezzi aggiungere Uomo 15 e Donna 15 e "nascondi ai pr" sulla vecchia.
+**`45` INCOLLATO da Luka l’8 ott (verificato da fuori).** La serata è "DAY-OFF La Domenica Pomeriggio con NABI", fascia "Uomo e Donna". Uomo 15 e Donna 15 aggiunte e vecchia nascosta da Luka l’8 ott (detto da lui: da fuori non si vede). Il tasto all’inizio non c’era: Safari aveva la pagina vecchia, si risolve ricaricando.
 
 **I PR NON RIENTRAVANO PIÙ (7 ott, `supabase/44_rientro_tabelle_nuove.sql`).** Luka: *"ho pr che dicono
 che non riescono ad entrare più, che il sito non li riconosce"*. Stesso buco del 24, rinato: le tabelle
