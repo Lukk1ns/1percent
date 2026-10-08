@@ -233,6 +233,12 @@ tuo artista preferito che vorresti vedere"* (stesso id `c6`) e si aggiunge la se
 "Ultima domanda: per quale festa ti stai candidando?"**, **solo testo libero** — una prima versione
 con le feste in programma come scelte l'ha bocciata subito: *"no la possibilità di scegliere, solo
 una risposta di testo"*. Nessuno script SQL: le risposte stanno già in `crew_answers` (jsonb).
+**Cambiato l'8 ott (Luka):** *"metti la possibilità di scegliere uno degli eventi aperti oppure di dare
+una risposta... e togli l'evento del 17"*. In `/candidatura` la c7 diventa **scelta fra le feste in
+programma** (`domandaFesta`, da `events_list`) **+ riga "Oppure scrivila tu"**; niente "Tutte". Escluse le
+serate in `FESTE_SENZA_PR` (slug che inizia per `maldita`: oggi non è pubblicata, ma lo sarà). Senza feste
+o senza database resta di solo testo. Id scelta `festa|<starts_at>|<testo>` (`leggiFesta`); in `/admin/crew`
+la risposta si legge in chiaro e **approvando il menu della serata parte da quella scelta** (per data).
 
 **LA HOME MOSTRA LE PROSSIME TRE (5 ott, `app/page.tsx`).** Luka, creata la terza serata
 (LIL NAAY 24/10, oltre a DAY-OFF 18/10 e Halloween 31/10): *"solo il primo in evidenza più grande e

@@ -132,10 +132,64 @@ export const CREW_QUESTIONS: QuizQuestion[] = [
     placeholder: "Evita quelli troppo troppo troppo famosi, purtroppo :)",
   },
   {
+    // Qui è solo testo: /candidatura la trasforma in scelta con le feste
+    // in programma (`domandaFesta`) appena le legge dal database. Se non
+    // arrivano resta così, e si scrive. Luka, 8 ott 2026.
     id: "c7",
     type: "text",
     text: "Ultima domanda: per quale festa ti stai candidando?",
     placeholder: "Scrivi il nome della festa",
   },
 ];
+
+/**
+ * Le serate che non c'entrano con i PR, quindi niente scelta alla c7:
+ * MALDITA del 17 è la serata dell'omaggio donne (niente PR, script 43).
+ * Si confronta l'inizio dello slug.
+ */
+const FESTE_SENZA_PR = ["maldita"];
+
+/**
+ * La c7 con le feste in programma come scelte, e sotto la riga per
+ * scriverne un'altra. Senza feste resta la domanda di solo testo.
+ *
+ * L'id di una scelta si porta dietro la data e il testo che ha visto il
+ * candidato (`festa|<starts_at>|<testo>`): il pannello lo legge anche fra
+ * mesi, e approvandolo propone già quella serata. Di una festa non ancora
+ * svelata il nome non arriva: si vede solo il giorno.
+ */
+export function domandaFesta(
+  q: QuizQuestion,
+  feste: { svelato: boolean; starts_at: string; nome?: string | null; slug?: string | null; passato?: boolean }[],
+): QuizQuestion {
+  const giorno = (iso: string) =>
+    new Date(iso)
+      .toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })
+      .replace(/\./g, "")
+      .toUpperCase();
+  const opzioni = feste
+    .filter((f) => !f.passato)
+    .filter((f) => !FESTE_SENZA_PR.some((s) => f.slug?.startsWith(s)))
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+    .map((f) => {
+      const nome = f.svelato && f.nome ? f.nome.replace(/\s+/g, " ").trim() : "Festa a sorpresa";
+      const testo = `${nome} · ${giorno(f.starts_at)}`;
+      return { id: `festa|${f.starts_at}|${testo}`, text: testo };
+    });
+  if (opzioni.length === 0) return q;
+  return {
+    id: q.id,
+    type: "choice",
+    text: q.text,
+    options: opzioni,
+    placeholder: "Oppure scrivila tu",
+  };
+}
+
+/** Legge una scelta della c7: la data della festa e il testo visto dal candidato. */
+export function leggiFesta(id: string): { starts_at: string; testo: string } | null {
+  if (!id.startsWith("festa|")) return null;
+  const [, starts_at, ...resto] = id.split("|");
+  return { starts_at, testo: resto.join("|") };
+}
 

@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CREW_QUESTIONS } from "@/lib/quiz";
+import { CREW_QUESTIONS, domandaFesta, type QuizQuestion } from "@/lib/quiz";
+import { createClient } from "@/lib/supabase/client";
 import { registraMembro, type Bozza } from "@/lib/registrazione";
 import Questionario, { type Risposte } from "@/components/Questionario";
 
 /**
- * Le 7 domande di chi si candida allo staff.
+ * Le 7 domande di chi si candida allo staff. L'ultima ("per quale festa")
+ * ha come scelte le feste in programma, lette dal database, più la riga
+ * per scriverne un'altra.
  *
  * Ci arriva chi ha scelto "Iscrizione come staff" su /unisciti, e fa solo
  * queste: le 4 del pubblico non gliele chiediamo, gli interessa altro.
@@ -17,6 +20,18 @@ import Questionario, { type Risposte } from "@/components/Questionario";
 export default function CandidaturaPage() {
   const router = useRouter();
   const [errore, setErrore] = useState("");
+  // Finché le feste non arrivano (o se il database non risponde) la c7
+  // resta di solo testo: si scrive e si va avanti lo stesso.
+  const [domande, setDomande] = useState<QuizQuestion[]>(CREW_QUESTIONS);
+
+  useEffect(() => {
+    createClient()
+      .rpc("events_list")
+      .then(({ data, error }) => {
+        if (error || !Array.isArray(data)) return;
+        setDomande(CREW_QUESTIONS.map((q) => (q.id === "c7" ? domandaFesta(q, data) : q)));
+      });
+  }, []);
 
   useEffect(() => {
     if (!sessionStorage.getItem("reg_draft")) router.replace("/unisciti");
@@ -42,7 +57,7 @@ export default function CandidaturaPage() {
 
   return (
     <Questionario
-      questions={CREW_QUESTIONS}
+      questions={domande}
       onComplete={invia}
       error={errore}
       loadingLabel="registriamo la tua candidatura…"

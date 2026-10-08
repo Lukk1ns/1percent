@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { CREW_QUESTIONS } from "@/lib/quiz";
+import { CREW_QUESTIONS, leggiFesta } from "@/lib/quiz";
 import { ConversazioneDirezione } from "@/components/ConversazioneDirezione";
 import { apriWhatsapp, messaggioBenvenutoPR, mostraNumero } from "@/lib/whatsapp";
 import { NuovoPR } from "@/components/NuovoPR";
@@ -74,6 +74,15 @@ function leggiRisposta(
   const q = CREW_QUESTIONS.find((x) => x.id === questionId);
   if (!q || valore === undefined) return null;
 
+  // c7: la festa scelta si porta dietro il suo testo; chi ne ha scritta
+  // un'altra ha solo quella. Le risposte di prima dell'8 ott sono testo.
+  if (q.id === "c7" && (typeof valore === "object" || valore.startsWith("festa|"))) {
+    const scelta = typeof valore === "string" ? valore : valore.tag;
+    const festa = scelta ? leggiFesta(scelta) : null;
+    const scritto = typeof valore === "object" ? valore.text?.trim() : undefined;
+    return { domanda: q.text, risposta: festa?.testo ?? "", libero: scritto || undefined };
+  }
+
   if (q.type === "choice") {
     // Può aver scelto un'opzione, aver scritto la sua, o tutte e due
     const scelta = typeof valore === "string" ? valore : valore.tag;
@@ -97,6 +106,22 @@ function leggiRisposta(
       : { domanda: q.text, risposta: "— non ha risposto" };
   }
   return null;
+}
+
+/**
+ * La serata che il candidato ha scelto alla domanda "per quale festa"
+ * (se è fra quelle in programma): l'approvazione la propone già.
+ */
+function serataDellaRisposta(
+  risposte: RisposteCrew,
+  serate: { event_id: string; starts_at: string }[],
+): string | undefined {
+  const v = risposte?.c7;
+  const scelta = typeof v === "string" ? v : v?.tag;
+  const festa = scelta ? leggiFesta(scelta) : null;
+  if (!festa) return undefined;
+  const t = new Date(festa.starts_at).getTime();
+  return serate.find((s) => new Date(s.starts_at).getTime() === t)?.event_id;
 }
 
 /** Le risposte al questionario, in chiaro. */
@@ -204,7 +229,8 @@ export default function AdminCrewPage() {
   }, []);
 
   async function decidi(c: Candidatura, approva: boolean) {
-    const serata = serataScelta[c.id] ?? serate[0]?.event_id;
+    const serata =
+      serataScelta[c.id] ?? serataDellaRisposta(c.crew_answers, serate) ?? serate[0]?.event_id;
     const nomeSerata = serate.find((s) => s.event_id === serata)?.nome;
     const verbo = approva ? "Far entrare" : "Rifiutare";
     if (
@@ -629,7 +655,11 @@ export default function AdminCrewPage() {
                         se entra, vende solo per
                       </span>
                       <select
-                        value={serataScelta[c.id] ?? serate[0].event_id}
+                        value={
+                          serataScelta[c.id] ??
+                          serataDellaRisposta(c.crew_answers, serate) ??
+                          serate[0].event_id
+                        }
                         onChange={(e) =>
                           setSerataScelta((prec) => ({ ...prec, [c.id]: e.target.value }))
                         }
