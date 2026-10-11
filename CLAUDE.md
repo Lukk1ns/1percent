@@ -4,6 +4,13 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**MENU BOTTIGLIE PAPI-ON SU `/papion` (12 ott, commit 57bee88).** Luka: *"caricalo e dammi il link che mi
+faccio io il qr code"* — il QR va sui tavoli. Pagina staccata come `/maldita` (fondo nero, niente tasto
+indietro né avvisi dell'1%): solo la grafica `public/papion/menu-bottiglie.webp` (da `Menu Papion 2026:27`),
+anteprima del link `anteprima-menu.jpg`. **Per cambiare il menu si sostituisce il webp.** Solo da guardare:
+non c'entra con gli ordini dal tavolo del gestionale (`/t/<codice>`). Link per il QR:
+`https://www.unpercento.it/papion` (diretto su www, senza il salto dell'apex).
+
 **FASCIA NASCOSTA AI PR (8 ott, `supabase/45_fascia_nascosta.sql`).** Luka sulla serata di Nabi aveva fatto
 una fascia unica **UOMO-DONNA 15 €** (stesso prezzo) e così non sapeva chi è uomo e chi donna; 29 biglietti già
 fatti, *"va bene così"*, ma da ora vuole UOMO 15 e DONNA 15 e la vecchia **disattivata e sparita**. Non si poteva:
