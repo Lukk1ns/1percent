@@ -43,48 +43,60 @@ export function BarraAdmin() {
 
   const suPannello = pathname === "/admin/dashboard";
 
+  // Tasti veri, non scritte: sul telefono le parole da 11px attaccate al
+  // bordo finivano nella sfumatura che Safari mette sotto l'orologio e
+  // "indietro" non si riusciva a prendere col dito. 44px è l'altezza
+  // minima perché un dito ci stia dentro.
+  const tasto =
+    "flex h-11 items-center gap-2 border px-3.5 font-tech text-xs uppercase tracking-[0.1em] transition-colors";
+  const spento = "border-white/20 text-white/85 hover:border-white/50 hover:text-white";
+
   return (
     <>
-      {/* Lo spazio che la barra occupa: senza, il contenuto le finirebbe
-          sotto e si intravedrebbe attraverso, che è quello che succedeva
-          quando era "sticky" e mezza trasparente. */}
-      <div className="h-[3.1rem]" aria-hidden />
+      {/* Lo spazio che la barra occupa (tasti + margini + la tacca
+          dell'iPhone): senza, il contenuto le finirebbe sotto. */}
+      <div
+        style={{ height: "calc(3.875rem + env(safe-area-inset-top))" }}
+        aria-hidden
+      />
 
       <div
         className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-2 px-4 py-2.5">
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-2 px-4 py-2">
           <Link
             href={suPannello ? "/" : "/admin/dashboard"}
-            className="font-tech text-[11px] uppercase tracking-[0.12em] text-brand-gray transition-colors hover:text-white"
+            className={`${tasto} ${spento}`}
           >
-            {suPannello ? "← il sito" : "← pannello"}
+            <span aria-hidden>←</span>
+            {suPannello ? "sito" : "pannello"}
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link
               href="/admin/posta"
-              className={`relative font-tech text-[11px] uppercase tracking-[0.12em] transition-colors ${
+              className={`${tasto} ${
                 pathname.startsWith("/admin/posta")
-                  ? "text-brand-red"
-                  : "text-brand-gray hover:text-white"
+                  ? "border-brand-red text-brand-red"
+                  : spento
               }`}
             >
               posta
               {posta !== null && posta > 0 && (
-                <span className="ml-1.5 bg-brand-red px-1.5 py-0.5 text-[9px] text-white">
+                <span className="bg-brand-red px-1.5 py-0.5 text-[10px] leading-none text-white">
                   {posta}
                 </span>
               )}
             </Link>
 
-            <Link
-              href="/"
-              className="font-tech text-[11px] uppercase tracking-[0.12em] text-brand-gray transition-colors hover:text-white"
-            >
-              sito ↗
-            </Link>
+            {/* Sul pannello il sito è già il tasto a sinistra: qui sarebbe
+                un doppione. Nelle altre pagine evita di passare dal pannello. */}
+            {!suPannello && (
+              <Link href="/" className={`${tasto} ${spento}`}>
+                sito
+              </Link>
+            )}
           </div>
         </div>
       </div>
