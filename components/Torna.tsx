@@ -29,6 +29,8 @@ const HANNO_GIA_IL_LORO = [
   // La pagina di MALDITA è staccata dal sito: "indietro" porterebbe
   // nell'1%, che con quella serata non c'entra (Luka, 6 ott).
   "/maldita",
+  // Il menu del PAPI-ON (QR sui tavoli): stessa storia di MALDITA.
+  "/papion",
   "/privacy",
   "/profilo",
   "/tessera",
