@@ -12,6 +12,13 @@ l'elenco (ora, telefono, annulla); il filtro è `pr_alias === alias` (alias unic
 `pr_id`). La scheda **Biglietti** ha la casella **"cerca per nome, cognome, PR o telefono"**: ogni parola
 deve esserci, senza maiuscole né accenti, anche girato ("rossi mario"). Solo la serata scelta in alto.
 La riga del biglietto è il componente `RigaBiglietto`, uguale nei due posti.
+**Subito dopo (commit a46a1e9):** *"il pr dice che non trova il link da mandare al cliente... e nemmeno io"*. Il PR
+aveva solo "rimanda"/"vedi" in corpo 9 in fondo alla pagina, nessun "copia link"; il pannello niente. Ora ogni nome
+(in `/pr/[evento]` e nelle due liste del pannello) ha **`components/MandaBiglietto.tsx`: whatsapp · copia link ·
+apri**. Messaggio, link e numero del cliente stanno in **`lib/biglietto-cliente.ts`** (`messaggioBiglietto`, prima
+copia locale nella pagina del PR): il pannello manda lo stesso testo del PR, delega compresa. `copia()` se il
+telefono non lascia copiare apre una finestrella col link. In `/pr/[evento]` il tasto in alto è **"i tuoi biglietti ·
+rimanda il link"** e sopra i 5 nomi c'è la ricerca (`cercaBiglietti`, condivisa).
 
 **MENU BOTTIGLIE PAPI-ON SU `/papion` (12 ott, commit 57bee88).** Luka: *"caricalo e dammi il link che mi
 faccio io il qr code"* — il QR va sui tavoli. Pagina staccata come `/maldita` (fondo nero, niente tasto
