@@ -9,6 +9,15 @@ import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, dataLunga, giornoEData, ora } from "@/lib/eventi";
 import { delegaPerLocale, forseUnder16 } from "@/lib/event";
 import { PiuPunti } from "@/components/Stelle";
+import { MandaBiglietto } from "@/components/MandaBiglietto";
+import {
+  apriChatCliente,
+  cercaBiglietti,
+  copia,
+  linkBiglietto,
+  messaggioBiglietto,
+  numeroCliente,
+} from "@/lib/biglietto-cliente";
 
 type Riepilogo = {
   assegnate: number;
@@ -76,65 +85,6 @@ type EventoPR = {
 
 const ANNO = new Date().getFullYear();
 
-/**
- * Il numero come lo vuole WhatsApp: solo cifre, con il prefisso.
- * Un cellulare italiano scritto "347 123 4567" diventa "393471234567".
- */
-function numeroWhatsapp(grezzo: string | null): string | null {
-  if (!grezzo) return null;
-  let n = grezzo.replace(/[^\d+]/g, "");
-  if (n.startsWith("+")) n = n.slice(1);
-  else if (n.startsWith("00")) n = n.slice(2);
-  else if (n.startsWith("3") && n.length >= 9) n = "39" + n;
-  return n.length >= 10 ? n : null;
-}
-
-function linkBiglietto(token: string): string {
-  if (typeof window === "undefined") return `/biglietto/${token}`;
-  return `${window.location.origin}/biglietto/${token}`;
-}
-
-function linkAssoluto(percorso: string): string {
-  if (typeof window === "undefined") return percorso;
-  return `${window.location.origin}${percorso}`;
-}
-
-/**
- * Il messaggio che il PR manda al cliente.
- *
- * Se il cliente potrebbe avere meno di 16 anni la sera della serata, il
- * modulo di delega ci finisce dentro da solo: il PR non deve ricordarsi
- * di niente e il ragazzo se lo scarica subito, non la sera stessa
- * davanti alla porta.
- */
-function messaggio(
-  b: { nome: string; token: string; anno_nascita?: number },
-  evento: string,
-  quando: string,
-  delega?: { serve: boolean; url: string },
-): string {
-  const base =
-    `Ciao ${b.nome}! Ecco il tuo biglietto per ${evento} — ${quando}.\n\n` +
-    `${linkBiglietto(b.token)}\n\n` +
-    `Fallo scansionare all'ingresso, non serve stamparlo. ` +
-    `Ricordati il documento fisico, non la foto sul telefono: serve a tutti.`;
-
-  if (!delega?.serve) return base;
-
-  return (
-    base +
-    `\n\n⚠️ SE HAI MENO DI 16 ANNI ti serve anche la delega firmata da un genitore. ` +
-    `Scaricala qui, compilala e portala con te: senza quella non si entra.\n` +
-    `${linkAssoluto(delega.url)}`
-  );
-}
-
-/** Apre WhatsApp col messaggio già scritto: l'invio lo fa il PR. */
-function apriWhatsapp(numero: string | null, testo: string) {
-  const base = numero ? `https://wa.me/${numero}` : "https://wa.me/";
-  window.open(`${base}?text=${encodeURIComponent(testo)}`, "_blank");
-}
-
 export default function PrEventoPage({ params }: { params: Promise<{ evento: string }> }) {
   const { evento } = use(params);
   const router = useRouter();
@@ -158,6 +108,8 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   const [omonimo, setOmonimo] = useState(false);
   const [appenaFatto, setAppenaFatto] = useState<Biglietto | null>(null);
   const [copiato, setCopiato] = useState(false);
+  // Con cinquanta nomi in lista, chi ha perso il link si cerca.
+  const [cercaNome, setCercaNome] = useState("");
   // Il pass del PR: esiste per serata e si accende con le vendite.
   const [ingresso, setIngresso] = useState<Ingresso | null>(null);
   // Senza campo (in porta capita): niente rimando al login, e il pass
@@ -404,6 +356,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   }
 
   const quando = ev ? `${dataLunga(ev.starts_at)} ore ${ora(ev.starts_at)}` : "";
+  const bigliettiTrovati = cercaBiglietti(biglietti, cercaNome, (b) => `${b.nome} ${b.cognome}`);
   const accento = accentoSerata(evento);
 
   /**
@@ -426,8 +379,8 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   const nonMia = !r.senza_limite && (ev === null || ev.puo_vendere === false);
 
   if (appenaFatto) {
-    const num = numeroWhatsapp(appenaFatto.telefono);
-    const testo = messaggio(appenaFatto, ev?.nome ?? "la serata", quando, delegaPer(appenaFatto));
+    const num = numeroCliente(appenaFatto.telefono);
+    const testo = messaggioBiglietto(appenaFatto, ev?.nome ?? "la serata", quando, delegaPer(appenaFatto));
     return (
       <main className="flex-1 px-5 py-10">
         <div className="mx-auto w-full max-w-sm">
@@ -464,7 +417,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           )}
 
           <button
-            onClick={() => apriWhatsapp(num, testo)}
+            onClick={() => apriChatCliente(num, testo)}
             className="mt-6 w-full bg-brand-red py-4 text-sm font-semibold uppercase tracking-widest text-white"
           >
             {num ? "Mandaglielo su WhatsApp" : "Apri WhatsApp"}
@@ -476,9 +429,8 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           )}
 
           <button
-            onClick={() => {
-              navigator.clipboard?.writeText(linkBiglietto(appenaFatto.token));
-              setCopiato(true);
+            onClick={async () => {
+              if (await copia(linkBiglietto(appenaFatto.token))) setCopiato(true);
             }}
             className="mt-3 w-full border border-white/20 py-3 text-[10px] uppercase tracking-[0.25em] text-white transition-colors hover:border-brand-red"
           >
@@ -621,11 +573,15 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
           href="#tuoi"
           className="mt-2 block border border-white/20 bg-white/[0.03] py-3 text-center font-tech text-[11px] uppercase tracking-[0.2em] text-brand-gray transition-colors hover:border-white/40 hover:text-white"
         >
-          vedi dettagli
-          {biglietti.length > 0 ? ` · ${biglietti.length}` : ""}
-          {!r.senza_limite && Number(r.dovuto) > 0
-            ? ` · ${Number(r.dovuto).toFixed(0)}€`
-            : ""}
+          i tuoi biglietti · rimanda il link
+          {(biglietti.length > 0 || (!r.senza_limite && Number(r.dovuto) > 0)) && (
+            <span className="mt-1 block text-[10px] text-brand-gray/70">
+              {biglietti.length} {biglietti.length === 1 ? "nome" : "nomi"}
+              {!r.senza_limite && Number(r.dovuto) > 0
+                ? ` · ${Number(r.dovuto).toFixed(0)}€`
+                : ""}
+            </span>
+          )}
         </a>
 
         {/* Il conto della serata, scritto grande: è la cosa che un PR
@@ -1013,7 +969,7 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
         {/* I suoi clienti */}
         <div id="tuoi" className="mt-8 scroll-mt-4">
           <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">
-            chi hai messo in lista
+            chi hai messo in lista · da qui rimandi il link
           </p>
           <p className="mt-1 font-display text-2xl uppercase leading-none text-white">
             {biglietti.length}{" "}
@@ -1023,9 +979,17 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
             )}
           </p>
 
+          {biglietti.length > 5 && (
+            <input
+              value={cercaNome}
+              onChange={(e) => setCercaNome(e.target.value)}
+              placeholder="cerca per nome o cognome…"
+              className="mt-3 w-full border border-white/15 bg-black px-3 py-3 text-sm text-white placeholder-brand-gray/50 outline-none focus:border-brand-red"
+            />
+          )}
+
           <div className="mt-3 flex flex-col gap-2">
-            {biglietti.map((b) => {
-              const num = numeroWhatsapp(b.telefono);
+            {bigliettiTrovati.map((b) => {
               return (
                 <div key={b.id} className="border border-white/10 px-4 py-3">
                   <div className="flex items-start justify-between gap-3">
@@ -1064,31 +1028,21 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                   </div>
 
                   {b.stato !== "annullata" && (
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={() =>
-                          apriWhatsapp(
-                            num,
-                            messaggio(b, ev?.nome ?? "la serata", quando, delegaPer(b)),
-                          )
-                        }
-                        className="border border-white/15 px-3 py-2 font-tech text-[9px] uppercase tracking-[0.15em] text-white transition-colors hover:border-brand-red"
-                      >
-                        rimanda
-                      </button>
-                      <a
-                        href={`/biglietto/${b.token}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="border border-white/10 px-3 py-2 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray transition-colors hover:text-white"
-                      >
-                        vedi
-                      </a>
-                    </div>
+                    <MandaBiglietto
+                      token={b.token}
+                      telefono={b.telefono}
+                      testo={messaggioBiglietto(b, ev?.nome ?? "la serata", quando, delegaPer(b))}
+                    />
                   )}
                 </div>
               );
             })}
+
+            {biglietti.length > 0 && bigliettiTrovati.length === 0 && (
+              <p className="border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">
+                Nessuno con «{cercaNome.trim()}» nella tua lista.
+              </p>
+            )}
 
             {biglietti.length === 0 && (
               <p className="border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">

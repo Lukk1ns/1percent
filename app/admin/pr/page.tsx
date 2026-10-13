@@ -4,10 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { accentoSerata, dataLunga, giornoEData } from "@/lib/eventi";
-import { delegaPerLocale } from "@/lib/event";
+import { accentoSerata, dataLunga, giornoEData, ora } from "@/lib/eventi";
+import { delegaPerLocale, forseUnder16 } from "@/lib/event";
 import { graficaBigliettoUrl } from "@/lib/biglietto";
 import { CinqueStelle } from "@/components/Stelle";
+import { MandaBiglietto } from "@/components/MandaBiglietto";
+import { cercaBiglietti, linkBiglietto, messaggioBiglietto } from "@/lib/biglietto-cliente";
 import { ORDINALI, PUNTI_PER_VENDITA, SOGLIE_STELLE, fmtPunti, statoStelle } from "@/lib/punti";
 
 type EventoAdmin = {
@@ -141,12 +143,6 @@ type PerFascia = {
 };
 
 const euro = (n: number) => `${Number(n ?? 0).toFixed(0)} €`;
-
-/** Il link che finisce su WhatsApp: assoluto, perché esce dal sito. */
-function linkBiglietto(token: string): string {
-  if (typeof window === "undefined") return `/biglietto/${token}`;
-  return `${window.location.origin}/biglietto/${token}`;
-}
 
 /**
  * La grafica che il cliente vede sul biglietto.
@@ -448,10 +444,6 @@ type MovimentoAm = {
   segnato_da: string | null;
 };
 
-/** Per cercare senza badare a maiuscole e accenti: "nicolò" = "nicolo". */
-const normalizza = (s: string) =>
-  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-
 /**
  * Un biglietto nell'elenco: nella scheda Biglietti e dentro la scheda di
  * ogni PR. Nella scheda del PR il suo nome non si ripete (`conPr`).
@@ -459,10 +451,13 @@ const normalizza = (s: string) =>
 function RigaBiglietto({
   b,
   onAnnulla,
+  messaggio,
   conPr = true,
 }: {
   b: BigliettoAdmin;
   onAnnulla: (b: BigliettoAdmin) => void;
+  /** Il messaggio col link, uguale a quello che manda il PR. */
+  messaggio: (b: BigliettoAdmin) => string;
   conPr?: boolean;
 }) {
   return (
@@ -521,6 +516,9 @@ function RigaBiglietto({
           )}
         </div>
       </div>
+      {b.stato !== "annullata" && (
+        <MandaBiglietto token={b.token} telefono={b.telefono} testo={messaggio(b)} />
+      )}
     </div>
   );
 }
@@ -576,7 +574,7 @@ export default function AdminPrPage() {
   // scorrere la lista mentre uno ti aspetta davanti non si fa.
   const [cerca, setCerca] = useState("");
   // Lo stesso nella scheda Biglietti: si cerca la persona, non il PR.
-  const [cercaBiglietti, setCercaBiglietti] = useState("");
+  const [cercaNomi, setCercaNomi] = useState("");
   // Quanto ha portato, scritto qui dentro invece che in una finestrella
   // di sistema: una per PR, così due schede aperte non si pestano.
   const [importi, setImporti] = useState<Record<string, string>>({});
@@ -1501,16 +1499,23 @@ export default function AdminPrPage() {
   const prVisibili =
     cercato || mostraNonAgganciati ? [...prAgganciati, ...prNonAgganciati] : prAgganciati;
   // I biglietti si cercano per nome e cognome, anche girati ("rossi mario"),
-  // per PR o per telefono: ogni parola scritta deve esserci.
-  const paroleBiglietti = normalizza(cercaBiglietti).split(/\s+/).filter(Boolean);
-  const bigliettiTrovati = paroleBiglietti.length
-    ? biglietti.filter((b) => {
-        const dove = normalizza(
-          `${b.nome} ${b.cognome} ${b.pr_alias} ${b.pr_nome ?? ""} ${b.telefono ?? ""}`,
-        );
-        return paroleBiglietti.every((p) => dove.includes(p));
-      })
-    : biglietti;
+  // per PR o per telefono.
+  const bigliettiTrovati = cercaBiglietti(
+    biglietti,
+    cercaNomi,
+    (b) => `${b.nome} ${b.cognome} ${b.pr_alias} ${b.pr_nome ?? ""} ${b.telefono ?? ""}`,
+  );
+  // Lo stesso messaggio che manda il PR, delega compresa per i più giovani.
+  const messaggioCliente = (b: BigliettoAdmin) =>
+    messaggioBiglietto(
+      b,
+      ev?.nome ?? "la serata",
+      ev ? `${dataLunga(ev.starts_at)} ore ${ora(ev.starts_at)}` : "",
+      {
+        serve: forseUnder16(b.anno_nascita, ev?.starts_at) || b.under16,
+        url: delega ?? delegaPerLocale(ev?.locale),
+      },
+    );
   // Le serate che si possono agganciare: quelle che devono ancora succedere.
   const serateFuture = eventi
     .filter((e) => !e.passato)
@@ -2318,7 +2323,13 @@ export default function AdminPrPage() {
                           )}
                           <div className="mt-3 flex flex-col gap-2">
                             {suoi.map((b) => (
-                              <RigaBiglietto key={b.id} b={b} onAnnulla={annulla} conPr={false} />
+                              <RigaBiglietto
+                                key={b.id}
+                                b={b}
+                                onAnnulla={annulla}
+                                messaggio={messaggioCliente}
+                                conPr={false}
+                              />
                             ))}
                             {suoi.length === 0 && (
                               <p className="text-[12px] text-brand-gray">
@@ -3018,14 +3029,14 @@ export default function AdminPrPage() {
             {biglietti.length > 0 && (
               <div className="flex items-center gap-2">
                 <input
-                  value={cercaBiglietti}
-                  onChange={(e) => setCercaBiglietti(e.target.value)}
+                  value={cercaNomi}
+                  onChange={(e) => setCercaNomi(e.target.value)}
                   placeholder="cerca per nome, cognome, PR o telefono…"
                   className="min-w-0 flex-1 border border-white/15 bg-black px-3 py-3 text-sm text-white placeholder-brand-gray/50 outline-none focus:border-brand-red"
                 />
-                {cercaBiglietti && (
+                {cercaNomi && (
                   <button
-                    onClick={() => setCercaBiglietti("")}
+                    onClick={() => setCercaNomi("")}
                     className="border border-white/10 px-3 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray hover:text-white"
                   >
                     pulisci
@@ -3033,7 +3044,7 @@ export default function AdminPrPage() {
                 )}
               </div>
             )}
-            {paroleBiglietti.length > 0 && (
+            {cercaNomi.trim() && (
               <p className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
                 trovati <span className="text-white">{bigliettiTrovati.length}</span> su{" "}
                 {biglietti.length} · solo questa serata
@@ -3041,12 +3052,12 @@ export default function AdminPrPage() {
             )}
 
             {bigliettiTrovati.map((b) => (
-              <RigaBiglietto key={b.id} b={b} onAnnulla={annulla} />
+              <RigaBiglietto key={b.id} b={b} onAnnulla={annulla} messaggio={messaggioCliente} />
             ))}
 
             {biglietti.length > 0 && bigliettiTrovati.length === 0 && (
               <p className="border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">
-                Nessun biglietto con «{cercaBiglietti.trim()}» su questa serata. Se è di
+                Nessun biglietto con «{cercaNomi.trim()}» su questa serata. Se è di
                 un&apos;altra, scegli la serata in alto.
               </p>
             )}
