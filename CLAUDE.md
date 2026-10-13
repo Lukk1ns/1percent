@@ -1,8 +1,17 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 8 ottobre 2026
+> Ultimo aggiornamento: 13 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**NOMI DEL PR E RICERCA BIGLIETTI (13 ott, `/admin/pr`, NESSUNO SCRIPT).** Luka: *"nella scheda del pr con
+tutti i dettagli mi servirebbe vedere i pr che ha aggiunto che non trovo... e quando cerco tra tutte le
+prevendite vendute devo poter cercare tramite nome/cognome"*. Letto come: i **nominativi** (biglietti) messi
+dal PR. Aprendo un PR, in fondo c'è **"i nomi che ha messo · questa serata"** con il conto per stato e
+l'elenco (ora, telefono, annulla); il filtro è `pr_alias === alias` (alias unico, `admin_presales` non porta
+`pr_id`). La scheda **Biglietti** ha la casella **"cerca per nome, cognome, PR o telefono"**: ogni parola
+deve esserci, senza maiuscole né accenti, anche girato ("rossi mario"). Solo la serata scelta in alto.
+La riga del biglietto è il componente `RigaBiglietto`, uguale nei due posti.
 
 **MENU BOTTIGLIE PAPI-ON SU `/papion` (12 ott, commit 57bee88).** Luka: *"caricalo e dammi il link che mi
 faccio io il qr code"* — il QR va sui tavoli. Pagina staccata come `/maldita` (fondo nero, niente tasto

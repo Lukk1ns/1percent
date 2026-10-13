@@ -448,6 +448,83 @@ type MovimentoAm = {
   segnato_da: string | null;
 };
 
+/** Per cercare senza badare a maiuscole e accenti: "nicolò" = "nicolo". */
+const normalizza = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+/**
+ * Un biglietto nell'elenco: nella scheda Biglietti e dentro la scheda di
+ * ogni PR. Nella scheda del PR il suo nome non si ripete (`conPr`).
+ */
+function RigaBiglietto({
+  b,
+  onAnnulla,
+  conPr = true,
+}: {
+  b: BigliettoAdmin;
+  onAnnulla: (b: BigliettoAdmin) => void;
+  conPr?: boolean;
+}) {
+  return (
+    <div className="border border-white/10 px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm text-white">
+            {b.nome} {b.cognome}
+            {b.under16 && (
+              <span className="ml-2 font-tech text-[9px] uppercase tracking-[0.15em] text-amber-300">
+                under 16 · delega
+              </span>
+            )}
+          </p>
+          <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+            {Number(b.prezzo) > 0
+              ? `${b.tier_label} · ${euro(b.prezzo)}${conPr ? ` · ${b.pr_alias}` : ""}`
+              : `${b.tier_label} · regalato da te`}
+            {b.telefono ? ` · ${b.telefono}` : ""}
+            {!conPr &&
+              ` · ${new Date(b.created_at).toLocaleString("it-IT", {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}`}
+          </p>
+        </div>
+        <div className="flex flex-shrink-0 flex-col items-end gap-2">
+          <span
+            className={`font-tech text-[9px] uppercase tracking-[0.15em] ${
+              b.stato === "attiva"
+                ? "text-emerald-400"
+                : b.stato === "usata"
+                  ? "text-brand-gray"
+                  : b.stato === "annullata"
+                    ? "text-brand-gray/40 line-through"
+                    : "text-amber-300"
+            }`}
+          >
+            {b.stato === "attiva"
+              ? "valido"
+              : b.stato === "usata"
+                ? "entrato"
+                : b.stato === "annullata"
+                  ? "annullato"
+                  : "in attesa"}
+          </span>
+          {b.stato !== "annullata" && b.stato !== "usata" && (
+            <button
+              onClick={() => onAnnulla(b)}
+              className="font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray hover:text-brand-red"
+            >
+              annulla
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPrPage() {
   const router = useRouter();
   const [autorizzato, setAutorizzato] = useState<boolean | null>(null);
@@ -498,6 +575,8 @@ export default function AdminPrPage() {
   // Cercare un PR per nome o per numero di tessera: con venti PR,
   // scorrere la lista mentre uno ti aspetta davanti non si fa.
   const [cerca, setCerca] = useState("");
+  // Lo stesso nella scheda Biglietti: si cerca la persona, non il PR.
+  const [cercaBiglietti, setCercaBiglietti] = useState("");
   // Quanto ha portato, scritto qui dentro invece che in una finestrella
   // di sistema: una per PR, così due schede aperte non si pestano.
   const [importi, setImporti] = useState<Record<string, string>>({});
@@ -1421,6 +1500,17 @@ export default function AdminPrPage() {
   const prNonAgganciati = prTrovati.filter((x) => x.agganciato === false);
   const prVisibili =
     cercato || mostraNonAgganciati ? [...prAgganciati, ...prNonAgganciati] : prAgganciati;
+  // I biglietti si cercano per nome e cognome, anche girati ("rossi mario"),
+  // per PR o per telefono: ogni parola scritta deve esserci.
+  const paroleBiglietti = normalizza(cercaBiglietti).split(/\s+/).filter(Boolean);
+  const bigliettiTrovati = paroleBiglietti.length
+    ? biglietti.filter((b) => {
+        const dove = normalizza(
+          `${b.nome} ${b.cognome} ${b.pr_alias} ${b.pr_nome ?? ""} ${b.telefono ?? ""}`,
+        );
+        return paroleBiglietti.every((p) => dove.includes(p));
+      })
+    : biglietti;
   // Le serate che si possono agganciare: quelle che devono ancora succedere.
   const serateFuture = eventi
     .filter((e) => !e.passato)
@@ -2205,6 +2295,40 @@ export default function AdminPrPage() {
                       {x.in_attesa > 0 &&
                         " Se ti fidi e vuoi farli valere subito senza aver preso niente, usa il tasto accanto: il debito resta scritto lo stesso."}
                     </p>
+
+                    {(() => {
+                      // L'alias è unico, e admin_presales porta quello.
+                      const suoi = biglietti.filter((b) => b.pr_alias === x.alias);
+                      const quanti = (stato: string) => suoi.filter((b) => b.stato === stato).length;
+                      return (
+                        <div className="mt-4 border-t border-white/5 pt-4">
+                          <p className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                            i nomi che ha messo · questa serata ·{" "}
+                            <span className="text-white">{suoi.length}</span>
+                          </p>
+                          {suoi.length > 0 && (
+                            <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray/70">
+                              <span className="text-emerald-400">{quanti("attiva")} validi</span>
+                              {quanti("in_attesa") > 0 && (
+                                <span className="text-amber-300"> · {quanti("in_attesa")} in attesa</span>
+                              )}
+                              {quanti("usata") > 0 && ` · ${quanti("usata")} entrati`}
+                              {quanti("annullata") > 0 && ` · ${quanti("annullata")} annullati`}
+                            </p>
+                          )}
+                          <div className="mt-3 flex flex-col gap-2">
+                            {suoi.map((b) => (
+                              <RigaBiglietto key={b.id} b={b} onAnnulla={annulla} conPr={false} />
+                            ))}
+                            {suoi.length === 0 && (
+                              <p className="text-[12px] text-brand-gray">
+                                Ancora nessun nome su questa serata.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -2891,57 +3015,41 @@ export default function AdminPrPage() {
 
         {scheda === "biglietti" && (
           <div className="mt-5 flex flex-col gap-2">
-            {biglietti.map((b) => (
-              <div key={b.id} className="border border-white/10 px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-white">
-                      {b.nome} {b.cognome}
-                      {b.under16 && (
-                        <span className="ml-2 font-tech text-[9px] uppercase tracking-[0.15em] text-amber-300">
-                          under 16 · delega
-                        </span>
-                      )}
-                    </p>
-                    <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
-                      {Number(b.prezzo) > 0
-                        ? `${b.tier_label} · ${euro(b.prezzo)} · ${b.pr_alias}`
-                        : `${b.tier_label} · regalato da te`}
-                      {b.telefono ? ` · ${b.telefono}` : ""}
-                    </p>
-                  </div>
-                  <div className="flex flex-shrink-0 flex-col items-end gap-2">
-                    <span
-                      className={`font-tech text-[9px] uppercase tracking-[0.15em] ${
-                        b.stato === "attiva"
-                          ? "text-emerald-400"
-                          : b.stato === "usata"
-                            ? "text-brand-gray"
-                            : b.stato === "annullata"
-                              ? "text-brand-gray/40 line-through"
-                              : "text-amber-300"
-                      }`}
-                    >
-                      {b.stato === "attiva"
-                        ? "valido"
-                        : b.stato === "usata"
-                          ? "entrato"
-                          : b.stato === "annullata"
-                            ? "annullato"
-                            : "in attesa"}
-                    </span>
-                    {b.stato !== "annullata" && b.stato !== "usata" && (
-                      <button
-                        onClick={() => annulla(b)}
-                        className="font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray hover:text-brand-red"
-                      >
-                        annulla
-                      </button>
-                    )}
-                  </div>
-                </div>
+            {biglietti.length > 0 && (
+              <div className="flex items-center gap-2">
+                <input
+                  value={cercaBiglietti}
+                  onChange={(e) => setCercaBiglietti(e.target.value)}
+                  placeholder="cerca per nome, cognome, PR o telefono…"
+                  className="min-w-0 flex-1 border border-white/15 bg-black px-3 py-3 text-sm text-white placeholder-brand-gray/50 outline-none focus:border-brand-red"
+                />
+                {cercaBiglietti && (
+                  <button
+                    onClick={() => setCercaBiglietti("")}
+                    className="border border-white/10 px-3 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray hover:text-white"
+                  >
+                    pulisci
+                  </button>
+                )}
               </div>
+            )}
+            {paroleBiglietti.length > 0 && (
+              <p className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
+                trovati <span className="text-white">{bigliettiTrovati.length}</span> su{" "}
+                {biglietti.length} · solo questa serata
+              </p>
+            )}
+
+            {bigliettiTrovati.map((b) => (
+              <RigaBiglietto key={b.id} b={b} onAnnulla={annulla} />
             ))}
+
+            {biglietti.length > 0 && bigliettiTrovati.length === 0 && (
+              <p className="border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">
+                Nessun biglietto con «{cercaBiglietti.trim()}» su questa serata. Se è di
+                un&apos;altra, scegli la serata in alto.
+              </p>
+            )}
 
             {biglietti.length === 0 && (
               <p className="border border-white/10 px-4 py-6 text-center text-[12px] text-brand-gray">
