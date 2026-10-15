@@ -21,6 +21,8 @@ passate, delega della serata letta all'apertura), MALDITA, profilo sul sito (tes
 (ogni pagina del pannello) e riquadro in dashboard. Solo admin (middleware + GuardiaAdmin, come tutto `/admin`).
 Logica provata 15/15 con dati finti; pagina fotografata a 390px in un iframe (⚠️ Chrome headless non scende sotto
 500px di finestra: `--window-size=390` taglia, non stringe).
+**Decisione Luka (15 ott): agli iscritti semplici NON si chiedono nome né telefono** (né obbligatori né facoltativi):
+si trovano per alias, mail o tessera. Non riproporlo.
 
 **PORTA PIÙ VELOCE, NIENTE DELEGA ALLO SCANNER (15 ott, `/admin/porta`, NESSUNO SCRIPT).** Luka, prima di MALDITA e
 DAY-OFF: *"la delega non deve chiederla lo scanner, la chiede la sicurezza all'ingresso... la scannerizzazione dev'essere
