@@ -123,6 +123,18 @@ export default function PortaPage() {
 
   const scannerRef = useRef<Scanner | null>(null);
   const occupato = useRef(false);
+  // La fotocamera resta accesa fra una persona e l'altra: lo stesso QR,
+  // ancora davanti all'obiettivo, non deve ripassare come "già entrato".
+  const ultimoQR = useRef<{ token: string; at: number }>({ token: "", at: 0 });
+  const timerEsito = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const chiudiEsito = useCallback(() => {
+    if (timerEsito.current) clearTimeout(timerEsito.current);
+    timerEsito.current = null;
+    ultimoQR.current = { ...ultimoQR.current, at: Date.now() };
+    setEsito(null);
+    occupato.current = false;
+  }, []);
 
   // ── senza rete ──────────────────────────────────────────────
   const [inRete, setInRete] = useState(true);
@@ -205,6 +217,7 @@ export default function PortaPage() {
     async (token: string) => {
       if (occupato.current || !serata) return;
       occupato.current = true;
+      ultimoQR.current = { token, at: Date.now() };
 
       let r: Esito;
 
@@ -282,21 +295,21 @@ export default function PortaPage() {
       }
 
       setEsito(r);
-      if (navigator.onLine) await aggiornaRiepilogo(serata);
+      // il conto in alto si aggiorna dopo: la porta non lo aspetta
+      if (navigator.onLine) void aggiornaRiepilogo(serata);
 
-      // quanto resta sullo schermo: se passa, poco; se c'è da leggere, di più
-      const quanto = r.esito === "ok" ? 2600 : 5200;
-      setTimeout(() => {
-        setEsito(null);
-        occupato.current = false;
-      }, quanto);
+      // quanto resta sullo schermo: se passa, un attimo; se c'è da leggere, di più
+      const quanto = r.esito === "ok" || r.esito === "pr_ok" ? 1200 : 5200;
+      if (timerEsito.current) clearTimeout(timerEsito.current);
+      timerEsito.current = setTimeout(chiudiEsito, quanto);
     },
-    [serata, aggiornaRiepilogo],
+    [serata, aggiornaRiepilogo, chiudiEsito],
   );
 
-  // La fotocamera: accesa quando non c'è un esito da leggere
+  // La fotocamera: sempre accesa (spegnerla e riaccenderla a ogni persona
+  // costava un secondo buono). L'esito le si mette sopra.
   useEffect(() => {
-    if (!autorizzato || errore || esito || modoCerca || !serata) return;
+    if (!autorizzato || errore || modoCerca || !serata) return;
 
     let annullato = false;
     setCamErrore(null);
@@ -322,7 +335,10 @@ export default function PortaPage() {
           },
           (letto: string) => {
             if (occupato.current) return;
-            valida(tokenDa(letto));
+            const token = tokenDa(letto);
+            const u = ultimoQR.current;
+            if (token === u.token && Date.now() - u.at < 4000) return;
+            valida(token);
           },
           () => {},
         );
@@ -346,7 +362,7 @@ export default function PortaPage() {
       scannerRef.current = null;
       if (inst) inst.stop().then(() => inst.clear()).catch(() => {});
     };
-  }, [autorizzato, errore, esito, modoCerca, serata, valida, tentativoCam]);
+  }, [autorizzato, errore, modoCerca, serata, valida, tentativoCam]);
 
   // Ricerca per nome
   useEffect(() => {
@@ -459,8 +475,7 @@ export default function PortaPage() {
     }
     if (data?.[0]?.esito === "ok") {
       suonaOk();
-      setEsito(null);
-      occupato.current = false;
+      chiudiEsito();
       await aggiornaRiepilogo(serata);
       window.alert(`${data[0].nome} ${data[0].cognome} può entrare.`);
     } else if (data?.[0]?.esito === "gia_usato") {
@@ -581,17 +596,7 @@ export default function PortaPage() {
 
       {/* Il grosso dello schermo */}
       <div className="relative flex-1">
-        {esito ? (
-          <Risposta
-            esito={esito}
-            sonoAdmin={sonoAdmin}
-            onForza={faiEntrareLoStesso}
-            onChiudi={() => {
-              setEsito(null);
-              occupato.current = false;
-            }}
-          />
-        ) : modoCerca ? (
+        {modoCerca ? (
           <div className="px-4 py-5">
             <input
               autoFocus
@@ -613,11 +618,6 @@ export default function PortaPage() {
                 >
                   <p className="text-sm text-white">
                     {t.nome} {t.cognome}
-                    {t.under16 && (
-                      <span className="ml-2 font-tech text-[9px] uppercase text-amber-300">
-                        under 16
-                      </span>
-                    )}
                   </p>
                   <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">
                     {t.tier_label} · {t.pr_alias} ·{" "}
@@ -687,6 +687,14 @@ export default function PortaPage() {
             )}
           </>
         )}
+        {esito && (
+          <Risposta
+            esito={esito}
+            sonoAdmin={sonoAdmin}
+            onForza={faiEntrareLoStesso}
+            onChiudi={chiudiEsito}
+          />
+        )}
       </div>
 
       {/* Piede: il bottone grande per chi non ha il QR */}
@@ -697,8 +705,7 @@ export default function PortaPage() {
               setModoCerca((v) => !v);
               setCerca("");
               setTrovati([]);
-              setEsito(null);
-              occupato.current = false;
+              chiudiEsito();
             }}
             className={`flex-1 py-4 text-[11px] font-semibold uppercase tracking-widest ${
               modoCerca ? "bg-white/10 text-white" : "bg-brand-red text-white"
@@ -780,7 +787,7 @@ function Risposta({
   return (
     <button
       onClick={onChiudi}
-      className={`absolute inset-0 flex w-full flex-col items-center justify-center px-6 text-center ${stile.sfondo} ${stile.colore}`}
+      className={`absolute inset-0 z-20 flex w-full flex-col items-center justify-center px-6 text-center ${stile.sfondo} ${stile.colore}`}
     >
       <p className="font-display text-5xl uppercase leading-none">{stile.testo}</p>
 
@@ -855,19 +862,6 @@ function Risposta({
             <p className="mt-4 font-display text-xl uppercase">Chiama Luka</p>
           )}
         </>
-      )}
-
-      {esito.esito === "ok" && esito.under16 && (
-        <div className="mt-5 border-2 border-black px-5 py-3">
-          <p className="font-display text-2xl uppercase leading-none">Meno di 16 anni</p>
-          <p className="mt-1 text-[12px] font-semibold">Documento + delega firmata</p>
-        </div>
-      )}
-
-      {esito.esito === "ok" && esito.minorenne && !esito.under16 && (
-        <div className="mt-5 border-2 border-black px-5 py-2">
-          <p className="font-display text-xl uppercase leading-none">Minorenne · documento</p>
-        </div>
       )}
 
       <p className="mt-8 font-tech text-[10px] uppercase tracking-[0.25em] opacity-60">

@@ -4,6 +4,17 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**PORTA PIÙ VELOCE, NIENTE DELEGA ALLO SCANNER (15 ott, `/admin/porta`, NESSUNO SCRIPT).** Luka, prima di MALDITA e
+DAY-OFF: *"la delega non deve chiederla lo scanner, la chiede la sicurezza all'ingresso... la scannerizzazione dev'essere
+il più veloce possibile"*. Tolti i riquadri "Meno di 16 anni · documento + delega" e "Minorenne · documento" dal
+verde e il tag under 16 dalla ricerca (il DB manda ancora `under16`/`minorenne`, la pagina li ignora). **La fotocamera non
+si spegne più a ogni esito**: l'esito è un livello sopra (`z-20`), prima a ogni persona si fermava e ripartiva (~1 s,
+di più su iPhone). Verde **1,2 s** (era 2,6 + l'attesa del riepilogo, ora non aspettato); rossi/gialli 5,2 s, tocco =
+chiude. Stesso QR ignorato per 4 s dopo l'esito (`ultimoQR`), così non torna "già entrato"; un timer solo
+(`timerEsito`, `chiudiEsito`) perché un tocco + timer vecchio chiudeva l'esito della persona dopo.
+**Operatori nuovi:** email in `/admin/regali` → operatori, poi entrano da **`/login?next=/admin/porta`** — `/admin/login`
+ha `shouldCreateUser: false` e rifiuta chi non ha mai usato il sito.
+
 **NOMI DEL PR E RICERCA BIGLIETTI (13 ott, `/admin/pr`, NESSUNO SCRIPT).** Luka: *"nella scheda del pr con
 tutti i dettagli mi servirebbe vedere i pr che ha aggiunto che non trovo... e quando cerco tra tutte le
 prevendite vendute devo poter cercare tramite nome/cognome"*. Letto come: i **nominativi** (biglietti) messi
