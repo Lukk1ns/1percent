@@ -21,7 +21,7 @@ tutto". `admin_elimina_persona(profili[], biglietti[], richieste[])`, tutto o ni
 - Provato su PGlite **19/19** (guardia, anonimizzazione, annullo solo futuri, rimborso 15 € senza nome nella nota,
   MALDITA, PR con 15 € aperti rifiutato senza toccare niente, manager con 10 € rifiutato, PR a posto eliminato coi
   registri interi, chiamata vuota, rieseguibile, anon senza permesso). Senza script il tasto dice cosa incollare.
-**PENDING Luka: incollare `46_elimina_persona.sql`.**
+**`46` INCOLLATO da Luka il 15 ott sera** (da fuori: `admin_elimina_persona` risponde 42501 alla chiave anon = c'è).
 
 **CERCA UNA PERSONA (15 ott, `/admin/cerca`, `lib/persone.ts`, NESSUNO SCRIPT).** Luka: *"devo poter cercare per
 nome anche tra i clienti o numero... così raggiungo velocemente i profili e trovo tutte le info anche di quello"*.
