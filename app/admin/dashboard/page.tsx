@@ -338,6 +338,13 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {[
             {
+              href: "/admin/cerca",
+              emoji: "🔍",
+              titolo: "Cerca una persona",
+              cosa: "Nome, cognome o telefono: biglietti, serate, MALDITA, profilo",
+              acceso: true,
+            },
+            {
               href: "/admin/maldita",
               emoji: "💃",
               titolo: "Donna omaggio 17/10",
@@ -431,6 +438,7 @@ export default function AdminDashboardPage() {
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {[
+            ["/admin/cerca", "Cerca una persona"],
             ["/admin/pr", "Prevendite e PR"],
             ["/admin/maldita", "Donna omaggio 17/10"],
             ["/admin/porta", "Porta"],

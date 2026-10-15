@@ -1,8 +1,26 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 13 ottobre 2026
+> Ultimo aggiornamento: 15 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**CERCA UNA PERSONA (15 ott, `/admin/cerca`, `lib/persone.ts`, NESSUNO SCRIPT).** Luka: *"devo poter cercare per
+nome anche tra i clienti o numero... così raggiungo velocemente i profili e trovo tutte le info anche di quello"*.
+Lo staff si cercava (`/admin/crew`), i biglietti una serata alla volta (`/admin/pr`), i clienti da nessuna parte.
+**Un cliente non sta in un posto solo:** iscritto al sito = alias + mail (niente nome né telefono); nome, cognome,
+anno e numero stanno sui **biglietti**; le ragazze MALDITA nelle `omaggio_richieste`. La pagina legge tutto con le
+funzioni che c'erano già (`admin_members`, `admin_crew_answers`/`admin_crew_requests` per i numeri dello staff,
+`admin_pr_eventi` + `admin_presales` **per ogni serata**, `admin_omaggio_richieste` per `LISTE_OMAGGIO`) e lo mette
+insieme **per nome** (parole in ordine, senza accenti/apostrofi: "Rossi Mario" = "Mario Rossi"), **mai per telefono**:
+un PR mette il suo numero su più biglietti di amici. Un profilo si unisce a una persona solo se il **nome vero**
+coincide. Ricerca: ogni parola deve esserci; nome, cognome, telefono (con/senza +39, con spazi), alias, mail,
+tessera (#55, 0055), Instagram. **Scheda:** età, numeri con whatsapp/chiama, totali (biglietti, entrato, spesi,
+omaggi), PR che gli hanno venduto, biglietti di tutte le serate (con whatsapp · copia link · apri sulle serate non
+passate, delega della serata letta all'apertura), MALDITA, profilo sul sito (tessera, mail, portato da / ha portato,
+"apri nello staff" = `/admin/crew?cerca=<alias>`), "stesso numero anche per". Tasto **cerca** nella `BarraAdmin`
+(ogni pagina del pannello) e riquadro in dashboard. Solo admin (middleware + GuardiaAdmin, come tutto `/admin`).
+Logica provata 15/15 con dati finti; pagina fotografata a 390px in un iframe (⚠️ Chrome headless non scende sotto
+500px di finestra: `--window-size=390` taglia, non stringe).
 
 **PORTA PIÙ VELOCE, NIENTE DELEGA ALLO SCANNER (15 ott, `/admin/porta`, NESSUNO SCRIPT).** Luka, prima di MALDITA e
 DAY-OFF: *"la delega non deve chiederla lo scanner, la chiede la sicurezza all'ingresso... la scannerizzazione dev'essere

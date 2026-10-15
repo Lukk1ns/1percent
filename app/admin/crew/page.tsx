@@ -225,6 +225,10 @@ export default function AdminCrewPage() {
 
   useEffect(() => {
     carica();
+    // Arrivando da "cerca una persona" (/admin/crew?cerca=alias) la lista
+    // si apre già filtrata su di lui.
+    const daCercare = new URLSearchParams(window.location.search).get("cerca");
+    if (daCercare) setCerca(daCercare);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

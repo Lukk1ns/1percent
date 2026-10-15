@@ -74,6 +74,16 @@ export function BarraAdmin() {
           </Link>
 
           <div className="flex items-center gap-2">
+            {/* Una persona si cerca da ogni pagina del pannello (15 ott). */}
+            <Link
+              href="/admin/cerca"
+              className={`${tasto} ${
+                pathname.startsWith("/admin/cerca") ? "border-brand-red text-brand-red" : spento
+              }`}
+            >
+              cerca
+            </Link>
+
             <Link
               href="/admin/posta"
               className={`${tasto} ${
