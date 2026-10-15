@@ -12,6 +12,7 @@ import { normalizzaNumero } from "./whatsapp";
 export type Iscritto = {
   id: string;
   alias: string;
+  avatar_id?: string | null;
   member_number: number;
   created_at: string;
   email: string | null;
@@ -139,6 +140,9 @@ export function costruisciPersone(
   };
 
   for (const b of biglietti) {
+    // Chi è stato eliminato (script 46) resta nei conti come "cancellato":
+    // non è una persona da trovare, e tutti insieme sembrerebbero una sola.
+    if (b.nome === "cancellato" && !b.cognome.trim()) continue;
     const nome = nomeIntero(b.nome, b.cognome);
     const p = prendi("n:" + chiaveNome(nome), nome);
     p.biglietti.push(b);
@@ -183,4 +187,15 @@ export function costruisciPersone(
     );
   }
   return [...persone.values()];
+}
+
+/** Le categorie della lista membri: quelle di prima più chi non si è mai iscritto. */
+export type Tipo = "crew" | "attesa" | "cliente" | "rifiutato" | "non_iscritto";
+
+export function tipoPersona(p: Persona): Tipo {
+  if (p.profili.length === 0) return "non_iscritto";
+  if (p.profili.some((x) => x.role === "crew")) return "crew";
+  if (p.profili.some((x) => x.crew_request_status === "in_attesa")) return "attesa";
+  if (p.profili.some((x) => x.crew_request_status === "rifiutata")) return "rifiutato";
+  return "cliente";
 }

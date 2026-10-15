@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 import { QUIZ_QUESTIONS } from "@/lib/quiz";
+import { CercaPersone } from "@/components/CercaPersone";
 
 type HybridAnswer = { text?: string; tag?: string };
 // q1/q2 sono a scelta, ma da luglio si può anche scrivere la propria
@@ -79,31 +80,6 @@ type Member = {
   invitato_da?: string | null;
 };
 
-/** Come è entrato: una parola sola, quella che serve a Luka. */
-type Tipo = "crew" | "attesa" | "rifiutato" | "cliente";
-
-function tipoDi(m: Member): Tipo {
-  if (m.role === "crew") return "crew";
-  if (m.crew_request_status === "in_attesa") return "attesa";
-  if (m.crew_request_status === "rifiutata") return "rifiutato";
-  return "cliente";
-}
-
-const ETICHETTE: Record<Tipo, { testo: string; classe: string }> = {
-  crew: { testo: "staff", classe: "text-brand-red border-brand-red/50 bg-brand-red/10" },
-  attesa: { testo: "si è candidato", classe: "text-amber-300 border-amber-300/40 bg-amber-300/10" },
-  rifiutato: { testo: "rifiutato", classe: "text-white/40 border-white/15" },
-  cliente: { testo: "cliente", classe: "text-sky-300/80 border-sky-300/30 bg-sky-300/5" },
-};
-
-const FILTRI: { id: Tipo | "tutti"; testo: string }[] = [
-  { id: "tutti", testo: "tutti" },
-  { id: "crew", testo: "staff" },
-  { id: "attesa", testo: "candidati" },
-  { id: "cliente", testo: "clienti" },
-  { id: "rifiutato", testo: "rifiutati" },
-];
-
 type Report = {
   id: string;
   reporter_alias: string;
@@ -136,14 +112,11 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
-  const [filtro, setFiltro] = useState<Tipo | "tutti">("tutti");
   const [answerMembers, setAnswerMembers] = useState<AnswerMember[]>([]);
   const [onlyWritten, setOnlyWritten] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [approvedPosts, setApprovedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editAlias, setEditAlias] = useState("");
   const [working, setWorking] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // null = non ancora caricato (o script SQL non incollato)
@@ -234,27 +207,6 @@ export default function AdminDashboardPage() {
     return () => { if (interval) clearInterval(interval); };
   }, [router]);
 
-  async function handleDelete(id: string, alias: string) {
-    if (!confirm(`Elimina "${alias}"? Il QR code verrà revocato.`)) return;
-    setWorking(id);
-    setError(null);
-    const supabase = createClient();
-    const { error: err } = await supabase.rpc("admin_delete_member", { p_profile_id: id });
-    if (err) { setError("Errore delete: " + err.message); setWorking(null); return; }
-    await load();
-    setWorking(null);
-  }
-
-  async function handleSaveAlias(id: string) {
-    if (!editAlias.trim()) return;
-    setWorking(id);
-    const supabase = createClient();
-    await supabase.rpc("admin_update_alias", { p_profile_id: id, p_new_alias: editAlias.trim().toLowerCase() });
-    setEditingId(null);
-    await load();
-    setWorking(null);
-  }
-
   async function handleLogout() {
     // "Esci" toglie l'accesso a tutto il sito, non solo al pannello: va
     // detto prima, e va lasciata la home come approdo. Rimandare
@@ -337,13 +289,6 @@ export default function AdminDashboardPage() {
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {[
-            {
-              href: "/admin/cerca",
-              emoji: "🔍",
-              titolo: "Cerca una persona",
-              cosa: "Nome, cognome o telefono: biglietti, serate, MALDITA, profilo",
-              acceso: true,
-            },
             {
               href: "/admin/maldita",
               emoji: "💃",
@@ -438,7 +383,6 @@ export default function AdminDashboardPage() {
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {[
-            ["/admin/cerca", "Cerca una persona"],
             ["/admin/pr", "Prevendite e PR"],
             ["/admin/maldita", "Donna omaggio 17/10"],
             ["/admin/porta", "Porta"],
@@ -905,163 +849,17 @@ export default function AdminDashboardPage() {
         );
       })()}
 
-      {/* Lista membri */}
-      {tab === "members" && (() => {
-      // Il ruolo arriva solo dopo aver incollato 08_chi_e_chi.sql
-      const datiRuolo = members.some((m) => typeof m.role === "string");
-      return <>
-      <p className="text-xs uppercase tracking-widest text-brand-gray mb-3">
-        Tutti i membri — dal più recente
-      </p>
-
-      {/* Se il ruolo non arriva dal database, NON si indovina: dire
-          "cliente" a uno staff approvato è peggio che non dire niente. */}
-      {!datiRuolo && members.length > 0 && (
-        <div className="border border-amber-300/40 bg-amber-300/5 px-4 py-3 mb-4">
-          <p className="text-amber-300 text-[10px] uppercase tracking-widest">
-            manca uno script
+      {/* La lista membri si cerca e ogni riga apre la scheda della persona
+          (16 ott): dentro ci sono biglietti, MALDITA, modifica alias ed
+          elimina. Prima qui c'erano solo alias e i tasti Edit/Del. */}
+      {tab === "members" && (
+        <>
+          <p className="text-xs uppercase tracking-widest text-brand-gray mb-3">
+            Tutti i membri — dal più recente
           </p>
-          <p className="text-brand-gray text-xs leading-relaxed mt-1.5">
-            Il database non manda ancora il ruolo, quindi qui non si può sapere chi è
-            staff e chi cliente. Incolla{" "}
-            <span className="text-white font-mono">supabase/08_chi_e_chi.sql</span> nel
-            SQL Editor di Supabase e ricarica.
-          </p>
-        </div>
+          <CercaPersone />
+        </>
       )}
-
-      {/* Chi è entrato come cosa. I numeri sono cliccabili: filtrano. */}
-      {datiRuolo && (
-      <div className="flex flex-wrap gap-2 mb-4">
-        {FILTRI.map((f) => {
-          const quanti =
-            f.id === "tutti" ? members.length : members.filter((m) => tipoDi(m) === f.id).length;
-          const attivo = filtro === f.id;
-          return (
-            <button
-              key={f.id}
-              onClick={() => setFiltro(f.id)}
-              className={`border px-3 py-1.5 text-[10px] uppercase tracking-widest transition-all ${
-                attivo
-                  ? "border-brand-red bg-brand-red/15 text-white"
-                  : "border-white/10 text-brand-gray hover:border-white/30"
-              }`}
-            >
-              {f.testo} <span className="tabular-nums text-white/80">{quanti}</span>
-            </button>
-          );
-        })}
-      </div>
-      )}
-
-      {loading ? (
-        <p className="text-brand-gray text-sm animate-pulse-glow">Caricamento…</p>
-      ) : members.length === 0 ? (
-        <p className="text-brand-gray/40 text-sm">Nessun membro ancora.</p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {members
-            .filter((m) => filtro === "tutti" || tipoDi(m) === filtro)
-            .map((m) => {
-            const avatar = m.avatar_id ? getAvatar(m.avatar_id) : null;
-            const etichetta = datiRuolo ? ETICHETTE[tipoDi(m)] : null;
-            const date = new Date(m.created_at).toLocaleDateString("it-IT", {
-              day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-            });
-            const isEditing = editingId === m.id;
-            const isBusy = working === m.id;
-
-            return (
-              <div
-                key={m.id}
-                className="border border-white/8 p-3 flex items-center gap-3"
-              >
-                {/* Avatar */}
-                <span className="text-xl w-8 text-center flex-shrink-0">
-                  {avatar?.emoji ?? "?"}
-                </span>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editAlias}
-                      onChange={(e) => setEditAlias(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSaveAlias(m.id)}
-                      className="bg-transparent border-b border-brand-red text-white text-sm outline-none w-full"
-                      autoFocus
-                    />
-                  ) : (
-                    <p className="text-white text-sm font-medium truncate flex items-center gap-2">
-                      <span className="truncate">{m.alias}</span>
-                      {etichetta && (
-                        <span
-                          className={`flex-shrink-0 border px-1.5 py-0.5 text-[9px] uppercase tracking-widest ${etichetta.classe}`}
-                        >
-                          {etichetta.testo}
-                        </span>
-                      )}
-                    </p>
-                  )}
-                  <p className="text-brand-gray/50 text-[10px]">
-                    #{String(m.member_number).padStart(4, "0")} · {date}
-                    {m.email && <> · {m.email}</>}
-                  </p>
-                  {(m.nome || m.invitato_da) && (
-                    <p className="text-brand-gray/40 text-[10px]">
-                      {m.nome && <>{m.nome}</>}
-                      {m.nome && m.invitato_da && <> · </>}
-                      {m.invitato_da && <>portato da {m.invitato_da}</>}
-                    </p>
-                  )}
-                </div>
-
-                {/* Azioni */}
-                <div className="flex gap-2 flex-shrink-0">
-                  {isEditing ? (
-                    <>
-                      <button
-                        onClick={() => handleSaveAlias(m.id)}
-                        disabled={isBusy}
-                        className="text-[10px] uppercase tracking-widest text-green-400 border border-green-400/30 px-2 py-1 hover:bg-green-400/10 transition-all"
-                      >
-                        ✓
-                      </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="text-[10px] text-brand-gray border border-white/10 px-2 py-1"
-                      >
-                        ✕
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => { setEditingId(m.id); setEditAlias(m.alias); }}
-                        className="text-[10px] uppercase tracking-widest text-brand-gray border border-white/10 px-2 py-1 hover:border-white/30 transition-all"
-                        title="Modifica alias"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(m.id, m.alias)}
-                        disabled={isBusy}
-                        className="text-[10px] uppercase tracking-widest text-brand-red border border-brand-red/30 px-2 py-1 hover:bg-brand-red/10 transition-all disabled:opacity-40"
-                        title="Elimina membro"
-                      >
-                        {isBusy ? "…" : "Del"}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      </>;
-      })()}
     </main>
   );
 }

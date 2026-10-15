@@ -1,8 +1,20 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 15 ottobre 2026
+> Ultimo aggiornamento: 16 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**LA RICERCA STA NELLA DASHBOARD (16 ott, `components/CercaPersone.tsx`, NESSUNO SCRIPT).** Luka, il giorno dopo
+`/admin/cerca`: *"dovrebbe essere messo nella pagina iniziale dell'admin sotto TUTTI I MEMBRI... così posso cercare
+direttamente sia su tutti sia su una categoria specifica e da lì posso fare tutto... ci evita una casella in più"*.
+Ora la scheda **Membri** della dashboard è `CercaPersone`: i filtri di prima (tutti · staff · candidati · clienti ·
+rifiutati) **+ "non iscritti"** (solo biglietto o MALDITA, `tipoPersona` in `lib/persone.ts`), la casella che cerca
+**dentro il filtro scelto**, e senza niente scritto la categoria intera dal più recente, 60 alla volta ("mostra altri").
+Ogni riga apre la scheda (si scende fino a lei, "torna alla lista" riporta al punto di prima) con tutto quello di
+prima + **"modifica alias"** (`admin_update_alias`, era il tasto Edit della lista) ed **elimina** (script 46, che
+sostituisce il vecchio Del = `admin_delete_member`, più completo). Tolti: tile "Cerca una persona", link nel resto del
+pannello, tasto **cerca** della `BarraAdmin`; `/admin/cerca` ora rimanda alla dashboard. I biglietti `cancellato`
+(persone eliminate) non diventano una persona. La lista della dashboard ha `px-4`: la casella fissa usa `-mx-4 px-4`.
 
 **ELIMINARE UNA PERSONA (15 ott sera, `supabase/46_elimina_persona.sql`, tasto in fondo alla scheda di `/admin/cerca`).**
 Luka: *"quando trovo un cliente o un iscritto o pr devo aver la possibilità di eliminarlo tutto con le sue info"*; sui
