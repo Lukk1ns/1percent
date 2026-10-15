@@ -76,6 +76,8 @@ export default function CercaPage() {
   // Il modulo di delega di ogni serata (quello caricato a mano, se c'è).
   const [deleghe, setDeleghe] = useState<Record<string, string | null>>({});
   const campo = useRef<HTMLInputElement>(null);
+  // Si rilegge tutto dopo aver eliminato qualcuno.
+  const [giro, setGiro] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -137,7 +139,7 @@ export default function CercaPage() {
       setMancano(saltati);
       setCarico(false);
     })();
-  }, []);
+  }, [giro]);
 
   const trovati = useMemo(() => {
     if (cerca.trim().length < 2) return [];
@@ -189,6 +191,10 @@ export default function CercaPage() {
           deleghe={deleghe}
           onChiudi={chiudi}
           onApri={apri}
+          onEliminata={() => {
+            setGiro((g) => g + 1);
+            chiudi();
+          }}
         />
       ) : (
         <>
@@ -310,12 +316,14 @@ function Scheda({
   deleghe,
   onChiudi,
   onApri,
+  onEliminata,
 }: {
   p: Persona;
   tutte: Persona[];
   deleghe: Record<string, string | null>;
   onChiudi: () => void;
   onApri: (chiave: string) => void;
+  onEliminata: () => void;
 }) {
   const biglietti = [...p.biglietti].sort(
     (a, b) => b.serata.starts_at.localeCompare(a.serata.starts_at) || b.created_at.localeCompare(a.created_at),
@@ -614,6 +622,225 @@ function Scheda({
           </div>
         </section>
       )}
+
+      <EliminaPersona key={p.chiave} p={p} onFatto={onEliminata} />
     </div>
+  );
+}
+
+type Annullato = {
+  serata: string;
+  pr: string;
+  prezzo: number;
+  rimborso: number;
+  manager: string | null;
+};
+
+/** Il motivo per cui il database si è fermato, detto come serve a Luka. */
+function spiegaRifiuto(err: { code?: string; message: string }): string {
+  if (!err.code) return "Niente connessione: non è cambiato niente, riprova tra un attimo.";
+  if (err.code === "PGRST202")
+    return "Manca lo script: incolla supabase/46_elimina_persona.sql nel SQL Editor di Supabase, poi riprova.";
+  const [motivo, chi, quanto] = err.message.split(":");
+  const soldi = euro(Math.abs(Number(quanto)));
+  if (motivo === "soldi_aperti")
+    return Number(quanto) > 0
+      ? `${chi} deve ancora consegnarti ${soldi} su una serata. Prima chiudi i suoi conti (Prevendite → PR), poi eliminalo. Non è cambiato niente.`
+      : `${chi} ti ha portato ${soldi} più di quanto ha venduto su una serata. Prima sistema i suoi conti (Prevendite → Soldi), poi eliminalo. Non è cambiato niente.`;
+  if (motivo === "manager_con_soldi")
+    return `${chi}, da manager, ha ancora ${soldi} in mano. Prima segna che te li ha portati (Prevendite → Manager), poi eliminalo. Non è cambiato niente.`;
+  return `Il database ha risposto: ${err.message}. Non è cambiato niente.`;
+}
+
+/**
+ * Eliminare una persona (15 ott). Luka: *"devo aver la possibilità di
+ * eliminarlo tutto con le sue info"*; sui biglietti ancora validi: *"lo
+ * annulli ma mi avvisi che cosa sta succedendo"*. Quindi prima si dice
+ * tutto, riga per riga, e solo dopo il tasto rosso. Il lavoro lo fa
+ * `admin_elimina_persona` (script 46), tutto o niente.
+ */
+function EliminaPersona({ p, onFatto }: { p: Persona; onFatto: () => void }) {
+  const [aperto, setAperto] = useState(false);
+  const [lavoro, setLavoro] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
+  const [fatto, setFatto] = useState<Annullato[] | null>(null);
+
+  const daAnnullare = p.biglietti.filter(
+    (b) => (b.stato === "attiva" || b.stato === "in_attesa") && !b.serata.passato,
+  );
+  const staff = p.profili.filter((x) => x.role === "crew");
+
+  async function elimina() {
+    setLavoro(true);
+    setErrore(null);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("admin_elimina_persona", {
+      p_profili: p.profili.map((x) => x.id),
+      p_biglietti: p.biglietti.map((b) => b.id),
+      p_richieste: p.richieste.map((r) => r.id),
+    });
+    if (error) {
+      setErrore(spiegaRifiuto(error));
+      setLavoro(false);
+      return;
+    }
+    // Le foto del profilo stanno nello storage, che da SQL non si tocca.
+    await Promise.all(
+      p.profili.flatMap((x) => [
+        supabase.storage.from("volti").remove([`${x.id}/volto.webp`]),
+        supabase.storage.from("volti-blur").remove([`${x.id}/volto.webp`]),
+      ]),
+    );
+    setFatto(((data as { annullati?: Annullato[] })?.annullati ?? []) as Annullato[]);
+    setLavoro(false);
+  }
+
+  const riga = "flex gap-2 text-sm leading-relaxed text-white/85";
+
+  if (fatto) {
+    return (
+      <section className="mt-12 border border-emerald-400/40 bg-emerald-400/5 px-5 py-5">
+        <p className="font-tech text-xs uppercase tracking-[0.2em] text-emerald-300">eliminato ✓</p>
+        <p className="mt-2 text-sm text-white/85">
+          {p.nome} non c&apos;è più: dati cancellati
+          {p.profili.length > 0 ? ", profilo e foto tolti" : ""}.
+        </p>
+        {fatto.length > 0 && (
+          <div className="mt-3 flex flex-col gap-2">
+            {fatto.map((a, i) => (
+              <p key={i} className="text-sm leading-relaxed text-white/85">
+                Annullato il biglietto di <b>{a.serata}</b>
+                {Number(a.prezzo) > 0 ? ` (${euro(a.prezzo)}, ${a.pr})` : " (omaggio)"}:{" "}
+                {Number(a.rimborso) > 0
+                  ? `${euro(a.rimborso)} stornati a ${a.pr}, non li deve più.`
+                  : Number(a.prezzo) > 0
+                    ? `${a.pr} non li aveva ancora consegnati, quindi non c'è niente da stornare.`
+                    : "nessun soldo di mezzo."}
+                {a.manager && (
+                  <span className="mt-1 block text-amber-300">
+                    ⚠️ Quei contanti risultano in mano a {a.manager}: se li ha restituiti al cliente,
+                    storna anche il suo movimento (Prevendite → Manager).
+                  </span>
+                )}
+              </p>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={onFatto}
+          className="mt-5 flex h-11 items-center border border-white/20 px-4 font-tech text-xs uppercase tracking-[0.1em] text-white hover:border-white/50"
+        >
+          torna alla ricerca
+        </button>
+      </section>
+    );
+  }
+
+  if (!aperto) {
+    return (
+      <div className="mt-12 border-t border-white/10 pt-6">
+        <button
+          onClick={() => setAperto(true)}
+          className="flex h-11 items-center border border-brand-red/60 px-4 font-tech text-xs uppercase tracking-[0.1em] text-brand-red hover:bg-brand-red/10"
+        >
+          elimina questa persona
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <section className="mt-12 border border-brand-red/60 bg-brand-red/5 px-5 py-5">
+      <p className="font-display text-2xl text-white">Eliminare {p.nome}?</p>
+      <p className="mt-1 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">
+        ecco cosa succede
+      </p>
+
+      <div className="mt-4 flex flex-col gap-2.5">
+        {p.profili.map((x) => (
+          <p key={x.id} className={riga}>
+            <span aria-hidden>·</span>
+            <span>
+              Profilo <b>{x.alias}</b> (tessera #{String(x.member_number).padStart(4, "0")}): spariscono
+              alias, mail, numero, foto e risposte, il suo QR non vale più.
+              {x.role === "crew" && " Esce dallo staff e dalle serate a cui era agganciato."}
+            </span>
+          </p>
+        ))}
+        {p.biglietti.length > 0 && (
+          <p className={riga}>
+            <span aria-hidden>·</span>
+            <span>
+              {p.biglietti.length === 1 ? "Il suo biglietto" : `I suoi ${p.biglietti.length} biglietti`}: nome,
+              cognome e telefono spariscono. {p.biglietti.length === 1 ? "Resta" : "Restano"} nei conti come
+              «cancellato», così incassi e soldi dei PR non cambiano.
+            </span>
+          </p>
+        )}
+        {p.richieste.length > 0 && (
+          <p className={riga}>
+            <span aria-hidden>·</span>
+            <span>La sua iscrizione a MALDITA viene cancellata.</span>
+          </p>
+        )}
+        {staff.length > 0 && (
+          <p className={riga}>
+            <span aria-hidden>·</span>
+            <span>
+              Se come PR ha ancora soldi da consegnarti, il sito si ferma e te lo dice: prima si chiudono i
+              conti.
+            </span>
+          </p>
+        )}
+      </div>
+
+      {daAnnullare.length > 0 && (
+        <div className="mt-4 border border-amber-300/50 bg-amber-300/5 px-4 py-3">
+          <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-amber-300">
+            ⚠️ {daAnnullare.length === 1 ? "questo biglietto viene annullato" : "questi biglietti vengono annullati"}
+          </p>
+          <div className="mt-2 flex flex-col gap-1">
+            {daAnnullare.map((b) => (
+              <p key={b.id} className="text-sm text-white">
+                {b.serata.nome} · {giornoEData(b.serata.starts_at)} ·{" "}
+                {Number(b.prezzo) > 0 ? `${euro(b.prezzo)} · PR ${b.pr_alias}` : "omaggio"}
+              </p>
+            ))}
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-white/75">
+            Il QR non apre più la porta. Se il PR ti aveva già consegnato quei soldi, gli vengono stornati,
+            come quando annulli un biglietto dalle Prevendite.
+          </p>
+        </div>
+      )}
+
+      <p className="mt-4 text-xs text-brand-gray">Non si torna indietro.</p>
+
+      {errore && (
+        <div className="mt-4 border border-brand-red/50 bg-brand-red/10 p-3 text-sm leading-relaxed text-brand-red">
+          {errore}
+        </div>
+      )}
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button
+          onClick={elimina}
+          disabled={lavoro}
+          className="flex h-11 items-center bg-brand-red px-4 font-tech text-xs uppercase tracking-[0.1em] text-white disabled:opacity-50"
+        >
+          {lavoro ? "elimino…" : "sì, elimina tutto"}
+        </button>
+        <button
+          onClick={() => {
+            setAperto(false);
+            setErrore(null);
+          }}
+          disabled={lavoro}
+          className="flex h-11 items-center border border-white/20 px-4 font-tech text-xs uppercase tracking-[0.1em] text-white/85 hover:border-white/50"
+        >
+          lascia stare
+        </button>
+      </div>
+    </section>
   );
 }

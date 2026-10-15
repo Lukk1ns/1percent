@@ -4,6 +4,25 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**ELIMINARE UNA PERSONA (15 ott sera, `supabase/46_elimina_persona.sql`, tasto in fondo alla scheda di `/admin/cerca`).**
+Luka: *"quando trovo un cliente o un iscritto o pr devo aver la possibilità di eliminarlo tutto con le sue info"*; sui
+biglietti ancora validi: *"lo annulli ma mi avvisi che cosa sta succedendo"*. Il tasto apre un riquadro che dice riga per
+riga cosa succede (profilo, biglietti, MALDITA, e in giallo **i biglietti che verranno annullati**), poi "sì, elimina
+tutto". `admin_elimina_persona(profili[], biglietti[], richieste[])`, tutto o niente:
+- **PR o manager con soldi aperti → si ferma** (`soldi_aperti:<alias>:<importo>` se su una serata venduto ≠ portato,
+  `manager_con_soldi:…` se `am_movimenti` non è a zero): quei soldi resterebbero senza un nome. La pagina lo spiega.
+- **Biglietti:** nome → `cancellato`, cognome vuoto, telefono via, **la riga resta** (conti dei PR e della serata
+  intatti, il registro dei soldi non si tocca). Quelli **attivi/in attesa di serate non finite si annullano** con
+  `admin_presale_annulla` (rimborso al PR e avviso manager come sempre; il nome sparisce prima, così la nota del
+  rimborso non lo porta). Serate passate: solo anonimizzati. Si aggiunge da solo il biglietto dell'omaggio MALDITA.
+- **MALDITA:** la richiesta si cancella. **Profilo:** come `delete_my_profile` + nome, numero, sesso, risposte crew,
+  ruolo → public; via pass, `pr_ingressi`, `pr_serate`, `account_managers`, `direzione_messaggi`. Le foto le toglie la
+  pagina dallo storage. Tessera, chat con altri, poke e regali restano (firmati `cancellato_N`). Riga in `admin_log`.
+- Provato su PGlite **19/19** (guardia, anonimizzazione, annullo solo futuri, rimborso 15 € senza nome nella nota,
+  MALDITA, PR con 15 € aperti rifiutato senza toccare niente, manager con 10 € rifiutato, PR a posto eliminato coi
+  registri interi, chiamata vuota, rieseguibile, anon senza permesso). Senza script il tasto dice cosa incollare.
+**PENDING Luka: incollare `46_elimina_persona.sql`.**
+
 **CERCA UNA PERSONA (15 ott, `/admin/cerca`, `lib/persone.ts`, NESSUNO SCRIPT).** Luka: *"devo poter cercare per
 nome anche tra i clienti o numero... così raggiungo velocemente i profili e trovo tutte le info anche di quello"*.
 Lo staff si cercava (`/admin/crew`), i biglietti una serata alla volta (`/admin/pr`), i clienti da nessuna parte.
