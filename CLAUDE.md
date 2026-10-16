@@ -4,6 +4,19 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**IL RIENTRO SBATTEVA SUI PROFILI CANCELLATI (16 ott, `supabase/47_rientro_scavalca_cancellati.sql`, commit fb673d4).**
+Ludovica (`ludo_rob`, PR, 13 biglietti) metteva mail e codice e leggeva "non risulti iscritta". Sul suo accesso
+con la mail c'era un **profilo cancellato** (la cancellazione — `delete_my_profile` o "elimina" del 46 — lascia la
+riga con `deleted_at`): `link_email_account` trovava quello vero e provava a spostarlo sullo stesso id → chiave
+doppia → errore → il sito lo leggeva come "non ti conosco". **Lei sistemata a mano il 16 ott** (scambio: il morto
+sull'accesso anonimo vecchio, il vero sulla mail; risultato "SISTEMATA ✓"). Il 47 fa lo stesso scambio dentro
+`link_email_account` (accesso di passaggio in `auth.users` creato e tolto nella stessa chiamata), provato su PGlite
+13/13; in fondo elenca chi oggi è bloccato così. **Sito:** `/unisciti` e `/pr` ora distinguono l'**errore** (codice
+pieno) dal "mail di nessuno": dicono "ti abbiamo trovato, scrivi a Luka, non iscriverti di nuovo" col codice.
+**Regola: un errore di `link_email_account` non è mai "non sei iscritto".** Diagnosi senza service key: query di
+sola lettura su `auth.users` + `profiles` incollata da Luka (accesso con mail "ha il suo profilo" ma profilo vero
+"attaccato a: accesso anonimo" = questo caso). **PENDING Luka: incollare il 47.**
+
 **LA RICERCA STA NELLA DASHBOARD (16 ott, `components/CercaPersone.tsx`, NESSUNO SCRIPT).** Luka, il giorno dopo
 `/admin/cerca`: *"dovrebbe essere messo nella pagina iniziale dell'admin sotto TUTTI I MEMBRI... così posso cercare
 direttamente sia su tutti sia su una categoria specifica e da lì posso fare tutto... ci evita una casella in più"*.
