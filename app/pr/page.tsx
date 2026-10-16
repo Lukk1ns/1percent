@@ -67,7 +67,12 @@ export default function PrPage() {
   // rientrare, invece di un "area riservata" muto da cui non esce.
   // `email` null = accesso anonimo rimasto orfano (iscritto da Safari,
   // poi rientrato dall'app: il profilo è andato con l'app).
-  const [senzaProfilo, setSenzaProfilo] = useState<{ email: string | null } | null>(null);
+  // `guasto` = il profilo c'è ma il database non lascia riattaccarlo
+  // (codice dell'errore): non è "mail sbagliata", deve scrivere a Luka.
+  const [senzaProfilo, setSenzaProfilo] = useState<{
+    email: string | null;
+    guasto?: string;
+  } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -94,11 +99,11 @@ export default function PrPage() {
       if (!errSt && !ok(st)) {
         const { data: mio } = await supabase.rpc("my_profile");
         if (!mio || (Array.isArray(mio) && mio.length === 0)) {
-          const { data: ritrovato } = user.email
+          const { data: ritrovato, error: errLink } = user.email
             ? await supabase.rpc("link_email_account")
-            : { data: false };
+            : { data: false, error: null };
           if (ritrovato) ({ data: st, error: errSt } = await supabase.rpc("prevendite_stato"));
-          else setSenzaProfilo({ email: user.email ?? null });
+          else setSenzaProfilo({ email: user.email ?? null, guasto: errLink?.code || undefined });
         }
       }
 
@@ -182,6 +187,24 @@ export default function PrPage() {
 
   // Il sito non sa chi è: mail sbagliata (quasi sempre si era iscritto
   // con un'altra) o un accesso vecchio. Esce e rientra con la sua mail.
+  if (!stato?.sono_pr && senzaProfilo?.guasto) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+        <div className="mb-6 font-display text-6xl text-brand-red">%</div>
+        <h1 className="mb-3 text-xl font-semibold text-white">Ti abbiamo trovato</h1>
+        <p className="max-w-xs text-sm leading-relaxed text-brand-gray">
+          Con <span className="break-all text-white">{senzaProfilo.email}</span> il tuo profilo
+          c&apos;è, con le tue prevendite, ma il sito non riesce a farti entrare. È un problema
+          nostro: <span className="text-white">scrivi a Luka su WhatsApp</span> con questa mail e
+          si sistema in un minuto. Non iscriverti di nuovo.
+        </p>
+        <p className="mt-4 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray/50">
+          codice {senzaProfilo.guasto}
+        </p>
+      </main>
+    );
+  }
+
   if (!stato?.sono_pr && senzaProfilo) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">

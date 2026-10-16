@@ -88,6 +88,10 @@ function JoinForm() {
   // rifà l'account da capo — perdendo profilo, biglietti e punti.
   const rientroFallito = params.get("rientro") === "1";
   const [emailAccesso, setEmailAccesso] = useState<string | null>(null);
+  // Il profilo c'è ma il database non lascia riattaccarlo (16 ott,
+  // Ludovica): dirgli "non risulti iscritto" è falso e lo spinge a
+  // rifarsi l'account. Gli si dice di scrivere a Luka.
+  const [rientroGuasto, setRientroGuasto] = useState<string | null>(null);
 
   // null = sto controllando, true/false = risposta del server
   const [signupsOpen, setSignupsOpen] = useState<boolean | null>(
@@ -105,12 +109,13 @@ function JoinForm() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: ritrovato } = await supabase.rpc("link_email_account");
+      const { data: ritrovato, error } = await supabase.rpc("link_email_account");
       if (ritrovato) {
         router.replace("/card");
         return;
       }
       setEmailAccesso(user.email ?? null);
+      if (error?.code) setRientroGuasto(error.code);
     })();
   }, [router]);
   // Registra il click sul link invito. Serve a distinguere chi l'ha
@@ -232,7 +237,26 @@ function JoinForm() {
 
   return (
     <main className="flex-1 flex flex-col items-center px-6 py-12 max-w-md mx-auto w-full">
-      {rientroFallito && emailAccesso && (
+      {rientroGuasto && emailAccesso && (
+        <div className="mb-8 w-full border border-brand-red/40 bg-brand-red/[0.06] px-4 py-5">
+          <p className="font-display text-xl uppercase leading-tight text-white">
+            Ti abbiamo trovato, ma non riesci a entrare
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-brand-gray">
+            Con <span className="break-all text-white">{emailAccesso}</span> il tuo profilo c&apos;è,
+            ma il sito non riesce a collegarlo a questo accesso. È un problema nostro, non tuo.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-brand-gray">
+            <span className="text-white">Non iscriverti di nuovo</span>: scrivi a Luka su WhatsApp
+            con questa mail, si sistema in un minuto e ritrovi tutto.
+          </p>
+          <p className="mt-3 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray/50">
+            codice {rientroGuasto}
+          </p>
+        </div>
+      )}
+
+      {rientroFallito && emailAccesso && !rientroGuasto && (
         <div className="mb-8 w-full border border-brand-red/40 bg-brand-red/[0.06] px-4 py-5">
           <p className="font-display text-xl uppercase leading-tight text-white">
             Non ti abbiamo riconosciuto
