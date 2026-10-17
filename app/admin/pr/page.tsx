@@ -9,7 +9,13 @@ import { delegaPerLocale, forseUnder16 } from "@/lib/event";
 import { graficaBigliettoUrl } from "@/lib/biglietto";
 import { CinqueStelle } from "@/components/Stelle";
 import { MandaBiglietto } from "@/components/MandaBiglietto";
-import { cercaBiglietti, linkBiglietto, messaggioBiglietto } from "@/lib/biglietto-cliente";
+import {
+  apriChatCliente,
+  cercaBiglietti,
+  linkBiglietto,
+  messaggioBiglietto,
+  numeroCliente,
+} from "@/lib/biglietto-cliente";
 import { ORDINALI, PUNTI_PER_VENDITA, SOGLIE_STELLE, fmtPunti, statoStelle } from "@/lib/punti";
 
 type EventoAdmin = {
@@ -587,6 +593,7 @@ export default function AdminPrPage() {
     cognome: string;
     token: string;
     under16: boolean;
+    telefono: string;
   } | null>(null);
   const [omDoppio, setOmDoppio] = useState(false);
   // Le serate passate restano visibili ma non si scelgono, per non
@@ -1395,6 +1402,7 @@ export default function AdminPrPage() {
       cognome: om.cognome.trim(),
       token: r.token,
       under16: Boolean(r.under16),
+      telefono: om.telefono,
     });
     setOm({ nome: "", cognome: "", anno: "", telefono: "" });
     setOmDoppio(false);
@@ -1889,11 +1897,9 @@ export default function AdminPrPage() {
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
+                    // Col numero scritto sopra si apre la sua chat; senza, si sceglie
                     onClick={() =>
-                      window.open(
-                        `https://wa.me/?text=${encodeURIComponent(testoOmaggio(omFatto))}`,
-                        "_blank",
-                      )
+                      apriChatCliente(numeroCliente(omFatto.telefono), testoOmaggio(omFatto))
                     }
                     className="border border-emerald-400/60 px-4 py-2.5 font-tech text-[10px] uppercase tracking-[0.15em] text-emerald-300"
                   >

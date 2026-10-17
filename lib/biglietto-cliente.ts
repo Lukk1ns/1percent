@@ -25,10 +25,12 @@ export function linkAssoluto(percorso: string): string {
  */
 export function numeroCliente(grezzo: string | null): string | null {
   if (!grezzo) return null;
-  let n = grezzo.replace(/\p{M}/gu, "");
-  if (n.startsWith("+")) n = n.slice(1);
-  else if (n.startsWith("00")) n = n.slice(2);
-  else if (n.startsWith("3") && n.length >= 9) n = "39" + n;
+  const conPiu = grezzo.trim().startsWith("+");
+  // Via spazi, trattini, punti e parentesi: wa.me vuole solo cifre
+  let n = grezzo.replace(/\D/g, "");
+  if (!conPiu && n.startsWith("00")) n = n.slice(2);
+  // Cellulare italiano senza prefisso (9-10 cifre); "39347…" ce l'ha già
+  else if (!conPiu && n.startsWith("3") && n.length >= 9 && n.length <= 10) n = "39" + n;
   return n.length >= 10 ? n : null;
 }
 
