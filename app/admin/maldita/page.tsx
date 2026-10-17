@@ -374,8 +374,21 @@ export default function AdminMalditaPage() {
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-white">Iscrizioni {aperta ? "aperte" : "chiuse"}</p>
-            <p className="text-[11px] text-white/50">Chiudono da sole {giornoOraRoma(lista.chiude_at)}</p>
+            {/* Il sito le apre solo con l'interruttore acceso E prima della
+                chiusura automatica: qui si dice la stessa cosa che vede la gente */}
+            {aperta && new Date(lista.chiude_at) <= new Date() ? (
+              <>
+                <p className="text-sm font-semibold text-[#ff5a5f]">Iscrizioni chiuse sul sito</p>
+                <p className="text-[11px] text-white/60">
+                  Si sono chiuse da sole {giornoOraRoma(lista.chiude_at)}, anche con l&apos;interruttore acceso
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-white">Iscrizioni {aperta ? "aperte" : "chiuse"}</p>
+                <p className="text-[11px] text-white/50">Chiudono da sole {giornoOraRoma(lista.chiude_at)}</p>
+              </>
+            )}
           </div>
           <button
             onClick={() => {
