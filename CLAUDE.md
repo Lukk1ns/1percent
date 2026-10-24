@@ -26,8 +26,7 @@ quello scritto, se no quello dell'ultima prenotazione della serata, se no 15; ca
   azzurro "N prenotazioni · entrate M: la cassa deve avere X €" (solo le entrate).
 - Provato su PGlite **23/23** (guardia, etichetta, prezzo zero, doppioni/forza, importi, porta ok/già entrato/
   altra serata, permessi anon, regex del sito sulle etichette vere). Build ok. Senza script il tasto dice cosa incollare.
-**PENDING Luka: incollare il 50** (verifica da fuori: `admin_prenotazione` con i parametri giusti → `42501`/Non
-autorizzato = c'è, `PGRST202` = manca).
+**`50` INCOLLATO da Luka il 24 ott mattina** (da fuori: `admin_prenotazione` risponde `42501` alla chiave anon = c'è).
 
 **IL RIENTRO SBATTEVA SUI PROFILI CANCELLATI (16 ott, `supabase/47_rientro_scavalca_cancellati.sql`, commit fb673d4).**
 Ludovica (`ludo_rob`, PR, 13 biglietti) metteva mail e codice e leggeva "non risulti iscritta". Sul suo accesso
