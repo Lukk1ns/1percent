@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, giornoEData, ora } from "@/lib/eventi";
 import { preparaAudio, suonaAttenzione, suonaNo, suonaOk } from "@/lib/suoni";
+import { inCassa } from "@/lib/biglietto-cliente";
 import {
   type BigliettoLocale,
   cercaOffline,
@@ -298,8 +299,10 @@ export default function PortaPage() {
       // il conto in alto si aggiorna dopo: la porta non lo aspetta
       if (navigator.onLine) void aggiornaRiepilogo(serata);
 
-      // quanto resta sullo schermo: se passa, un attimo; se c'è da leggere, di più
-      const quanto = r.esito === "ok" || r.esito === "pr_ok" ? 1200 : 5200;
+      // quanto resta sullo schermo: se passa, un attimo; se c'è da leggere
+      // (o da incassare, la prenotazione), di più
+      const quanto =
+        (r.esito === "ok" && inCassa(r.tier_label) === null) || r.esito === "pr_ok" ? 1200 : 5200;
       if (timerEsito.current) clearTimeout(timerEsito.current);
       timerEsito.current = setTimeout(chiudiEsito, quanto);
     },
@@ -764,6 +767,28 @@ function Risposta({
   onChiudi: () => void;
 }) {
   const nome = [esito.nome, esito.cognome].filter(Boolean).join(" ");
+  // La prenotazione passa, ma prima paga: schermo azzurro, cifra gigante,
+  // così chi sta alla cassa non la scambia per un verde qualsiasi.
+  const euro = esito.esito === "ok" ? inCassa(esito.tier_label) : null;
+
+  if (euro !== null) {
+    return (
+      <button
+        onClick={onChiudi}
+        className="absolute inset-0 z-20 flex w-full flex-col items-center justify-center bg-sky-400 px-6 text-center text-black"
+      >
+        <p className="font-tech text-xs uppercase tracking-[0.25em]">prenotazione · passa</p>
+        <p className="mt-3 font-display text-7xl uppercase leading-none">PAGA {euro} €</p>
+        <p className="mt-2 font-display text-2xl uppercase leading-none">in cassa</p>
+        {nome && (
+          <p className="mt-6 font-display text-3xl uppercase leading-tight">{nome}</p>
+        )}
+        <p className="mt-8 font-tech text-[10px] uppercase tracking-[0.25em] opacity-60">
+          tocca per continuare
+        </p>
+      </button>
+    );
+  }
 
   const stile = {
     ok: { sfondo: "bg-emerald-500", testo: "PASSA", colore: "text-black" },

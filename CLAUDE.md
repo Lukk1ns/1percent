@@ -1,8 +1,33 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 16 ottobre 2026
+> Ultimo aggiornamento: 24 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**PRENOTAZIONI · PAGA IN CASSA (24 ott, `supabase/50_prenotazioni.sql`, `/admin/pr`, `/admin/porta`).** Luka, la
+mattina di LIL NAAY: *"prevendite che quando scannerizza la cassiera viene fuori quanto deve pagare in cassa... per
+alcuni pr o collaboratori a cui non do l'omaggio ma un prezzo conveniente"*. Decisioni sue: **le crea solo lui dal
+pannello** (come gli omaggi), **prezzo uno per serata**. Nel riquadro "Regala un ingresso" ci sono due tasti
+**omaggio · gratis / prenotazione · paga in cassa**; con la seconda c'è la casella "in cassa paga [15] €" (vale
+quello scritto, se no quello dell'ultima prenotazione della serata, se no 15; cambiarlo vale per le prossime).
+- `admin_prenotazione(event, nome, cognome, anno, telefono, importo=15, forza)` = copia di `admin_omaggio` (36):
+  biglietto **a zero euro** (fuori dai conti delle prevendite: i soldi li prende la cassa), `pr_id` null, già
+  valido, **`tier_label = 'PRENOTAZIONE · 15 € IN CASSA'`**, `attivata_da = 'prenotazione'`. Esiti in più:
+  `importo_sbagliato` (1–500, euro tondi).
+- **Il prezzo viaggia nel nome della fascia apposta:** `porta_checkin` e `porta_lista` lo mandano già, quindi
+  **le funzioni della porta non sono state toccate** e funziona anche offline. Il sito lo legge con
+  **`inCassa()` in `lib/biglietto-cliente.ts`** (regex sulla scritta esatta): se cambia la scritta nello script,
+  va cambiata lì. ⚠️ La regola "prezzo = 0 → omaggio" ora ha un'eccezione: a zero euro con quella scritta è una
+  prenotazione.
+- **Porta:** su `ok` con prenotazione lo schermo è **azzurro** (`bg-sky-400`), "PAGA 15 € · in cassa" gigante,
+  resta 5,2 s (non 1,2) o fino al tocco. **Biglietto del cliente:** "all'ingresso paghi 15 € in cassa"; messaggio
+  WhatsApp "Ecco la tua prenotazione… All'ingresso paghi 15 € in cassa" (anche dal tasto whatsapp della lista).
+- **Pannello:** le prenotazioni non contano né fra gli omaggi né fra le vendute; sotto le tessere c'è il riquadro
+  azzurro "N prenotazioni · entrate M: la cassa deve avere X €" (solo le entrate).
+- Provato su PGlite **23/23** (guardia, etichetta, prezzo zero, doppioni/forza, importi, porta ok/già entrato/
+  altra serata, permessi anon, regex del sito sulle etichette vere). Build ok. Senza script il tasto dice cosa incollare.
+**PENDING Luka: incollare il 50** (verifica da fuori: `admin_prenotazione` con i parametri giusti → `42501`/Non
+autorizzato = c'è, `PGRST202` = manca).
 
 **IL RIENTRO SBATTEVA SUI PROFILI CANCELLATI (16 ott, `supabase/47_rientro_scavalca_cancellati.sql`, commit fb673d4).**
 Ludovica (`ludo_rob`, PR, 13 biglietti) metteva mail e codice e leggeva "non risulti iscritta". Sul suo accesso

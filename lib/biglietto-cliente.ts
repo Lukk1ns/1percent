@@ -35,6 +35,20 @@ export function numeroCliente(grezzo: string | null): string | null {
 }
 
 /**
+ * La prenotazione (`supabase/50_prenotazioni.sql`): un biglietto della
+ * direzione a zero euro che in porta si paga. Quanto, sta scritto nel
+ * nome della fascia — "PRENOTAZIONE · 15 € IN CASSA" — così la porta lo
+ * legge anche dalla lista scaricata, senza campo. Se cambia la scritta
+ * nello script, va cambiata anche qui.
+ *
+ * Torna gli euro da pagare, o null se non è una prenotazione.
+ */
+export function inCassa(tierLabel: string | null | undefined): number | null {
+  const m = tierLabel?.match(/^PRENOTAZIONE · (\d+) € IN CASSA$/);
+  return m ? Number(m[1]) : null;
+}
+
+/**
  * Il messaggio col biglietto.
  *
  * Se il cliente potrebbe avere meno di 16 anni la sera della serata, il
@@ -43,13 +57,17 @@ export function numeroCliente(grezzo: string | null): string | null {
  * stessa davanti alla porta.
  */
 export function messaggioBiglietto(
-  b: { nome: string; token: string },
+  b: { nome: string; token: string; tier_label?: string | null },
   evento: string,
   quando: string,
   delega?: { serve: boolean; url: string },
 ): string {
+  const euro = inCassa(b.tier_label);
   const base =
-    `Ciao ${b.nome}! Ecco il tuo biglietto per ${evento} — ${quando}.\n\n` +
+    (euro === null
+      ? `Ciao ${b.nome}! Ecco il tuo biglietto per ${evento} — ${quando}.\n\n`
+      : `Ciao ${b.nome}! Ecco la tua prenotazione per ${evento} — ${quando}.\n` +
+        `All'ingresso paghi ${euro} € in cassa.\n\n`) +
     `${linkBiglietto(b.token)}\n\n` +
     `Fallo scansionare all'ingresso, non serve stamparlo. ` +
     `Ricordati il documento fisico, non la foto sul telefono: serve a tutti.`;

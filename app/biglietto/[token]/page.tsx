@@ -4,6 +4,7 @@ import { use, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import { graficaBigliettoUrl } from "@/lib/biglietto";
+import { inCassa } from "@/lib/biglietto-cliente";
 import { dataLunga, ora } from "@/lib/eventi";
 import { DELEGA_UNDER16_URL, delegaPerLocale } from "@/lib/event";
 
@@ -137,6 +138,8 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
   const annullato = b.stato === "annullata";
   const usato = b.stato === "usata";
   const spento = annullato || usato;
+  // Prenotazione: il biglietto è valido, ma la serata si paga in porta
+  const euro = inCassa(b.tier_label);
   const grafica = b.ticket_key ? graficaBigliettoUrl(b.ticket_key, b.ticket_v) : null;
 
   /** Il QR e il nome: appoggiati sulla grafica se c'è, da soli se manca. */
@@ -236,6 +239,11 @@ export default function BigliettoPage({ params }: { params: Promise<{ token: str
               <p className="font-tech text-[11px] uppercase tracking-[0.2em] text-emerald-300">
                 valido · ti aspettiamo
               </p>
+              {euro !== null && (
+                <p className="mt-2 font-display text-xl uppercase leading-none text-white">
+                  all&apos;ingresso paghi {euro} € in cassa
+                </p>
+              )}
             </div>
           )}
         </div>
