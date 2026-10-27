@@ -8,6 +8,7 @@ import { normalizzaNumero } from "@/lib/whatsapp";
 import {
   ERRORI_ISCRIZIONE,
   INDIRIZZO_PAPION,
+  LOCANDINA_2010,
   SLUG_BACK_TO_2010,
   allOra,
   oraRoma,
@@ -39,8 +40,7 @@ const ERRORI: Record<string, string> = {
  * unpercento.it/backto2010 — SHOT OMAGGIO a BACK TO 2010 (script 51).
  *
  * Come /maldita: in alto la serata, le quattro regole, il modulo. Dopo
- * l'invio si finisce sulla propria pagina col QR. La locandina non c'è
- * ancora: per ora la testa è solo scritta.
+ * l'invio si finisce sulla propria pagina col QR.
  */
 export default function BackTo2010Page() {
   const router = useRouter();
@@ -148,46 +148,37 @@ export default function BackTo2010Page() {
 
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pb-16 pt-4">
-      {/* La testa della serata, finché non arriva la locandina */}
-      <section className="relative overflow-hidden border border-white/10 px-5 pb-7 pt-7">
-        <p className="font-tech text-[10px] uppercase tracking-[0.35em] text-[#ffae5e]">
+      {/* La locandina: è lei che vende */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={LOCANDINA_2010}
+        alt="PRE HALLOWEEN PARTY · BACK TO 2010, reggaeton & hip hop — venerdì 30 ottobre al PAPI-ON con Deejlord e DJ Darian Cuban Flow, free entry per tutti fino all'1"
+        width={1080}
+        height={1350}
+        className="block h-auto w-full border border-white/10"
+      />
+
+      <section className="mt-7 text-center">
+        <p className="font-tech text-[10px] uppercase tracking-[0.35em] text-[#ff8a80]">
           venerdì 30 ottobre · papi-on
         </p>
         <h1
-          className="mt-3 font-display text-[4.6rem] uppercase leading-[0.84] text-white"
+          className="mt-2 font-display text-[3.4rem] uppercase leading-[0.9] text-white"
           // drop-shadow e non text-shadow: con le righe così strette la seconda
           // riga copriva il bagliore della prima, che usciva tagliato
-          style={{ filter: "drop-shadow(0 0 18px rgba(255,138,31,0.5))" }}
-        >
-          Back
-          <br />
-          to 2010
-        </h1>
-        <p className="mt-4 font-tech text-[12px] uppercase tracking-[0.3em] text-white/85">reggaeton &amp; hip hop</p>
-        <p className="mt-1 text-[13px] text-white/55">Deejlord · Darian</p>
-        {/* La data della macchinetta digitale, come nella locandina */}
-        <span
-          className="absolute bottom-3 right-4 font-tech text-[15px] tracking-[0.12em] text-[#ff8a1f]"
-          style={{ textShadow: "0 0 8px rgba(255,138,31,0.9)" }}
-          aria-hidden
-        >
-          30 10 2010
-        </span>
-      </section>
-
-      <section className="mt-7 text-center">
-        <h2
-          className="font-display text-[3.4rem] uppercase leading-[0.9] text-white"
-          style={{ filter: "drop-shadow(0 0 16px rgba(255,138,31,0.55))" }}
+          style={{ filter: "drop-shadow(0 0 16px rgba(255,58,46,0.55))" }}
         >
           Shot
           <br />
           omaggio
-        </h2>
+        </h1>
         <p className="mt-3 text-sm text-white/80">
           Ingresso <strong className="text-white">gratis per tutti {allOra("fino", ora)}</strong>.
           Registrati qui: se entri <strong className="text-white">{allOra("entro", ora)}</strong> facendo
           scansionare il tuo QR, al bar lo shot te lo offriamo noi.
+        </p>
+        <p className="mt-2 text-[13px] text-white/60">
+          Vieni in costume: entri gratis anche {allOra("dopo", ora)}.
         </p>
       </section>
 
@@ -308,7 +299,7 @@ export default function BackTo2010Page() {
               type="checkbox"
               checked={privacy}
               onChange={(e) => setPrivacy(e.target.checked)}
-              className="mt-0.5 h-5 w-5 shrink-0 accent-[#ff8a1f]"
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[#ff3a2e]"
             />
             <span className="text-[12px] leading-relaxed text-white/80">
               Ho letto l&apos;
@@ -325,7 +316,7 @@ export default function BackTo2010Page() {
           </label>
 
           {informativa && (
-            <div className="mt-3 border-l-2 border-[#ff8a1f] bg-white/[0.03] px-3 py-3 text-[11px] leading-relaxed text-white/65">
+            <div className="mt-3 border-l-2 border-[#ff3a2e] bg-white/[0.03] px-3 py-3 text-[11px] leading-relaxed text-white/65">
               Titolare: <strong className="text-white">QFB SRL</strong> (PAPI-ON), P.IVA 01920690938.
               Nome, cognome, anno di nascita e WhatsApp servono solo a gestire il tuo shot omaggio a
               BACK TO 2010 del 30 ottobre e a scriverti su WhatsApp per questa serata, e li teniamo solo
@@ -339,7 +330,7 @@ export default function BackTo2010Page() {
           )}
 
           {errore && (
-            <p role="alert" className="mt-4 border border-[#ff8a1f]/60 bg-[#ff8a1f]/10 px-3 py-2.5 text-[13px] text-white">
+            <p role="alert" className="mt-4 border border-[#ff3a2e]/60 bg-[#ff3a2e]/10 px-3 py-2.5 text-[13px] text-white">
               {errore}
             </p>
           )}
@@ -347,8 +338,8 @@ export default function BackTo2010Page() {
           <button
             type="submit"
             disabled={invio}
-            className="mt-5 w-full bg-[#ff8a1f] px-4 py-4 font-display text-xl uppercase tracking-wide text-black transition-opacity disabled:opacity-60"
-            style={{ boxShadow: "0 0 32px rgba(255,138,31,0.45)" }}
+            className="mt-5 w-full bg-[#ff3a2e] px-4 py-4 font-display text-xl uppercase tracking-wide text-black transition-opacity disabled:opacity-60"
+            style={{ boxShadow: "0 0 32px rgba(255,58,46,0.45)" }}
           >
             {invio ? "un attimo…" : info.esauriti ? "Mettimi in lista d'attesa" : "Voglio il mio shot"}
           </button>
@@ -365,7 +356,7 @@ export default function BackTo2010Page() {
 }
 
 const INPUT =
-  "w-full appearance-none rounded-none border border-white/15 bg-black/60 px-3 py-3 text-[16px] text-white placeholder:text-white/30 outline-none focus:border-[#ff8a1f]";
+  "w-full appearance-none rounded-none border border-white/15 bg-black/60 px-3 py-3 text-[16px] text-white placeholder:text-white/30 outline-none focus:border-[#ff3a2e]";
 
 function Campo({
   etichetta,

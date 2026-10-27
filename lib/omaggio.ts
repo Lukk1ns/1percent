@@ -23,6 +23,8 @@ export const ICONA_512 = "/maldita/icona-512.png";
  * (fino all'1 è gratis comunque) ma lo shot al bar a chi entra entro l'1.
  */
 export const SLUG_BACK_TO_2010 = "backto2010";
+/** La locandina di Luka (27/10): PRE HALLOWEEN PARTY · BACK TO 2010. */
+export const LOCANDINA_2010 = "/backto2010/locandina.webp";
 export const ICONA_2010_180 = "/backto2010/icona-180.png";
 export const ICONA_2010_192 = "/backto2010/icona-192.png";
 export const ICONA_2010_512 = "/backto2010/icona-512.png";

@@ -225,7 +225,7 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
           className="shrink-0 border border-white/10"
         />
         <div className="min-w-0">
-          <p className="font-tech text-[10px] uppercase tracking-[0.3em] text-[#ffae5e]">shot omaggio</p>
+          <p className="font-tech text-[10px] uppercase tracking-[0.3em] text-[#ff8a80]">shot omaggio</p>
           <p className="mt-1 font-display text-2xl uppercase leading-none text-white">{m.titolo}</p>
           <p className="mt-1.5 text-[12px] text-white/60">venerdì 30 ottobre · PAPI-ON</p>
         </div>
@@ -309,7 +309,7 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
           {!entrata && (
             <div
               className={`mt-4 px-3 py-3 text-center ${
-                scaduto ? "border border-white/15" : "border-2 border-[#ff8a1f] bg-[#ff8a1f]/10"
+                scaduto ? "border border-white/15" : "border-2 border-[#ff3a2e] bg-[#ff3a2e]/10"
               }`}
             >
               <p className="font-display text-2xl uppercase leading-none text-white">
@@ -388,10 +388,10 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
       {/* LO SHOT: acceso di serie (script 51), Luka lo spegne dal pannello */}
       {m.sorpresa_on && m.stato === "approvata" && (
         <section
-          className="mt-5 border border-[#ff8a1f]/60 px-4 py-5"
-          style={{ background: "linear-gradient(160deg, rgba(255,138,31,0.22), rgba(0,0,0,0) 70%)" }}
+          className="mt-5 border border-[#ff3a2e]/60 px-4 py-5"
+          style={{ background: "linear-gradient(160deg, rgba(255,58,46,0.22), rgba(0,0,0,0) 70%)" }}
         >
-          <p className="font-tech text-[10px] uppercase tracking-[0.3em] text-[#ffae5e]">il tuo shot</p>
+          <p className="font-tech text-[10px] uppercase tracking-[0.3em] text-[#ff8a80]">il tuo shot</p>
           <p className="mt-1 font-display text-3xl uppercase leading-none text-white">Uno shot offerto 🥃</p>
           {m.sorpresa_testo && (
             <p className="mt-3 text-[13px] leading-relaxed text-white/80">
@@ -416,7 +416,7 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
           ) : (
             <p className="mt-3 text-[11px] text-white/45">Lo shot si ritira al bar, una volta dentro.</p>
           )}
-          {shotErr && <p className="mt-2 text-[12px] text-[#ffae5e]">{shotErr}</p>}
+          {shotErr && <p className="mt-2 text-[12px] text-[#ff8a80]">{shotErr}</p>}
         </section>
       )}
 

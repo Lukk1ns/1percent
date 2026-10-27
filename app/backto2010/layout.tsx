@@ -6,19 +6,18 @@ import { ICONA_2010_180, ICONA_2010_192 } from "@/lib/omaggio";
  *
  * Staccata dal resto del sito come /maldita: è un servizio che
  * unpercento.it fa per la serata del PAPI-ON. Niente 1%, niente PR.
- * Il colore è l'arancio della data stampata dalle macchinette del 2010,
- * come nella locandina.
+ * Il colore è il rosso della locandina (PRE HALLOWEEN PARTY, 27/10).
  */
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.unpercento.it"),
   title: "BACK TO 2010 — Shot omaggio",
   description:
-    "Venerdì 30 ottobre al PAPI-ON. Ingresso gratis per tutti fino all'1: registrati qui e, se entri entro l'1, al bar hai uno shot offerto.",
+    "Pre Halloween Party, venerdì 30 ottobre al PAPI-ON. Ingresso gratis per tutti fino all'1: registrati qui e, se entri entro l'1, al bar hai uno shot offerto.",
   icons: { icon: ICONA_2010_192, apple: ICONA_2010_180 },
   appleWebApp: { title: "BACK TO 2010", capable: true, statusBarStyle: "black-translucent" },
   openGraph: {
     title: "BACK TO 2010 — Shot omaggio",
-    description: "Venerdì 30 ottobre · PAPI-ON · gratis fino all'1 · shot offerto a chi entra entro l'1",
+    description: "Pre Halloween Party · venerdì 30 ottobre · PAPI-ON · gratis fino all'1 · shot offerto a chi entra entro l'1",
     images: [
       {
         url: "/backto2010/anteprima-backto2010.jpg",
@@ -37,7 +36,7 @@ export default function BackTo2010Layout({ children }: { children: React.ReactNo
       <div className="fixed inset-0 -z-[5] bg-black" aria-hidden />
       <div
         className="pointer-events-none fixed inset-x-0 top-0 -z-[4] h-[60vh]"
-        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(255,138,31,0.22), transparent 70%)" }}
+        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(255,58,46,0.22), transparent 70%)" }}
         aria-hidden
       />
       {children}
