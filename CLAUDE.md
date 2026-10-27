@@ -26,8 +26,8 @@ shot. **Stessa macchina di MALDITA, lista nuova** (`omaggio_liste` è già per s
   (`CercaPersone`), una tile in dashboard, il prefisso in `FESTE_SENZA_PR` e i tre posti che nascondono l'1%
   (`Torna`, `StatoCrew`, `Notifiche`).**
 - **Porta:** niente da cambiare. Verde con "SHOT OMAGGIO"; dopo l'1 rosso "SCADUTO · l'omaggio valeva fino alle 01:00".
-**PENDING Luka: incollare il 51** (verifica da fuori: `omaggio_info` con `{"p_slug":"backto2010"}` → una riga = c'è) ·
-decidere posti/automatica dal pannello · cassiera operatrice · dare la locandina. Dopo la serata: cancellare i dati.
+**Script 51 DENTRO (27/10, verificato con `omaggio_info` → una riga, chiude 01:00).** In cassa Sharon (già operatrice).
+PENDING Luka: decidere posti/automatica dal pannello · dare la locandina. Dopo la serata: cancellare i dati.
 
 **PRENOTAZIONI · PAGA IN CASSA (24 ott, `supabase/50_prenotazioni.sql`, `/admin/pr`, `/admin/porta`).** Luka, la
 mattina di LIL NAAY: *"prevendite che quando scannerizza la cassiera viene fuori quanto deve pagare in cassa... per
