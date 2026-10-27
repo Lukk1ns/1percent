@@ -31,6 +31,8 @@ const HANNO_GIA_IL_LORO = [
   "/maldita",
   // Il menu del PAPI-ON (QR sui tavoli): stessa storia di MALDITA.
   "/papion",
+  // Lo shot omaggio di BACK TO 2010 (30 ott): come MALDITA.
+  "/backto2010",
   "/privacy",
   "/profilo",
   "/tessera",

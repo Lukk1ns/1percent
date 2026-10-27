@@ -290,6 +290,13 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {[
             {
+              href: "/admin/backto2010",
+              emoji: "🥃",
+              titolo: "Shot omaggio 30/10",
+              cosa: "BACK TO 2010: registrazioni, posti, approvazioni, WhatsApp",
+              acceso: true,
+            },
+            {
               href: "/admin/maldita",
               emoji: "💃",
               titolo: "Donna omaggio 17/10",
@@ -384,6 +391,7 @@ export default function AdminDashboardPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           {[
             ["/admin/pr", "Prevendite e PR"],
+            ["/admin/backto2010", "Shot omaggio 30/10"],
             ["/admin/maldita", "Donna omaggio 17/10"],
             ["/admin/porta", "Porta"],
             ["/admin/scan", "Estrazione premi"],

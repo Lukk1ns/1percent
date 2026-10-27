@@ -1,8 +1,33 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 24 ottobre 2026
+> Ultimo aggiornamento: 27 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**SHOT OMAGGIO · BACK TO 2010 30/10 (27 ott, `supabase/51_back_to_2010.sql`, `/backto2010`, `/admin/backto2010`).**
+Luka: *"una registrazione online con la quale hanno uno shottino in omaggio se entrano fino all'1... come avevamo
+fatto con gli omaggi l'altra volta, stessa modalità, mi serve un link nuovo"*. Venerdì 30 è **ingresso gratis per tutti
+fino all'1** (DJ Deejlord + Darian, era CUBAN FLOW): il QR non regala l'ingresso, dice "è entrato entro l'1" e così sblocca lo
+shot. **Stessa macchina di MALDITA, lista nuova** (`omaggio_liste` è già per slug): nessuna funzione nuova nel database.
+- **Script 51:** usa la serata del 30 se c'è (se si chiama CUBAN FLOW la rinomina), se no la crea **non pubblicata**
+  (`back-to-2010-30-ottobre`, PAPI-ON, 23:00); lista `backto2010`, **18+**, per tutti, `tier_label 'SHOT OMAGGIO'`,
+  iscrizioni **e** QR fino al **31/10 01:00** (lezione del 48: Luka le vuole aperte fino all'ultimo), **sorpresa accesa di
+  serie** (lo shot è il premio, non un extra), approvazione come MALDITA (**a mano, posti da decidere**). Rieseguibile:
+  se la lista c'è non la tocca. Provato su PGlite **21/21** (iscrizione 2008 sì / 2009 no, approvazione → biglietto a
+  zero con scadenza, shot prima di entrare `non_entrata`, dopo `ok`, poi `gia`, MALDITA intatta, rinomina CUBAN FLOW,
+  guardia senza 42).
+- **Pagine:** `/backto2010` e `/backto2010/<token>` sono **copie** di quelle MALDITA (i testi erano tutti al femminile e
+  del 17), arancio della data delle macchinette (`#ff8a1f`) al posto del rosso, testa solo scritta finché non c'è la
+  locandina; niente download della locandina sullo shot. `public/backto2010/` = icone e anteprima del link (fatte con
+  Chrome da HTML, in Anton). `sw-backto2010.js` = copia di `sw-maldita.js`. `allOra()` in `lib/omaggio.ts` scrive
+  "entro l'1" / "prima dell'1" / "fino all'1" (e "le 00:30" per le altre ore).
+- **Pannello:** `app/admin/maldita/page.tsx` è diventato **`components/PannelloOmaggio.tsx`** (props `slug`, `sopra`, `csv`,
+  `chi`); `/admin/maldita` e `/admin/backto2010` lo usano. **Una lista nuova = una riga in `LISTE_OMAGGIO`
+  (`CercaPersone`), una tile in dashboard, il prefisso in `FESTE_SENZA_PR` e i tre posti che nascondono l'1%
+  (`Torna`, `StatoCrew`, `Notifiche`).**
+- **Porta:** niente da cambiare. Verde con "SHOT OMAGGIO"; dopo l'1 rosso "SCADUTO · l'omaggio valeva fino alle 01:00".
+**PENDING Luka: incollare il 51** (verifica da fuori: `omaggio_info` con `{"p_slug":"backto2010"}` → una riga = c'è) ·
+decidere posti/automatica dal pannello · cassiera operatrice · dare la locandina. Dopo la serata: cancellare i dati.
 
 **PRENOTAZIONI · PAGA IN CASSA (24 ott, `supabase/50_prenotazioni.sql`, `/admin/pr`, `/admin/porta`).** Luka, la
 mattina di LIL NAAY: *"prevendite che quando scannerizza la cassiera viene fuori quanto deve pagare in cassa... per

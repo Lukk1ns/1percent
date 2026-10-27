@@ -17,6 +17,16 @@ export const ICONA_180 = "/maldita/icona-180.png";
 export const ICONA_192 = "/maldita/icona-192.png";
 export const ICONA_512 = "/maldita/icona-512.png";
 
+/**
+ * BACK TO 2010 (venerdì 30 ottobre 2026, script 51): stessa macchina,
+ * lista nuova. Per tutti dai 18 anni; il QR non regala l'ingresso
+ * (fino all'1 è gratis comunque) ma lo shot al bar a chi entra entro l'1.
+ */
+export const SLUG_BACK_TO_2010 = "backto2010";
+export const ICONA_2010_180 = "/backto2010/icona-180.png";
+export const ICONA_2010_192 = "/backto2010/icona-192.png";
+export const ICONA_2010_512 = "/backto2010/icona-512.png";
+
 export const INDIRIZZO_PAPION = "Via XX Settembre 289 · Roveredo in Piano (PN)";
 
 export type StatoRichiesta = "in_attesa" | "lista_attesa" | "approvata" | "rifiutata";
@@ -38,10 +48,10 @@ export const ERRORI_ISCRIZIONE: Record<string, string> = {
 };
 
 /** Il link della pagina personale, da mandare su WhatsApp. */
-export function linkPersonale(token: string): string {
+export function linkPersonale(token: string, slug: string = SLUG_MALDITA): string {
   const base =
     typeof window === "undefined" ? "https://www.unpercento.it" : window.location.origin;
-  return `${base}/${SLUG_MALDITA}/${token}`;
+  return `${base}/${slug}/${token}`;
 }
 
 /** Riempie {nome}, {link}, {tag} nei testi scritti da Luka. */
@@ -62,6 +72,14 @@ export function oraRoma(iso: string): string {
     minute: "2-digit",
     timeZone: "Europe/Rome",
   });
+}
+
+/** "entro l'1" ma "entro le 00:30": l'una in italiano vuole l'apostrofo. */
+export function allOra(prep: "entro" | "prima" | "dopo" | "fino", ora: string): string {
+  const una = ora === "01:00";
+  if (prep === "prima") return una ? "prima dell'1" : `prima delle ${ora}`;
+  if (prep === "fino") return una ? "fino all'1" : `fino alle ${ora}`;
+  return una ? `${prep} l'1` : `${prep} le ${ora}`;
 }
 
 /** "venerdì 16 ottobre alle 23:59" */

@@ -50,7 +50,10 @@ import { MandaBiglietto } from "@/components/MandaBiglietto";
  */
 
 // Le liste omaggio che esistono. Una nuova si aggiunge qui.
-const LISTE_OMAGGIO = [{ slug: "maldita", titolo: "Donna omaggio · MALDITA" }];
+const LISTE_OMAGGIO = [
+  { slug: "maldita", titolo: "Donna omaggio · MALDITA", corto: "maldita" },
+  { slug: "backto2010", titolo: "Shot omaggio · BACK TO 2010", corto: "2010" },
+];
 
 const euro = (n: number) => `${Number(n ?? 0).toFixed(0)} €`;
 
@@ -351,7 +354,9 @@ function RigaPersona({ p, onApri }: { p: Persona; onApri: () => void }) {
           )}
           {p.richieste.length > 0 && (
             <span className="flex-shrink-0 border border-pink-300/40 px-1.5 py-0.5 text-[9px] uppercase tracking-widest text-pink-300">
-              maldita
+              {[...new Set(p.richieste.map((r) => LISTE_OMAGGIO.find((l) => l.slug === r.lista)?.corto ?? r.lista))].join(
+                " · ",
+              )}
             </span>
           )}
         </p>
@@ -565,10 +570,10 @@ function Scheda({
         </section>
       )}
 
-      {/* Le liste omaggio (MALDITA) */}
+      {/* Le liste omaggio (MALDITA, BACK TO 2010) */}
       {p.richieste.length > 0 && (
         <section className="mt-8">
-          <p className={titolo}>donna omaggio</p>
+          <p className={titolo}>liste omaggio</p>
           <div className="mt-3 flex flex-col gap-2">
             {p.richieste.map((r) => (
               <div key={r.id} className="border border-pink-300/20 px-4 py-3">

@@ -147,7 +147,7 @@ export const CREW_QUESTIONS: QuizQuestion[] = [
  * MALDITA del 17 è la serata dell'omaggio donne (niente PR, script 43).
  * Si confronta l'inizio dello slug.
  */
-const FESTE_SENZA_PR = ["maldita"];
+const FESTE_SENZA_PR = ["maldita", "back-to-2010"];
 
 /**
  * La c7 con le feste in programma come scelte, e sotto la riga per

@@ -65,7 +65,7 @@ export function StatoCrew() {
   if (!alias) return null;
   // La pagina di MALDITA è staccata dall'1%: l'annuncio aspetta la
   // prossima pagina del sito (il "visto" non si segna, quindi non si perde).
-  if (pathname?.startsWith("/maldita") || pathname?.startsWith("/papion")) return null;
+  if (["/maldita", "/papion", "/backto2010"].some((p) => pathname?.startsWith(p))) return null;
 
   return (
     <div
