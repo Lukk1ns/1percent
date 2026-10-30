@@ -147,6 +147,15 @@ export default function AdminLoginPage() {
           className="bg-transparent border-b border-white/20 text-white placeholder-brand-gray/50 pb-2 outline-none focus:border-brand-red transition-colors text-sm"
         />
         {error && <p className="text-brand-red text-sm">{error}</p>}
+        {error && (
+          // Operatori e baristi nuovi: qui il codice non arriva, da /login sì
+          <a
+            href="/login?next=/admin/porta"
+            className="border border-white/25 px-3 py-3 text-center text-sm text-white"
+          >
+            Sei in porta o al bar? Entra da qui →
+          </a>
+        )}
         <button
           type="submit"
           disabled={loading}

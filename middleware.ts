@@ -51,12 +51,20 @@ export async function middleware(request: NextRequest) {
     },
   );
 
+  const bastaStaff = DA_STAFF.some((p) => pathname.startsWith(p));
+
   const { data } = await supabase.auth.getUser();
   if (!data.user) {
+    // Porta e scanner li usano operatori e baristi che il sito non l'hanno
+    // mai usato: /admin/login (shouldCreateUser false) non gli manderebbe
+    // il codice. /login sì, e poi li riporta qui.
+    if (bastaStaff) {
+      return NextResponse.redirect(
+        new URL(`/login?next=${encodeURIComponent(pathname)}`, request.url),
+      );
+    }
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
-
-  const bastaStaff = DA_STAFF.some((p) => pathname.startsWith(p));
 
   try {
     const { data: admin, error } = await supabase.rpc("is_admin");
