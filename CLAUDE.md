@@ -50,6 +50,12 @@ shot. **Stessa macchina di MALDITA, lista nuova** (`omaggio_liste` è già per s
   (`CercaPersone`), una tile in dashboard, il prefisso in `FESTE_SENZA_PR` e i tre posti che nascondono l'1%
   (`Torna`, `StatoCrew`, `Notifiche`).**
 - **Porta:** niente da cambiare. Verde con "SHOT OMAGGIO"; dopo l'1 rosso "SCADUTO · l'omaggio valeva fino alle 01:00".
+- **30/10 pomeriggio, Luka: "i baristi direttamente possono scannerizzare... sul biglietto andare diretto al bar"** (commit 846b08b,
+  nessuno script). Il barista usa **`/admin/porta`** (serve un account operatore): la scansione al bar È il ritiro dello
+  shot (`porta_checkin` brucia il QR una volta, dopo l'1 SCADUTO). Con `tier_label 'SHOT OMAGGIO'` lo scanner scrive
+  **DAI LO SHOT 🥃 / SHOT GIÀ DATO · dato alle… / SCADUTO · lo shot valeva fino alle 01:00** (senza "l'ingresso si paga").
+  Biglietto: "Vai dritto al bar · in cassa non serve"; tolto il tasto «il barista conferma lo shot» e il `sorpresa_testo`
+  del DB (diceva "in cassa"). ⚠️ I testi WhatsApp nel pannello (`msg_conferma`) dicono ancora "in cassa": li cambia Luka.
 **Script 51 DENTRO (27/10, verificato con `omaggio_info` → una riga, chiude 01:00).** In cassa Sharon (già operatrice).
 PENDING Luka: decidere posti/automatica dal pannello · dare la locandina. Dopo la serata: cancellare i dati.
 
