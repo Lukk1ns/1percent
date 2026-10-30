@@ -25,7 +25,8 @@ cognome, anno, telefono. Il PR resta scelto per segnarne diverse di fila.
 - Provato su PGlite **34/34** con le funzioni vere copiate dagli script (rieseguibile, guardia, esiti, conto 15+8, blocchetto,
   cruscotto, incasso che accende tutto, credito → valida subito, doppione/forza, annullo con regola del 35, 41 intatto,
   registro, permessi anon). Build ok. Senza script il tasto dice cosa incollare.
-**PENDING Luka: incollare il 52.**
+**Decisione Luka, stesso giorno:** *"solo poche eccezioni per halloween poi basta"* → le fanno i PR con una **fascia normale
+EX NABI 8 €** su Halloween (senza tetto). **Il 52 non serve e non è incollato**: il tasto resta e senza script dice cosa incollare.
 
 **SHOT OMAGGIO · BACK TO 2010 30/10 (27 ott, `supabase/51_back_to_2010.sql`, `/backto2010`, `/admin/backto2010`).**
 Luka: *"una registrazione online con la quale hanno uno shottino in omaggio se entrano fino all'1... come avevamo
