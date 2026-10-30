@@ -56,6 +56,11 @@ shot. **Stessa macchina di MALDITA, lista nuova** (`omaggio_liste` è già per s
   **DAI LO SHOT 🥃 / SHOT GIÀ DATO · dato alle… / SCADUTO · lo shot valeva fino alle 01:00** (senza "l'ingresso si paga").
   Biglietto: "Vai dritto al bar · in cassa non serve"; tolto il tasto «il barista conferma lo shot» e il `sorpresa_testo`
   del DB (diceva "in cassa"). ⚠️ I testi WhatsApp nel pannello (`msg_conferma`) dicono ancora "in cassa": li cambia Luka.
+- **Accesso dei baristi (30/10, commit fc7f771 + 7c4ea7d).** (1) `middleware.ts`: porta/scanner senza accesso → `/login?next=…`
+  (prima `/admin/login`, che con `shouldCreateUser: false` non manda il codice a chi non ha mai usato il sito); su `/admin/login`
+  rifiutato compare "Sei in porta o al bar? Entra da qui →". (2) **L'icona sulla schermata Home si apre sempre sulla pagina
+  dove è stata aggiunta** (il sito non ha manifest): `/login` con `next=/admin…` e `/admin/login` ora, se c'è già una sessione
+  con mail e i diritti, saltano dritti allo scanner/dashboard. Prima chiedevano mail e codice a ogni apertura.
 **Script 51 DENTRO (27/10, verificato con `omaggio_info` → una riga, chiude 01:00).** In cassa Sharon (già operatrice).
 PENDING Luka: decidere posti/automatica dal pannello · dare la locandina. Dopo la serata: cancellare i dati.
 
