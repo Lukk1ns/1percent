@@ -174,8 +174,8 @@ export default function BackTo2010Page() {
         </h1>
         <p className="mt-3 text-sm text-white/80">
           Ingresso <strong className="text-white">gratis per tutti {allOra("fino", ora)}</strong>.
-          Registrati qui: se entri <strong className="text-white">{allOra("entro", ora)}</strong> facendo
-          scansionare il tuo QR, al bar lo shot te lo offriamo noi.
+          Registrati qui: vai dritto al bar e fai scansionare il tuo QR{" "}
+          <strong className="text-white">{allOra("entro", ora)}</strong>, lo shot te lo offriamo noi.
         </p>
         <p className="mt-2 text-[13px] text-white/60">
           Vieni in costume: entri gratis anche {allOra("dopo", ora)}.
@@ -186,8 +186,8 @@ export default function BackTo2010Page() {
       <ul className="mt-6 grid grid-cols-2 gap-2">
         {[
           ["per tutti", `dai ${info?.eta_min ?? 18} anni in su`],
-          [allOra("entro", ora), "fai scansionare il QR in cassa"],
-          ["uno a testa", "lo shot si ritira al bar"],
+          [allOra("entro", ora), "il QR si scansiona al bar"],
+          ["uno a testa", "in cassa non serve"],
           ["documento vero", "in mano, non la foto"],
         ].map(([titolo, sotto]) => (
           <li key={titolo} className="border border-white/12 bg-white/[0.03] px-3 py-3">

@@ -11,7 +11,6 @@ import {
   type StatoRichiesta,
   allOra,
   oraRoma,
-  riempi,
 } from "@/lib/omaggio";
 
 type Mio = {
@@ -54,8 +53,9 @@ function chiTelefono(): { tipo: Telefono; dentroApp: boolean; installata: boolea
 /**
  * La pagina personale di BACK TO 2010: copia di /maldita/<token>.
  *
- * Mostra il QR da far scansionare in cassa entro l'1 e, una volta
- * dentro, lo shot che il barista conferma toccando questa pagina.
+ * Mostra il QR da far scansionare direttamente al bar entro l'1: lo
+ * legge il barista con lo scanner della porta, e quello è lo shot.
+ * In cassa non si passa (l'ingresso fino all'1 è gratis per tutti).
  * Si aggiorna da sola ogni 20 secondi e regge anche senza campo.
  */
 export default function MioPage({ params }: { params: Promise<{ token: string }> }) {
@@ -65,7 +65,6 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
   const [letto, setLetto] = useState(false);
   const [adesso, setAdesso] = useState(() => Date.now());
   const [copiato, setCopiato] = useState(false);
-  const [shotErr, setShotErr] = useState<string | null>(null);
   // senza rete si mostra l'ultima copia salvata, e si dice di quando è
   const [copiaDel, setCopiaDel] = useState<string | null>(null);
   const [senzaRete, setSenzaRete] = useState(false);
@@ -159,18 +158,6 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
     }
   }
 
-  async function shot() {
-    if (!window.confirm("Lo fa il barista: confermi che lo shot è stato dato?")) return;
-    setShotErr(null);
-    const { data, error } = await createClient().rpc("omaggio_shot", { p_token: token });
-    const esito = (data?.[0] as { esito: string } | undefined)?.esito;
-    if (error || !esito) return setShotErr("Il sito non risponde, riprova.");
-    if (esito === "non_entrata") return setShotErr("Lo shot vale quando sei già dentro il locale.");
-    if (esito === "no") return setShotErr("Lo shot non è attivo.");
-    const { data: d2 } = await createClient().rpc("omaggio_mia", { p_token: token });
-    setM((d2?.[0] as Mio) ?? m);
-  }
-
   if (!letto) {
     return (
       <main className="flex flex-1 items-center justify-center">
@@ -248,7 +235,7 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
         }
         testo={
           entrata
-            ? "sei dentro"
+            ? "shot ritirato"
             : scaduto
               ? "scaduto"
               : m.stato === "approvata"
@@ -297,7 +284,7 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
               scaduto ? "text-white/50" : "text-emerald-300"
             }`}
           >
-            {entrata ? `entrata alle ${oraRoma(m.entrata_at!)} ✓` : scaduto ? "scaduto" : "confermato · il tuo QR"}
+            {entrata ? `shot ritirato alle ${oraRoma(m.entrata_at!)} ✓` : scaduto ? "scaduto" : "confermato · il tuo QR"}
           </p>
           <div className="mt-3 flex justify-center">
             <div className={`bg-white p-2 ${entrata || scaduto ? "opacity-25 grayscale" : ""}`}>
@@ -313,12 +300,12 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
               }`}
             >
               <p className="font-display text-2xl uppercase leading-none text-white">
-                {scaduto ? `Valeva ${allOra("fino", scadenza)}` : `Entra ${allOra("entro", scadenza)}`}
+                {scaduto ? `Valeva ${allOra("fino", scadenza)}` : `Vai dritto al bar`}
               </p>
               <p className="mt-1.5 text-[12px] leading-snug text-white/75">
                 {scaduto
-                  ? `Lo shot omaggio valeva solo per chi entrava ${allOra("entro", scadenza)}.`
-                  : `Fai scansionare il QR in cassa ${allOra("prima", scadenza)}: dentro, al bar, lo shot è tuo.`}
+                  ? `Lo shot omaggio si ritirava al bar ${allOra("entro", scadenza)}.`
+                  : `In cassa non serve: al bar il barista scansiona questo QR ${allOra("entro", scadenza)} e lo shot è tuo.`}
               </p>
             </div>
           )}
@@ -393,30 +380,18 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
         >
           <p className="font-tech text-[10px] uppercase tracking-[0.3em] text-[#ff8a80]">il tuo shot</p>
           <p className="mt-1 font-display text-3xl uppercase leading-none text-white">Uno shot offerto 🥃</p>
-          {m.sorpresa_testo && (
-            <p className="mt-3 text-[13px] leading-relaxed text-white/80">
-              {riempi(m.sorpresa_testo, { nome: m.nome, tag: m.ig_tag })}
-            </p>
-          )}
-
-          {m.shot_at ? (
+          {/* Il testo salvato nel database (script 51) diceva "in cassa": dal 30/10 lo shot
+              si scansiona al bar, la scansione del barista è il ritiro */}
+          {entrata ? (
             <p className="mt-4 border border-emerald-400/50 bg-emerald-400/10 px-3 py-3 text-center font-tech text-[11px] uppercase tracking-[0.2em] text-emerald-300">
-              shot ritirato alle {oraRoma(m.shot_at)} ✓
+              shot ritirato alle {oraRoma(m.entrata_at!)} ✓
             </p>
-          ) : entrata ? (
-            <>
-              <p className="mt-4 text-[12px] text-white/60">Al bar: fai vedere questa schermata.</p>
-              <button
-                onClick={shot}
-                className="mt-2 w-full bg-white px-4 py-4 font-display text-lg uppercase text-black"
-              >
-                Il barista conferma lo shot
-              </button>
-            </>
           ) : (
-            <p className="mt-3 text-[11px] text-white/45">Lo shot si ritira al bar, una volta dentro.</p>
+            <p className="mt-3 text-[13px] leading-relaxed text-white/80">
+              Vai dritto al bar {allOra("entro", scadenza)} e fai scansionare il QR qui sopra al barista: lo shot
+              te lo offriamo noi. Uno a testa.
+            </p>
           )}
-          {shotErr && <p className="mt-2 text-[12px] text-[#ff8a80]">{shotErr}</p>}
         </section>
       )}
 

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.unpercento.it"),
   title: "BACK TO 2010 — Shot omaggio",
   description:
-    "Pre Halloween Party, venerdì 30 ottobre al PAPI-ON. Ingresso gratis per tutti fino all'1: registrati qui e, se entri entro l'1, al bar hai uno shot offerto.",
+    "Pre Halloween Party, venerdì 30 ottobre al PAPI-ON. Ingresso gratis per tutti fino all'1: registrati qui e, entro l'1, al bar hai uno shot offerto.",
   icons: { icon: ICONA_2010_192, apple: ICONA_2010_180 },
   appleWebApp: { title: "BACK TO 2010", capable: true, statusBarStyle: "black-translucent" },
   openGraph: {

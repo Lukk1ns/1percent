@@ -809,12 +809,22 @@ function Risposta({
     },
   }[esito.esito];
 
+  // Lo shot di BACK TO 2010 lo scansiona il barista, non la porta:
+  // stesse risposte, parole da bar.
+  const shot = esito.tier_label === "SHOT OMAGGIO";
+  const testo =
+    shot && esito.esito === "ok"
+      ? "DAI LO SHOT 🥃"
+      : shot && esito.esito === "gia_usato"
+        ? "SHOT GIÀ DATO"
+        : stile.testo;
+
   return (
     <button
       onClick={onChiudi}
       className={`absolute inset-0 z-20 flex w-full flex-col items-center justify-center px-6 text-center ${stile.sfondo} ${stile.colore}`}
     >
-      <p className="font-display text-5xl uppercase leading-none">{stile.testo}</p>
+      <p className="font-display text-5xl uppercase leading-none">{testo}</p>
 
       {nome && (
         <p className="mt-5 font-display text-3xl uppercase leading-tight">{nome}</p>
@@ -829,7 +839,7 @@ function Risposta({
 
       {esito.esito === "gia_usato" && esito.entrata_at && (
         <p className="mt-4 text-sm opacity-90">
-          È passato alle {ora(esito.entrata_at)}
+          {shot ? "Dato alle" : "È passato alle"} {ora(esito.entrata_at)}
         </p>
       )}
 
@@ -841,9 +851,9 @@ function Risposta({
 
       {esito.esito === "scaduto" && (
         <p className="mt-4 max-w-[26ch] text-sm leading-relaxed">
-          L&apos;omaggio valeva fino alle{" "}
-          <strong>{esito.entrata_at ? ora(esito.entrata_at) : "00:30"}</strong>. Adesso
-          l&apos;ingresso si paga.
+          {shot ? "Lo shot valeva fino alle" : "L’omaggio valeva fino alle"}{" "}
+          <strong>{esito.entrata_at ? ora(esito.entrata_at) : "00:30"}</strong>.
+          {shot ? "" : " Adesso l’ingresso si paga."}
         </p>
       )}
 
