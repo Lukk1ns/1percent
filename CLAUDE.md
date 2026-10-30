@@ -1,8 +1,31 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 27 ottobre 2026
+> Ultimo aggiornamento: 30 ottobre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**VENDITA DEL PR SEGNATA DA LUKA · EX NABI 8 € (30 ott, `supabase/52_vendita_pr_prezzo_speciale.sql`, `/admin/pr`).**
+Luka: *"chi aveva acquistato la prevendita di Nabi poteva avere l'ingresso a soli 8 euro... qualche pr ha fatto delle
+prevendite a 8 euro, gli ho detto di non segnare nulla... segnare io quale pr ha venduto e a chi, e quella persona ha un
+link come gli altri, solo calcolato a 8"*. Terzo tasto nel riquadro "Regala un ingresso": **venduta da un pr · prezzo
+speciale** (ambra): menu PR (solo gli agganciati alla serata), "venduta a [8] €", "scritta [EX NABI]", poi i soliti nome,
+cognome, anno, telefono. Il PR resta scelto per segnarne diverse di fila.
+- `admin_vendita_pr(event, pr, nome, cognome, anno, telefono, importo=8, scritta='EX NABI', forza)`: biglietto **a nome
+  del PR** (`pr_id`, `da_admin false`), `tier_id` null, `tier_label` = scritta (maiuscola), `prezzo` = importo, **`in_attesa`**
+  poi `_pr_applica_credito` (valido subito se il PR ha già credito). Così porta (`non_pagato` finché non porta i soldi),
+  dovuto, cruscotto, controllo conti, annullo/rimborso, punti e stelle funzionano **senza toccare niente**.
+- **Il blocchetto non cala:** insieme al biglietto entra una consegna `+1` in `pr_allocations` con nota
+  `"EX NABI 8 € · Nome Cognome (segnata dalla direzione)"` e `created_by` = mail di Luka: è anche la traccia nel registro
+  dei soldi. ⚠️ Annullando uno di questi biglietti il `+1` resta: il PR si ritrova una prevendita in più in mano (si ritira).
+- Esiti: `pr_sconosciuto`, `non_agganciato` (anche serate con lista omaggio, regola del 43), `dati_mancanti`, `anno_sbagliato`,
+  `importo_sbagliato` (1–500), `scritta_sbagliata` (vuota, >40, o che inizia con PRENOTAZIONE: la porta la leggerebbe
+  come "paga in cassa", vedi `inCassa`), `gia_presente` (forzabile). Il trigger del numero WhatsApp (41) non scatta: lo fa Luka.
+- Sul biglietto del cliente esce "EX NABI · 8 €" (la pagina scrive `tier_label · prezzo`). Messaggio WhatsApp = "Ecco il
+  tuo biglietto per…" (`testoOmaggio` con `vendita`). Nessuna fascia: i PR non la vedono e non possono venderla da soli.
+- Provato su PGlite **34/34** con le funzioni vere copiate dagli script (rieseguibile, guardia, esiti, conto 15+8, blocchetto,
+  cruscotto, incasso che accende tutto, credito → valida subito, doppione/forza, annullo con regola del 35, 41 intatto,
+  registro, permessi anon). Build ok. Senza script il tasto dice cosa incollare.
+**PENDING Luka: incollare il 52.**
 
 **SHOT OMAGGIO · BACK TO 2010 30/10 (27 ott, `supabase/51_back_to_2010.sql`, `/backto2010`, `/admin/backto2010`).**
 Luka: *"una registrazione online con la quale hanno uno shottino in omaggio se entrano fino all'1... come avevamo

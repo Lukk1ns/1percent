@@ -599,10 +599,18 @@ export default function AdminPrPage() {
     telefono: string;
     /** prenotazione: quanto paga in cassa; null = omaggio */
     euro: number | null;
+    /** vendita del PR segnata da Luka (script 52): di chi è e se è già valida */
+    vendita?: { alias: string; valida: boolean; prezzo: number };
   } | null>(null);
-  // Stesso modulo, due cose: l'omaggio (non paga) o la prenotazione
-  // (paga in porta il prezzo della serata, script 50).
-  const [omTipo, setOmTipo] = useState<"omaggio" | "prenotazione">("omaggio");
+  // Stesso modulo, tre cose: l'omaggio (non paga), la prenotazione
+  // (paga in porta il prezzo della serata, script 50) o la vendita che un
+  // PR ha fatto fuori dal sito, segnata da Luka a nome suo (script 52).
+  const [omTipo, setOmTipo] = useState<"omaggio" | "prenotazione" | "pr">("omaggio");
+  // La vendita del PR: chi l'ha fatta, a quanto e con che scritta.
+  // Partono dal caso per cui è nata: chi aveva la prevendita di Nabi, 8 €.
+  const [prVenditore, setPrVenditore] = useState("");
+  const [prezzoPr, setPrezzoPr] = useState("8");
+  const [scrittaPr, setScrittaPr] = useState("EX NABI");
   // Il prezzo in cassa scritto a mano, per serata. Se non l'hai toccato
   // vale quello dell'ultima prenotazione della serata, o 15.
   const [prezziCassa, setPrezziCassa] = useState<Record<string, string>>({});
@@ -1366,9 +1374,22 @@ export default function AdminPrPage() {
       return;
     }
     const prenota = omTipo === "prenotazione";
-    const importo = Number(prezzoCassa);
-    if (prenota && (!Number.isInteger(importo) || importo < 1 || importo > 500)) {
-      setOmErrore("Scrivi quanto paga in cassa, in euro tondi (tipo 15).");
+    const vendita = omTipo === "pr";
+    const importo = Number(vendita ? prezzoPr : prezzoCassa);
+    if (vendita && !prVenditore) {
+      setOmErrore("Scegli il PR che l'ha venduta.");
+      return;
+    }
+    if (vendita && !scrittaPr.trim()) {
+      setOmErrore("Scrivi cosa compare sul biglietto (tipo EX NABI).");
+      return;
+    }
+    if ((prenota || vendita) && (!Number.isInteger(importo) || importo < 1 || importo > 500)) {
+      setOmErrore(
+        vendita
+          ? "Scrivi a quanto l'ha venduta, in euro tondi (tipo 8)."
+          : "Scrivi quanto paga in cassa, in euro tondi (tipo 15).",
+      );
       return;
     }
     setLavorando(true);
@@ -1382,9 +1403,16 @@ export default function AdminPrPage() {
       p_telefono: om.telefono || null,
       p_forza: forza,
     };
-    const { data, error } = prenota
-      ? await supabase.rpc("admin_prenotazione", { ...dati, p_importo: importo })
-      : await supabase.rpc("admin_omaggio", dati);
+    const { data, error } = vendita
+      ? await supabase.rpc("admin_vendita_pr", {
+          ...dati,
+          p_pr: prVenditore,
+          p_importo: importo,
+          p_scritta: scrittaPr,
+        })
+      : prenota
+        ? await supabase.rpc("admin_prenotazione", { ...dati, p_importo: importo })
+        : await supabase.rpc("admin_omaggio", dati);
     setLavorando(false);
 
     if (error) {
@@ -1392,7 +1420,11 @@ export default function AdminPrPage() {
       setOmErrore(
         code === "PGRST202"
           ? `Manca ancora lo script sul database: incolla supabase/${
-              prenota ? "50_prenotazioni" : "36_omaggi"
+              vendita
+                ? "52_vendita_pr_prezzo_speciale"
+                : prenota
+                  ? "50_prenotazioni"
+                  : "36_omaggi"
             }.sql su Supabase e riprova.`
           : error.message,
       );
@@ -1415,12 +1447,21 @@ export default function AdminPrPage() {
           : r?.esito === "dati_mancanti"
             ? "Servono nome e cognome."
             : r?.esito === "importo_sbagliato"
-              ? "Il prezzo in cassa non torna."
-              : "Non è andata. Riprova.",
+              ? vendita
+                ? "Il prezzo non torna."
+                : "Il prezzo in cassa non torna."
+              : r?.esito === "non_agganciato"
+                ? "Questo PR non è agganciato a questa serata: aggancialo dalla scheda PR qui sotto e riprova."
+                : r?.esito === "pr_sconosciuto"
+                  ? "Questo PR non è più nella crew."
+                  : r?.esito === "scritta_sbagliata"
+                    ? "La scritta sul biglietto non va bene (vuota, troppo lunga o comincia con PRENOTAZIONE)."
+                    : "Non è andata. Riprova.",
       );
       return;
     }
 
+    const venditore = vendita ? pr.find((x) => x.pr_id === prVenditore) : undefined;
     setOmFatto({
       nome: om.nome.trim(),
       cognome: om.cognome.trim(),
@@ -1428,22 +1469,29 @@ export default function AdminPrPage() {
       under16: Boolean(r.under16),
       telefono: om.telefono,
       euro: prenota ? importo : null,
+      vendita: vendita
+        ? { alias: venditore?.alias ?? "il PR", valida: r.stato === "attiva", prezzo: importo }
+        : undefined,
     });
     setOm({ nome: "", cognome: "", anno: "", telefono: "" });
     setOmDoppio(false);
     caricaEvento(evento);
   }
 
-  /** Il messaggio pronto da mandare a chi riceve l'omaggio (o la prenotazione). */
+  /** Il messaggio pronto da mandare a chi riceve l'omaggio (o la prenotazione, o la vendita del PR). */
   function testoOmaggio(o: {
     nome: string;
     token: string;
     under16: boolean;
     euro: number | null;
+    vendita?: unknown;
   }): string {
     const quando = ev ? `${giornoEData(ev.starts_at)} ${dataLunga(ev.starts_at)}` : "";
     const base =
-      (o.euro === null
+      (o.vendita
+        ? `Ciao ${o.nome}! Ecco il tuo biglietto per ${ev?.nome ?? "la serata"}` +
+          `${quando ? ` — ${quando}` : ""}.\n\n`
+        : o.euro === null
         ? `Ciao ${o.nome}! Ecco il tuo ingresso omaggio per ${ev?.nome ?? "la serata"}` +
           `${quando ? ` — ${quando}` : ""}.\n\n`
         : `Ciao ${o.nome}! Ecco la tua prenotazione per ${ev?.nome ?? "la serata"}` +
@@ -1881,14 +1929,22 @@ export default function AdminPrPage() {
         {ev && (
           <section
             className={`mt-3 border-2 px-5 py-5 ${
-              omTipo === "prenotazione" ? "border-sky-400/50" : "border-emerald-400/40"
+              omTipo === "prenotazione"
+                ? "border-sky-400/50"
+                : omTipo === "pr"
+                  ? "border-amber-400/50"
+                  : "border-emerald-400/40"
             }`}
           >
             <p className="font-display text-2xl uppercase leading-none text-white">
-              {omTipo === "prenotazione" ? "Prenotazione · paga in cassa" : "Regala un ingresso"}
+              {omTipo === "prenotazione"
+                ? "Prenotazione · paga in cassa"
+                : omTipo === "pr"
+                  ? "Venduta da un PR · prezzo speciale"
+                  : "Regala un ingresso"}
             </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              {(["omaggio", "prenotazione"] as const).map((t) => (
+              {(["omaggio", "prenotazione", "pr"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => {
@@ -1897,18 +1953,79 @@ export default function AdminPrPage() {
                     setOmFatto(null);
                   }}
                   className={`border px-3 py-2.5 font-tech text-[10px] uppercase tracking-[0.15em] ${
+                    t === "pr" ? "col-span-2" : ""
+                  } ${
                     omTipo === t
                       ? t === "prenotazione"
                         ? "border-sky-400 bg-sky-400/15 text-sky-200"
-                        : "border-emerald-400 bg-emerald-400/15 text-emerald-200"
+                        : t === "pr"
+                          ? "border-amber-400 bg-amber-400/15 text-amber-200"
+                          : "border-emerald-400 bg-emerald-400/15 text-emerald-200"
                       : "border-white/15 text-brand-gray"
                   }`}
                 >
-                  {t === "omaggio" ? "omaggio · gratis" : "prenotazione · paga in cassa"}
+                  {t === "omaggio"
+                    ? "omaggio · gratis"
+                    : t === "prenotazione"
+                      ? "prenotazione · paga in cassa"
+                      : "venduta da un pr · prezzo speciale"}
                 </button>
               ))}
             </div>
-            {omTipo === "omaggio" ? (
+            {omTipo === "pr" ? (
+              <>
+                <p className="mt-3 text-[12px] leading-relaxed text-brand-gray">
+                  Per le prevendite che un PR ha venduto fuori dal sito (chi aveva quella di
+                  Nabi a 8 €). Il biglietto va a nome del PR, come se l&apos;avesse fatto lui:
+                  gli conta come vendita, i soldi li deve portare lui e diventa valido quando li
+                  porta. Il suo blocchetto non cala.
+                </p>
+                <select
+                  value={prVenditore}
+                  onChange={(e) => setPrVenditore(e.target.value)}
+                  className="mt-3 w-full border border-amber-400/50 bg-black px-3 py-3 text-sm text-white outline-none focus:border-amber-300"
+                >
+                  <option value="">chi l&apos;ha venduta?</option>
+                  {pr
+                    .filter((x) => x.agganciato !== false)
+                    .sort((a, b) => a.alias.localeCompare(b.alias))
+                    .map((x) => (
+                      <option key={x.pr_id} value={x.pr_id}>
+                        {x.alias}
+                        {x.nome ? ` · ${x.nome}` : ""}
+                      </option>
+                    ))}
+                </select>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-2">
+                    <span className="font-tech text-[10px] uppercase tracking-[0.15em] text-amber-300">
+                      venduta a
+                    </span>
+                    <input
+                      inputMode="numeric"
+                      value={prezzoPr}
+                      onChange={(e) => setPrezzoPr(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
+                      className="w-16 border border-amber-400/50 bg-black px-2 py-2 text-center text-lg text-white outline-none focus:border-amber-300"
+                    />
+                    <span className="text-sm text-white">€</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <span className="font-tech text-[10px] uppercase tracking-[0.15em] text-amber-300">
+                      scritta
+                    </span>
+                    <input
+                      value={scrittaPr}
+                      onChange={(e) => setScrittaPr(e.target.value.toUpperCase().slice(0, 40))}
+                      className="w-32 border border-amber-400/50 bg-black px-2 py-2 text-center text-sm text-white outline-none focus:border-amber-300"
+                    />
+                  </label>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-brand-gray/70">
+                  Il PR resta scelto: puoi segnarne diverse di fila. La scritta compare sul
+                  biglietto e in porta.
+                </p>
+              </>
+            ) : omTipo === "omaggio" ? (
               <p className="mt-3 text-[12px] leading-relaxed text-brand-gray">
                 Solo tu. Esce un biglietto vero, col suo QR, ma a zero euro: non tocca il
                 blocchetto di nessun PR e non c&apos;è niente da ritirare. Nei numeri qui sopra
@@ -1986,7 +2103,9 @@ export default function AdminPrPage() {
                   ? "un attimo…"
                   : omTipo === "prenotazione"
                     ? "genera la prenotazione"
-                    : "genera l'omaggio"}
+                    : omTipo === "pr"
+                      ? "genera il biglietto"
+                      : "genera l'omaggio"}
               </button>
               {omDoppio && (
                 <button
@@ -2007,6 +2126,13 @@ export default function AdminPrPage() {
                 {omFatto.euro !== null && (
                   <p className="mt-2 text-[12px] leading-relaxed text-sky-300">
                     Prenotazione: in porta paga {omFatto.euro} €.
+                  </p>
+                )}
+                {omFatto.vendita && (
+                  <p className="mt-2 text-[12px] leading-relaxed text-amber-300">
+                    {omFatto.vendita.valida
+                      ? `Messa sul conto di ${omFatto.vendita.alias}: aveva già portato abbastanza, quindi è valida subito.`
+                      : `Messa sul conto di ${omFatto.vendita.alias}: deve portare ${omFatto.vendita.prezzo} € in più. È valida appena li segni come ricevuti.`}
                   </p>
                 )}
                 {omFatto.under16 && (
