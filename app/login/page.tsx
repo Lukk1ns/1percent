@@ -44,6 +44,24 @@ function LoginForm() {
     setApp(Boolean(standalone));
   }, []);
 
+  // L'icona sulla schermata Home si apre sempre qui (è dove è stata
+  // aggiunta): chi in porta o al bar è già entrato va dritto allo scanner,
+  // invece di rifare mail e codice a ogni apertura.
+  useEffect(() => {
+    if (!next?.startsWith("/admin")) return;
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.user.email) return;
+      const [admin, staff, manager] = await Promise.all([
+        supabase.rpc("is_admin"),
+        supabase.rpc("is_staff"),
+        supabase.rpc("is_account_manager"),
+      ]);
+      if (admin.data || staff.data || manager.data) router.replace(next);
+    })();
+  }, [next, router]);
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);

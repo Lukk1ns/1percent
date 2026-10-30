@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -18,6 +18,23 @@ export default function AdminLoginPage() {
   const [codice, setCodice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Chi è già dentro (icona sulla schermata Home salvata su questa pagina)
+  // non rifà mail e codice: va dove gli spetta.
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.user.email) return;
+      const [admin, staff, manager] = await Promise.all([
+        supabase.rpc("is_admin"),
+        supabase.rpc("is_staff"),
+        supabase.rpc("is_account_manager"),
+      ]);
+      if (admin.data) router.replace("/admin/dashboard");
+      else if (staff.data || manager.data) router.replace("/admin/porta");
+    })();
+  }, [router]);
 
   async function handleCode(e: React.FormEvent) {
     e.preventDefault();
