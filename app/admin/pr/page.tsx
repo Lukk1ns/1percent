@@ -743,7 +743,16 @@ export default function AdminPrPage() {
       vendite_on: Boolean(cfgRes.data?.[0]?.vendite_on),
       soglia: Number(cfgRes.data?.[0]?.soglia ?? 13),
     });
-    const lista: EventoAdmin[] = evRes.data ?? [];
+    // Il database le manda dalla più lontana, e così si apriva sempre
+    // l'ultima in calendario: in cima va quella che arriva prima, poi le
+    // altre in ordine di data, in fondo le già fatte dalla più recente.
+    const lista: EventoAdmin[] = [...(evRes.data ?? [])].sort((a, b) =>
+      a.passato !== b.passato
+        ? Number(a.passato) - Number(b.passato)
+        : a.passato
+          ? b.starts_at.localeCompare(a.starts_at)
+          : a.starts_at.localeCompare(b.starts_at),
+    );
     setEventi(lista);
 
     setEvento((e) => {

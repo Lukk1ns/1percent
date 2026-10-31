@@ -138,7 +138,12 @@ export default function ManagerPage() {
       }
       const lista = (ev as Serata[]) ?? [];
       setSerate(lista);
-      const prima = lista[0]?.event_id ?? "";
+      // In elenco ci sono anche le serate già fatte, in cima: si apre la
+      // più vicina non ancora finita, con dodici ore di margine per la notte.
+      const vicina =
+        lista.find((e) => new Date(e.starts_at).getTime() > Date.now() - 12 * 60 * 60 * 1000) ??
+        lista[lista.length - 1];
+      const prima = vicina?.event_id ?? "";
       setSerata(prima);
       if (prima) await caricaSerata(prima);
       setPronto(true);
