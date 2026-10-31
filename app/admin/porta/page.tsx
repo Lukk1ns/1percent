@@ -34,7 +34,9 @@ type Esito = {
     | "scaduto"
     // il pass del PR: passa solo se ha fatto i suoi numeri
     | "pr_ok"
-    | "pr_non_attivo";
+    | "pr_non_attivo"
+    // il server non ha risposto e la lista non c'è: solo sul telefono
+    | "rete";
   nome: string | null;
   cognome: string | null;
   tier_label: string | null;
@@ -124,6 +126,7 @@ export default function PortaPage() {
 
   const scannerRef = useRef<Scanner | null>(null);
   const occupato = useRef(false);
+  const [controllo, setControllo] = useState(false);
   // La fotocamera resta accesa fra una persona e l'altra: lo stesso QR,
   // ancora davanti all'obiettivo, non deve ripassare come "già entrato".
   const ultimoQR = useRef<{ token: string; at: number }>({ token: "", at: 0 });
@@ -219,9 +222,16 @@ export default function PortaPage() {
       if (occupato.current || !serata) return;
       occupato.current = true;
       ultimoQR.current = { token, at: Date.now() };
+      // Halloween 31/10, in porta: "quando scannerizzano non esce la
+      // conferma". Col campo che va e viene la chiamata poteva restare
+      // appesa per sempre: niente esito, `occupato` mai sbloccato e ogni
+      // QR dopo ignorato. Adesso si vede subito che il QR è stato letto,
+      // dopo 6 secondi si molla, e qualunque intoppo finisce in un esito.
+      setControllo(true);
 
       let r: Esito;
 
+      try {
       // Senza campo si lavora sulla lista scaricata prima
       if (!navigator.onLine && depositoAttuale()) {
         const loc = validaOffline(token);
@@ -245,10 +255,15 @@ export default function PortaPage() {
         setLocaleEntrati(contatoreLocale());
       } else {
         const supabase = createClient();
-        const { data, error } = await supabase.rpc("porta_checkin", {
-          p_token: token,
-          p_event: serata,
-        });
+        const freno = new AbortController();
+        const scade = setTimeout(() => freno.abort(), 6000);
+        const { data, error } = await supabase
+          .rpc("porta_checkin", {
+            p_token: token,
+            p_event: serata,
+          })
+          .abortSignal(freno.signal);
+        clearTimeout(scade);
 
         if (error && depositoAttuale()) {
           // il server non risponde ma la lista ce l'abbiamo: si va avanti
@@ -269,15 +284,32 @@ export default function PortaPage() {
           setInCoda(daMandare());
           setLocaleEntrati(contatoreLocale());
         } else {
+          // Errore senza codice = rete (postgrest-js): non è "non è un
+          // biglietto", è "non ho sentito il server".
           r = error
             ? {
-                esito: "sconosciuto",
+                esito: error.code ? "sconosciuto" : "rete",
                 nome: null, cognome: null, tier_label: null, prezzo: null,
                 minorenne: null, under16: null, pr_alias: null, evento: null,
                 entrata_at: null, presale_id: null,
               }
-            : (data?.[0] as Esito);
+            : ((data?.[0] as Esito | undefined) ?? {
+                esito: "rete",
+                nome: null, cognome: null, tier_label: null, prezzo: null,
+                minorenne: null, under16: null, pr_alias: null, evento: null,
+                entrata_at: null, presale_id: null,
+              });
         }
+      }
+      } catch {
+        r = {
+          esito: "rete",
+          nome: null, cognome: null, tier_label: null, prezzo: null,
+          minorenne: null, under16: null, pr_alias: null, evento: null,
+          entrata_at: null, presale_id: null,
+        };
+      } finally {
+        setControllo(false);
       }
 
       if (r.esito === "ok" || r.esito === "pr_ok") suonaOk();
@@ -690,6 +722,13 @@ export default function PortaPage() {
             )}
           </>
         )}
+        {controllo && !esito && (
+          <div className="absolute inset-x-0 bottom-0 z-10 bg-black/80 px-4 py-4 text-center">
+            <p className="font-display text-3xl uppercase leading-none text-white">
+              QR letto · controllo…
+            </p>
+          </div>
+        )}
         {esito && (
           <Risposta
             esito={esito}
@@ -798,6 +837,7 @@ function Risposta({
     altra_serata: { sfondo: "bg-amber-400", testo: "ALTRA SERATA", colore: "text-black" },
     scaduto: { sfondo: "bg-brand-red", testo: "SCADUTO", colore: "text-white" },
     sconosciuto: { sfondo: "bg-neutral-700", testo: "NON È UN BIGLIETTO", colore: "text-white" },
+    rete: { sfondo: "bg-neutral-700", testo: "NESSUNA RISPOSTA", colore: "text-white" },
     // Verde come un biglietto valido, ma la scritta dice che è uno
     // della crew: in porta si capisce chi sta entrando e con che
     // diritto, senza chiedere niente a nessuno.
@@ -860,6 +900,13 @@ function Risposta({
       {esito.esito === "sconosciuto" && (
         <p className="mt-4 max-w-xs text-sm opacity-80">
           Questo QR non è una prevendita. Se è il pass di un membro, si entra normalmente.
+        </p>
+      )}
+
+      {esito.esito === "rete" && (
+        <p className="mt-4 max-w-[26ch] text-sm leading-relaxed opacity-90">
+          Il telefono non ha campo o il server è lento. Scansiona di nuovo, oppure cercalo per
+          nome.
         </p>
       )}
 
