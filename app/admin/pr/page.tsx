@@ -1810,18 +1810,46 @@ export default function AdminPrPage() {
                   style={{ width: `${percRaccolto}%` }}
                 />
               </div>
-              <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2">
-                <p className="font-tech text-[10px] uppercase tracking-[0.15em] text-emerald-400">
-                  {euro(cruscotto.raccolto)} in cassa
-                </p>
-                <p
-                  className={`font-tech text-[10px] uppercase tracking-[0.15em] ${
-                    cruscotto.da_incassare > 0 ? "text-brand-red" : "text-brand-gray"
-                  }`}
-                >
-                  {euro(cruscotto.da_incassare)} da ritirare
-                </p>
+              {/* Luka voleva la cifra secca di quanto ha ritirato, non solo
+                  quanto manca. "Ritirato" comprende anche quello che un
+                  manager ha preso dai PR e non gli ha ancora portato: lo
+                  dice la riga sotto, così non deve fare la sottrazione. */}
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div>
+                  <p className="font-tech text-[10px] uppercase tracking-[0.15em] text-emerald-400">
+                    ritirato
+                  </p>
+                  <p className="mt-1 font-display text-3xl leading-none text-emerald-400">
+                    {euro(cruscotto.raccolto)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p
+                    className={`font-tech text-[10px] uppercase tracking-[0.15em] ${
+                      cruscotto.da_incassare > 0 ? "text-brand-red" : "text-brand-gray"
+                    }`}
+                  >
+                    da ritirare
+                  </p>
+                  <p
+                    className={`mt-1 font-display text-3xl leading-none ${
+                      cruscotto.da_incassare > 0 ? "text-brand-red" : "text-brand-gray"
+                    }`}
+                  >
+                    {euro(cruscotto.da_incassare)}
+                  </p>
+                </div>
               </div>
+              {daRicevere && Number(daRicevere.dai_manager) > 0 && (
+                <p className="mt-3 text-[12px] leading-relaxed text-white/80">
+                  In mano tua{" "}
+                  <strong className="text-white">
+                    {euro(Number(cruscotto.raccolto) - Number(daRicevere.dai_manager))}
+                  </strong>
+                  : gli altri <strong className="text-amber-300">{euro(daRicevere.dai_manager)}</strong>{" "}
+                  li hanno ritirati i manager e non te li hanno ancora portati.
+                </p>
+              )}
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
