@@ -163,6 +163,39 @@ export default function AdminFotoPage() {
     await caricaAlbums();
   }
 
+  // Album sbagliato (Luka, 3/11): via tutte le foto in un colpo, file compresi (script 55).
+  // "svuota" tiene l'album per ricaricarle, "elimina" toglie anche l'album.
+  const [svuotando, setSvuotando] = useState(false);
+  async function svuota(a: AlbumAdmin, elimina: boolean) {
+    const domanda = elimina
+      ? `Eliminare l'album "${a.nome}" con tutte le sue foto (${a.foto})?\n\nSparisce tutto, anche i file: non si torna indietro.`
+      : `Svuotare "${a.nome}"?\n\nVanno via tutte le foto (${a.foto}), anche i file. L'album resta, pronto per ricaricarle.`;
+    if (!window.confirm(domanda)) return;
+    setSvuotando(true);
+    const r = await fetch("/api/foto/album", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ album_id: a.id, elimina }),
+    });
+    const j = await r.json().catch(() => ({}));
+    setSvuotando(false);
+    if (!r.ok) {
+      window.alert(
+        j.error === "manca-script-55"
+          ? "Manca un pezzo sul database: incolla supabase/55_album_svuota_elimina.sql nel SQL Editor."
+          : `Non è andata: ${j.error ?? r.status}`,
+      );
+      return;
+    }
+    if (j.r2 !== "ok")
+      window.alert("Le foto sono sparite dal sito, ma i file su Cloudflare non si sono cancellati. Non li vede nessuno.");
+    setInMano(null);
+    setFoto([]);
+    if (elimina) setScelto(null);
+    await caricaAlbums();
+    if (!elimina) await caricaFoto(a.slug);
+  }
+
   async function togliFoto(f: FotoAdmin) {
     const motivo = window.prompt("Perché la togli? (resta scritto, la foto non si cancella)", "");
     if (motivo === null) return;
@@ -332,6 +365,26 @@ export default function AdminFotoPage() {
                         guarda
                       </Link>
                     )}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/5 pt-3">
+                    <span className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray/70">
+                      album sbagliato?
+                    </span>
+                    <button
+                      onClick={() => svuota(a, false)}
+                      disabled={Boolean(caricamento) || svuotando}
+                      className="border border-brand-red/50 px-3 py-2 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:bg-brand-red/15 disabled:opacity-40"
+                    >
+                      {svuotando ? "un attimo…" : "svuota · via tutte le foto"}
+                    </button>
+                    <button
+                      onClick={() => svuota(a, true)}
+                      disabled={Boolean(caricamento) || svuotando}
+                      className="border border-brand-red bg-brand-red/15 px-3 py-2 font-tech text-[10px] uppercase tracking-[0.2em] text-white transition-colors hover:bg-brand-red/30 disabled:opacity-40"
+                    >
+                      elimina album
+                    </button>
                   </div>
 
                   {caricamento && (

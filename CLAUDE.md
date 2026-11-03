@@ -4,6 +4,13 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**SVUOTA / ELIMINA ALBUM (3 nov, `supabase/55_album_svuota_elimina.sql`, `/api/foto/album`, `/admin/foto`).** Luka: *"ho sbagliato
+un album nuovo... manca un tasto per cancellare tutto insieme e ricaricare"*. Nell'album aperto: **svuota · via tutte le foto** (l'album
+resta) ed **elimina album**. `admin_album_svuota(id, elimina)` cancella davvero le righe (anche le foto già "tolte", richieste di
+rimozione in cascata, copertina azzerata), riga in `admin_log`, torna quante foto (−1 = album sparito); poi la route cancella su R2
+**tutta la cartella `<albumId>/`** (`cancellaCartellaR2`, anche orfani di caricamenti interrotti). Prima il DB, poi R2: se R2 non
+risponde restano solo file orfani. Provato su PGlite **11/11**. **PENDING Luka: incollare il 55** (senza, il tasto dice cosa incollare).
+
 **SHOT OMAGGIO · MALDITA SAB 7/11 (3 nov, `supabase/53_maldita_7_novembre.sql`, `/maldita7`, `/admin/maldita7`, commit 304e610).**
 Luka: *"servirebbe il link nuovo per shottini di questo sabato con iscrizione solita"*. Copia di BACK TO 2010 (pagine,
 icona, anteprima, `sw-maldita7.js`), con queste differenze:

@@ -12,7 +12,13 @@
  * un indirizzo firmato che scade.
  */
 
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const R2_BUCKET = process.env.R2_BUCKET ?? "1percent-foto";
@@ -80,4 +86,27 @@ export function chiaviFoto(albumId: string, id: string) {
     medium: `${albumId}/${id}_m.webp`,
     hd: `${albumId}/${id}_hd.webp`,
   };
+}
+
+/**
+ * Cancella tutti i file di un album (la sua cartella `<albumId>/`).
+ * Prende anche i file rimasti senza riga, per esempio da un caricamento
+ * interrotto. Torna quanti file ha cancellato.
+ */
+export async function cancellaCartellaR2(albumId: string): Promise<number> {
+  if (!/^[0-9a-f-]{36}$/.test(albumId)) throw new Error("album-non-valido");
+  let tolti = 0;
+  let dopo: string | undefined;
+  do {
+    const lista = await r2().send(
+      new ListObjectsV2Command({ Bucket: R2_BUCKET, Prefix: `${albumId}/`, ContinuationToken: dopo }),
+    );
+    const chiavi = (lista.Contents ?? []).map((o) => ({ Key: o.Key! }));
+    if (chiavi.length) {
+      await r2().send(new DeleteObjectsCommand({ Bucket: R2_BUCKET, Delete: { Objects: chiavi, Quiet: true } }));
+      tolti += chiavi.length;
+    }
+    dopo = lista.IsTruncated ? lista.NextContinuationToken : undefined;
+  } while (dopo);
+  return tolti;
 }
