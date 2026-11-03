@@ -31,7 +31,7 @@ const CHIAVE_MIA = "maldita7_mio_token";
 const ERRORI: Record<string, string> = {
   ...ERRORI_ISCRIZIONE,
   privacy: "Per registrarti devi accettare l'informativa qui sotto.",
-  troppo_giovane: "Lo shot omaggio è dai 18 anni in su.",
+  troppo_giovane: "Con questo anno di nascita non puoi registrarti a questa serata.",
   gia_registrata: "Hai già una registrazione con un altro numero: ne vale una a testa.",
   troppe: "Troppe registrazioni dalla stessa rete. Riprova fra un'ora o da un'altra connessione.",
 };
@@ -94,7 +94,7 @@ export default function Maldita7Page() {
 
   // Gli anni nel menu: dal più giovane ammesso in giù
   const anni = useMemo(() => {
-    const ultimo = info ? new Date(info.starts_at).getFullYear() - info.eta_min : 2008;
+    const ultimo = info ? new Date(info.starts_at).getFullYear() - info.eta_min : 2010;
     return Array.from({ length: ultimo - 1960 + 1 }, (_, i) => ultimo - i);
   }, [info]);
 
@@ -113,7 +113,7 @@ export default function Maldita7Page() {
     if (!privacy) return setErrore(ERRORI.privacy);
 
     // Solo l'anno, come MALDITA: il 1° gennaio fa passare chi è nato
-    // entro il 2008, cioè i 18 anni fatti sull'anno. Il resto in porta.
+    // entro il 2010, cioè i 16 anni fatti sull'anno (script 54). Il resto in porta.
     const nascita = `${anno}-01-01`;
 
     setInvio(true);
@@ -188,7 +188,7 @@ export default function Maldita7Page() {
       {/* Le regole: corte, si leggono in tre secondi */}
       <ul className="mt-6 grid grid-cols-2 gap-2">
         {[
-          ["per tutti", `dai ${info?.eta_min ?? 18} anni in su`],
+          ["per tutti", "ragazzi e ragazze"],
           [allOra("entro", ora), "il QR si scansiona al bar"],
           ["uno a testa", "non è l'ingresso"],
           ["documento vero", "in mano, non la foto"],

@@ -22,7 +22,11 @@ icona, anteprima, `sw-maldita7.js`), con queste differenze:
   serata": per scrivergli promo serve un consenso che non hanno dato.
 - `FESTE_SENZA_PR` ora `maldita-official-opening` (non più ogni slug `maldita…`), così il 7/11 con PR compare nella c7.
 - Provato su PGlite **21/21** (guardia, creazione al PAPI-ON, orari, rieseguibile, PR1ME+PAPI-ON stesso giorno, regola PR shot/
-  donna/manager, permessi). Build ok. **PENDING Luka: incollare il 53** (`omaggio_info` con `{"p_slug":"maldita7"}` → una riga).
+  donna/manager, permessi). Build ok. **53 DENTRO (3/11, verificato)** (`omaggio_info` con `{"p_slug":"maldita7"}` → una riga).
+- **Shot anche ai minorenni, analcolico (3/11, `supabase/54_maldita7_anche_minorenni.sql`):** Luka: *"togli il 18+... lo diamo anche ai
+  minorenni ma analcolico... non specificare niente"*. Lista `eta_min` 16; pagina senza età ("ragazzi e ragazze"). **Scanner del bar:**
+  `SHOT OMAGGIO` + `minorenne` (anno di oggi − anno < 18, come sempre in porta) → schermo **viola ANALCOLICO · niente alcol**, 5,2 s.
+  **PENDING Luka: incollare il 54.** Link in bio PAPI-ON aggiornato con MALDITA + tasto shot.
 
 **VENDITA DEL PR SEGNATA DA LUKA · EX NABI 8 € (30 ott, `supabase/52_vendita_pr_prezzo_speciale.sql`, `/admin/pr`).**
 Luka: *"chi aveva acquistato la prevendita di Nabi poteva avere l'ingresso a soli 8 euro... qualche pr ha fatto delle

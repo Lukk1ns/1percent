@@ -333,8 +333,9 @@ export default function PortaPage() {
 
       // quanto resta sullo schermo: se passa, un attimo; se c'è da leggere
       // (o da incassare, la prenotazione), di più
+      const analcolico = r.esito === "ok" && r.tier_label === "SHOT OMAGGIO" && r.minorenne === true;
       const quanto =
-        (r.esito === "ok" && inCassa(r.tier_label) === null) || r.esito === "pr_ok" ? 1200 : 5200;
+        (r.esito === "ok" && inCassa(r.tier_label) === null && !analcolico) || r.esito === "pr_ok" ? 1200 : 5200;
       if (timerEsito.current) clearTimeout(timerEsito.current);
       timerEsito.current = setTimeout(chiudiEsito, quanto);
     },
@@ -819,6 +820,27 @@ function Risposta({
         <p className="font-tech text-xs uppercase tracking-[0.25em]">prenotazione · passa</p>
         <p className="mt-3 font-display text-7xl uppercase leading-none">PAGA {euro} €</p>
         <p className="mt-2 font-display text-2xl uppercase leading-none">in cassa</p>
+        {nome && (
+          <p className="mt-6 font-display text-3xl uppercase leading-tight">{nome}</p>
+        )}
+        <p className="mt-8 font-tech text-[10px] uppercase tracking-[0.25em] opacity-60">
+          tocca per continuare
+        </p>
+      </button>
+    );
+  }
+
+  // Lo shot a un minorenne (dal 7/11 lo shot è anche per loro): analcolico. Sulle pagine
+  // pubbliche non è scritto, lo sa solo il barista: schermo viola, resta finché non lo legge.
+  if (esito.esito === "ok" && esito.tier_label === "SHOT OMAGGIO" && esito.minorenne) {
+    return (
+      <button
+        onClick={onChiudi}
+        className="absolute inset-0 z-20 flex w-full flex-col items-center justify-center bg-violet-400 px-6 text-center text-black"
+      >
+        <p className="font-tech text-xs uppercase tracking-[0.25em]">shot omaggio · minorenne</p>
+        <p className="mt-3 font-display text-7xl uppercase leading-none">ANALCOLICO</p>
+        <p className="mt-2 font-display text-2xl uppercase leading-none">niente alcol</p>
         {nome && (
           <p className="mt-6 font-display text-3xl uppercase leading-tight">{nome}</p>
         )}
