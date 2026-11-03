@@ -145,9 +145,9 @@ export const CREW_QUESTIONS: QuizQuestion[] = [
 /**
  * Le serate che non c'entrano con i PR, quindi niente scelta alla c7:
  * MALDITA del 17 è la serata dell'omaggio donne (niente PR, script 43).
- * Si confronta l'inizio dello slug.
+ * Si confronta l'inizio dello slug. MALDITA del 7 novembre ha i PR: resta.
  */
-const FESTE_SENZA_PR = ["maldita", "back-to-2010"];
+const FESTE_SENZA_PR = ["maldita-official-opening", "back-to-2010"];
 
 /**
  * La c7 con le feste in programma come scelte, e sotto la riga per

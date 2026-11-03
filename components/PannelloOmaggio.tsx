@@ -249,11 +249,11 @@ export default function PannelloOmaggio({
   }
 
   function scaricaCsv() {
-    const intest = ["nome", "cognome", "anno di nascita", "whatsapp", "stato", "iscrizione", "entrata", "shot"];
+    const intest = ["nome", "cognome", "anno di nascita", "whatsapp", "stato", "iscrizione", "entrata", "shot", "avvisatemi"];
     const righeCsv = righe.map((r) =>
       [
         r.nome, r.cognome, r.nascita.slice(0, 4), r.telefono,
-        r.stato, quando(r.created_at), r.entrata_at ? oraRoma(r.entrata_at) : "", r.shot_at ? oraRoma(r.shot_at) : "",
+        r.stato, quando(r.created_at), r.entrata_at ? oraRoma(r.entrata_at) : "", r.shot_at ? oraRoma(r.shot_at) : "", r.promo ? "sì" : "",
       ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
         .join(";"),

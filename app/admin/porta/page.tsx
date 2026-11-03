@@ -849,7 +849,7 @@ function Risposta({
     },
   }[esito.esito];
 
-  // Lo shot di BACK TO 2010 lo scansiona il barista, non la porta:
+  // Lo shot (BACK TO 2010, MALDITA 7/11) lo scansiona il barista, non la porta:
   // stesse risposte, parole da bar.
   const shot = esito.tier_label === "SHOT OMAGGIO";
   const testo =

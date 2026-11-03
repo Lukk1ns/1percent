@@ -290,19 +290,15 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {[
             {
-              href: "/admin/backto2010",
+              href: "/admin/maldita7",
               emoji: "🥃",
-              titolo: "Shot omaggio 30/10",
-              cosa: "BACK TO 2010: registrazioni, posti, approvazioni, WhatsApp",
+              titolo: "Shot omaggio 7/11",
+              cosa: "MALDITA: registrazioni, posti, approvazioni, WhatsApp",
               acceso: true,
             },
-            {
-              href: "/admin/maldita",
-              emoji: "💃",
-              titolo: "Donna omaggio 17/10",
-              cosa: "MALDITA: prenotazioni delle ragazze, posti, approvazioni, WhatsApp",
-              acceso: true,
-            },
+            // Le liste delle serate passate (17/10, 30/10) non stanno più qui (Luka, 3/11):
+            // le pagine restano su /admin/maldita e /admin/backto2010, e i contatti si
+            // trovano in Membri → "non iscritti", con la serata per cui si erano iscritti.
             {
               href: "/admin/eventi",
               emoji: "📅",
@@ -391,8 +387,7 @@ export default function AdminDashboardPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           {[
             ["/admin/pr", "Prevendite e PR"],
-            ["/admin/backto2010", "Shot omaggio 30/10"],
-            ["/admin/maldita", "Donna omaggio 17/10"],
+            ["/admin/maldita7", "Shot omaggio 7/11"],
             ["/admin/porta", "Porta"],
             ["/admin/scan", "Estrazione premi"],
             ["/admin/eventi", "Eventi"],

@@ -53,6 +53,7 @@ import { MandaBiglietto } from "@/components/MandaBiglietto";
 const LISTE_OMAGGIO = [
   { slug: "maldita", titolo: "Donna omaggio · MALDITA", corto: "maldita" },
   { slug: "backto2010", titolo: "Shot omaggio · BACK TO 2010", corto: "2010" },
+  { slug: "maldita7", titolo: "Shot omaggio · MALDITA 7/11", corto: "shot 7/11" },
 ];
 
 const euro = (n: number) => `${Number(n ?? 0).toFixed(0)} €`;
@@ -570,7 +571,7 @@ function Scheda({
         </section>
       )}
 
-      {/* Le liste omaggio (MALDITA, BACK TO 2010) */}
+      {/* Le liste omaggio (MALDITA, BACK TO 2010, MALDITA 7/11) */}
       {p.richieste.length > 0 && (
         <section className="mt-8">
           <p className={titolo}>liste omaggio</p>

@@ -33,6 +33,8 @@ const HANNO_GIA_IL_LORO = [
   "/papion",
   // Lo shot omaggio di BACK TO 2010 (30 ott): come MALDITA.
   "/backto2010",
+  // Lo shot omaggio di MALDITA 7 novembre: come BACK TO 2010.
+  "/maldita7",
   "/privacy",
   "/profilo",
   "/tessera",

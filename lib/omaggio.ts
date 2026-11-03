@@ -29,6 +29,18 @@ export const ICONA_2010_180 = "/backto2010/icona-180.png";
 export const ICONA_2010_192 = "/backto2010/icona-192.png";
 export const ICONA_2010_512 = "/backto2010/icona-512.png";
 
+/**
+ * MALDITA sabato 7 novembre 2026 (script 53): lo shot di BACK TO 2010
+ * su una serata dove i ragazzi pagano. Per tutti dai 18 anni, al bar
+ * entro le 00:30; i PR vendono lo stesso (il 53 cambia la regola del 43).
+ */
+export const SLUG_MALDITA_7 = "maldita7";
+/** La locandina di Luka (3/11): MALDITA · Deejlord, DJ Gringo. */
+export const LOCANDINA_MALDITA_7 = "/maldita7/locandina.webp";
+export const ICONA_M7_180 = "/maldita7/icona-180.png";
+export const ICONA_M7_192 = "/maldita7/icona-192.png";
+export const ICONA_M7_512 = "/maldita7/icona-512.png";
+
 export const INDIRIZZO_PAPION = "Via XX Settembre 289 · Roveredo in Piano (PN)";
 
 export type StatoRichiesta = "in_attesa" | "lista_attesa" | "approvata" | "rifiutata";
