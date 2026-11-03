@@ -1,8 +1,28 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 30 ottobre 2026
+> Ultimo aggiornamento: 3 novembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**SHOT OMAGGIO · MALDITA SAB 7/11 (3 nov, `supabase/53_maldita_7_novembre.sql`, `/maldita7`, `/admin/maldita7`, commit 304e610).**
+Luka: *"servirebbe il link nuovo per shottini di questo sabato con iscrizione solita"*. Copia di BACK TO 2010 (pagine,
+icona, anteprima, `sw-maldita7.js`), con queste differenze:
+- **Sabato i ragazzi pagano** (free entry solo donna entro le 00:30) → probabili prevendite PR. Il 43 staccava dai PR ogni
+  serata con una lista omaggio: il **53 ridefinisce `_pr_agganciato`** (ultima definizione ora è il 53) e stacca solo le liste
+  con `tier_label` **diverso da `'SHOT OMAGGIO'`**. MALDITA del 17 (OMAGGIO DONNA) resta staccata.
+- Serata: quella del **PAPI-ON** del 7 se c'è (il filtro guarda il **locale**, il sabato lavora anche il PR1ME), se no la crea
+  non pubblicata (`maldita-7-novembre`, 23:00). Lista `maldita7`, 18+, iscrizioni e QR fino all'**08/11 00:30** (ora scelta da
+  me sulla locandina, da confermare con Luka), a mano, posti da decidere, testi WhatsApp già "vai dritto al bar".
+- Testi: il QR **"non è l'ingresso"** (non più "in cassa non serve": i ragazzi in cassa ci passano per pagare).
+- **Casella facoltativa "Avvisatemi su WhatsApp delle prossime serate del PAPI-ON"** (`p_promo`, colonna `promo` del 42 mai
+  usata dal 6/10) + riga nell'informativa; nel CSV del pannello colonna **avvisatemi**. Luka (3/11): *"conserva sempre tutti
+  i contatti e per cosa si erano iscritti che poi un giorno magari gli scriviamo a tutti"* → si può scrivere solo a chi l'ha spuntata.
+- **Tolte dalla dashboard le liste del 17/10 e 30/10** (pagine ancora su `/admin/maldita`, `/admin/backto2010`); **nessun dato
+  cancellato**: i contatti restano e si cercano in Membri (`LISTE_OMAGGIO`). Le loro informative dicevano "solo per questa
+  serata": per scrivergli promo serve un consenso che non hanno dato.
+- `FESTE_SENZA_PR` ora `maldita-official-opening` (non più ogni slug `maldita…`), così il 7/11 con PR compare nella c7.
+- Provato su PGlite **21/21** (guardia, creazione al PAPI-ON, orari, rieseguibile, PR1ME+PAPI-ON stesso giorno, regola PR shot/
+  donna/manager, permessi). Build ok. **PENDING Luka: incollare il 53** (`omaggio_info` con `{"p_slug":"maldita7"}` → una riga).
 
 **VENDITA DEL PR SEGNATA DA LUKA · EX NABI 8 € (30 ott, `supabase/52_vendita_pr_prezzo_speciale.sql`, `/admin/pr`).**
 Luka: *"chi aveva acquistato la prevendita di Nabi poteva avere l'ingresso a soli 8 euro... qualche pr ha fatto delle
