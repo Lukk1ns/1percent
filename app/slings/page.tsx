@@ -175,7 +175,7 @@ export default function SlingsPage() {
           Le <strong className="text-white">prime 50 ragazze</strong> che prenotano qui entrano gratis: fai
           scansionare il tuo QR in cassa <strong className="text-white">{allOra("entro", ora)}</strong>.
         </p>
-        <p className="mt-2 text-[13px] text-white/60">Special guest SLINGS · DJ thatsmrb · start 23:30 · serata 16+</p>
+        <p className="mt-2 text-[13px] text-white/60">Special guest SLINGS · DJ ISM · start 23:30 · serata 16+</p>
       </section>
 
       {/* Le regole: corte, si leggono in tre secondi */}
