@@ -41,6 +41,19 @@ export const ICONA_M7_180 = "/maldita7/icona-180.png";
 export const ICONA_M7_192 = "/maldita7/icona-192.png";
 export const ICONA_M7_512 = "/maldita7/icona-512.png";
 
+/**
+ * CULTURE con gli SLINGS, venerdì 13 novembre 2026 (script 56): la donna
+ * omaggio di MALDITA del 17, ma con 50 posti in automatico e i PR che
+ * vendono lo stesso (i ragazzi pagano). Solo ragazze, dai 18 anni,
+ * ingresso omaggio scansionato in cassa entro le 00:30.
+ */
+export const SLUG_SLINGS = "slings";
+/** La locandina ufficiale (5/11): CULTURE · SLINGS, gialla. */
+export const LOCANDINA_SLINGS = "/slings/locandina.webp";
+export const ICONA_SL_180 = "/slings/icona-180.png";
+export const ICONA_SL_192 = "/slings/icona-192.png";
+export const ICONA_SL_512 = "/slings/icona-512.png";
+
 export const INDIRIZZO_PAPION = "Via XX Settembre 289 · Roveredo in Piano (PN)";
 
 export type StatoRichiesta = "in_attesa" | "lista_attesa" | "approvata" | "rifiutata";

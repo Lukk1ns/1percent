@@ -35,6 +35,8 @@ const HANNO_GIA_IL_LORO = [
   "/backto2010",
   // Lo shot omaggio di MALDITA 7 novembre: come BACK TO 2010.
   "/maldita7",
+  // La donna omaggio di CULTURE con gli SLINGS (13 novembre): come MALDITA.
+  "/slings",
   "/privacy",
   "/profilo",
   "/tessera",

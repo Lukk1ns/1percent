@@ -290,6 +290,13 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {[
             {
+              href: "/admin/slings",
+              emoji: "💛",
+              titolo: "Donna omaggio 13/11",
+              cosa: "CULTURE · SLINGS: prime 50, prenotazioni, lista d'attesa",
+              acceso: true,
+            },
+            {
               href: "/admin/maldita7",
               emoji: "🥃",
               titolo: "Shot omaggio 7/11",
@@ -388,6 +395,7 @@ export default function AdminDashboardPage() {
           {[
             ["/admin/pr", "Prevendite e PR"],
             ["/admin/maldita7", "Shot omaggio 7/11"],
+            ["/admin/slings", "Donna omaggio 13/11"],
             ["/admin/porta", "Porta"],
             ["/admin/scan", "Estrazione premi"],
             ["/admin/eventi", "Eventi"],

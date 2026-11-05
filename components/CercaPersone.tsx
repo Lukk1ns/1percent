@@ -54,6 +54,7 @@ const LISTE_OMAGGIO = [
   { slug: "maldita", titolo: "Donna omaggio · MALDITA", corto: "maldita" },
   { slug: "backto2010", titolo: "Shot omaggio · BACK TO 2010", corto: "2010" },
   { slug: "maldita7", titolo: "Shot omaggio · MALDITA 7/11", corto: "shot 7/11" },
+  { slug: "slings", titolo: "Donna omaggio · CULTURE SLINGS 13/11", corto: "slings" },
 ];
 
 const euro = (n: number) => `${Number(n ?? 0).toFixed(0)} €`;
