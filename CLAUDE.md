@@ -12,8 +12,8 @@ Copia di `/maldita7` con le parole della donna omaggio di `/maldita`: solo ragaz
 locandina, anteprima `public/slings/anteprima-slings.jpg`. **Il 56 ridefinisce `_pr_agganciato`** (ultima definizione ora è
 il 56): la lista `slings` non stacca la serata dai PR (i ragazzi pagano). Serata del PAPI-ON del 13 se c'è, se no la crea
 non pubblicata (`culture-slings-13-novembre`, 23:30). Collegata in dashboard, `LISTE_OMAGGIO`, `Torna`, `StatoCrew`,
-`Notifiche`; NON in `FESTE_SENZA_PR`. Build ok, pagina fotografata. **PENDING Luka: incollare il 56** (verifica:
-`omaggio_info` con `{"p_slug":"slings"}` → una riga).
+`Notifiche`; NON in `FESTE_SENZA_PR`. Build ok, pagina fotografata. **56 DENTRO (5/11).** Poi Luka: *"metti 16+ la serata"* → **`57_slings_16.sql`**
+(`eta_min` 16; il 56 nel repo ora dice già 16) + testi "serata 16+". **PENDING Luka: incollare il 57** (verifica: `omaggio_info` → `eta_min:16`).
 
 **SVUOTA / ELIMINA ALBUM (3 nov, `supabase/55_album_svuota_elimina.sql`, `/api/foto/album`, `/admin/foto`).** Luka: *"ho sbagliato
 un album nuovo... manca un tasto per cancellare tutto insieme e ricaricare"*. Nell'album aperto: **svuota · via tutte le foto** (l'album
