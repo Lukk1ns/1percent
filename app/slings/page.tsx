@@ -27,10 +27,10 @@ type Info = {
 /** Dove il telefono si ricorda che si è già prenotata. */
 const CHIAVE_MIA = "slings_mio_token";
 
-/** Quelli di MALDITA del 17 erano scritti per i 16 anni: qui è 18+. */
+/** La serata è 16+ (script 57). */
 const ERRORI: Record<string, string> = {
   ...ERRORI_ISCRIZIONE,
-  troppo_giovane: "L'ingresso omaggio di venerdì è dai 18 anni in su.",
+  troppo_giovane: "La serata è dai 16 anni in su.",
 };
 
 /**
@@ -89,7 +89,7 @@ export default function SlingsPage() {
 
   // Gli anni nel menu: dalla più giovane ammessa in giù
   const anni = useMemo(() => {
-    const ultimo = info ? new Date(info.starts_at).getFullYear() - info.eta_min : 2008;
+    const ultimo = info ? new Date(info.starts_at).getFullYear() - info.eta_min : 2010;
     return Array.from({ length: ultimo - 1960 + 1 }, (_, i) => ultimo - i);
   }, [info]);
 
@@ -107,7 +107,7 @@ export default function SlingsPage() {
     if (!normalizzaNumero(telefono)) return setErrore(ERRORI.numero_sbagliato);
     if (!privacy) return setErrore(ERRORI.privacy);
 
-    // Solo l'anno, come MALDITA: il 1° gennaio fa passare chi compie 18
+    // Solo l'anno, come MALDITA: il 1° gennaio fa passare chi compie 16
     // anni entro l'anno. Il documento lo controllano in porta.
     const nascita = `${anno}-01-01`;
 
@@ -175,7 +175,7 @@ export default function SlingsPage() {
           Le <strong className="text-white">prime 50 ragazze</strong> che prenotano qui entrano gratis: fai
           scansionare il tuo QR in cassa <strong className="text-white">{allOra("entro", ora)}</strong>.
         </p>
-        <p className="mt-2 text-[13px] text-white/60">Special guest SLINGS · DJ thatsmrb · start 23:30</p>
+        <p className="mt-2 text-[13px] text-white/60">Special guest SLINGS · DJ thatsmrb · start 23:30 · serata 16+</p>
       </section>
 
       {/* Le regole: corte, si leggono in tre secondi */}
@@ -183,7 +183,7 @@ export default function SlingsPage() {
         {[
           ["prime 50", "poi lista d'attesa"],
           [allOra("entro", ora), "dopo l'ingresso si paga"],
-          ["dai 18 anni", "solo ragazze"],
+          ["serata 16+", "omaggio solo ragazze"],
           ["documento vero", "in mano, non la foto"],
         ].map(([titolo, sotto]) => (
           <li key={titolo} className="border border-white/12 bg-white/[0.03] px-3 py-3">

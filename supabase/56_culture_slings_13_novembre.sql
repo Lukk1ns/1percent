@@ -7,7 +7,7 @@
 --
 -- Stessa macchina di MALDITA del 17 (42), lista nuova:
 --   · ci si prenota su unpercento.it/slings (nome, cognome, anno,
---     WhatsApp): solo ragazze, dai 18 anni (il venerdì è 18+);
+--     WhatsApp): solo ragazze, dai 16 anni (la serata è 16+, script 57);
 --   · 50 posti, approvazione AUTOMATICA: le prime 50 hanno subito il QR,
 --     dalla 51ª lista d'attesa. Si cambia dal pannello /admin/slings;
 --   · il QR è l'ingresso omaggio, lo scansiona la cassa entro le 00:30.
@@ -109,7 +109,7 @@ begin
      'auto', 50,
      timestamptz '2026-11-14 00:30:00 Europe/Rome',
      timestamptz '2026-11-14 00:30:00 Europe/Rome',
-     18,
+     16,
      'OMAGGIO DONNA',
      false,
      E'Ciao {nome}! 🔥 Sei tra le prime 50: ingresso omaggio a CULTURE con gli SLINGS, venerdì 13 novembre al PAPI-ON.\n\nIl tuo QR è qui: {link}\n\nFallo scansionare in cassa entro le 00:30 e porta il documento vero, in mano. Ci vediamo venerdì!');

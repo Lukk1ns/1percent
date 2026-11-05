@@ -12,12 +12,12 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.unpercento.it"),
   title: "CULTURE · SLINGS — Donna omaggio",
   description:
-    "Hip-hop Friday: venerdì 13 novembre al PAPI-ON con gli SLINGS. Le prime 50 ragazze che prenotano qui entrano gratis entro le 00:30.",
+    "Hip-hop Friday: venerdì 13 novembre al PAPI-ON con gli SLINGS. Serata 16+. Le prime 50 ragazze che prenotano qui entrano gratis entro le 00:30.",
   icons: { icon: ICONA_SL_192, apple: ICONA_SL_180 },
   appleWebApp: { title: "CULTURE", capable: true, statusBarStyle: "black-translucent" },
   openGraph: {
     title: "CULTURE · SLINGS — Donna omaggio",
-    description: "Venerdì 13 novembre · PAPI-ON · special guest SLINGS · prime 50 donne ingresso omaggio con prenotazione",
+    description: "Venerdì 13 novembre · PAPI-ON · special guest SLINGS · serata 16+ · prime 50 donne ingresso omaggio con prenotazione",
     images: [
       {
         url: "/slings/anteprima-slings.jpg",
