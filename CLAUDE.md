@@ -4,6 +4,17 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**DONNA OMAGGIO · CULTURE con gli SLINGS VEN 13/11 (5 nov, `supabase/56_culture_slings_13_novembre.sql`, `/slings`,
+`/admin/slings`, commit f5acb40).** Luka: *"serve anche fare la prenotazione per le donne gratis e mettere 50 posti"*.
+Copia di `/maldita7` con le parole della donna omaggio di `/maldita`: solo ragazze **18+**, lista `slings` **auto, 50 posti**
+(dalla 51ª lista d'attesa), `tier_label 'OMAGGIO DONNA'`, QR = ingresso, in cassa **entro le 00:30** (prenotazioni e QR fino al
+14/11 00:30), sorpresa spenta, casella "avvisatemi". Colore giallo della locandina `#e6fb05`, icona = cerchio 13/11 della
+locandina, anteprima `public/slings/anteprima-slings.jpg`. **Il 56 ridefinisce `_pr_agganciato`** (ultima definizione ora è
+il 56): la lista `slings` non stacca la serata dai PR (i ragazzi pagano). Serata del PAPI-ON del 13 se c'è, se no la crea
+non pubblicata (`culture-slings-13-novembre`, 23:30). Collegata in dashboard, `LISTE_OMAGGIO`, `Torna`, `StatoCrew`,
+`Notifiche`; NON in `FESTE_SENZA_PR`. Build ok, pagina fotografata. **PENDING Luka: incollare il 56** (verifica:
+`omaggio_info` con `{"p_slug":"slings"}` → una riga).
+
 **SVUOTA / ELIMINA ALBUM (3 nov, `supabase/55_album_svuota_elimina.sql`, `/api/foto/album`, `/admin/foto`).** Luka: *"ho sbagliato
 un album nuovo... manca un tasto per cancellare tutto insieme e ricaricare"*. Nell'album aperto: **svuota · via tutte le foto** (l'album
 resta) ed **elimina album**. `admin_album_svuota(id, elimina)` cancella davvero le righe (anche le foto già "tolte", richieste di
