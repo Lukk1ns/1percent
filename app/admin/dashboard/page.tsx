@@ -296,16 +296,10 @@ export default function AdminDashboardPage() {
               cosa: "CULTURE · SLINGS: prime 50, prenotazioni, lista d'attesa",
               acceso: true,
             },
-            {
-              href: "/admin/maldita7",
-              emoji: "🥃",
-              titolo: "Shot omaggio 7/11",
-              cosa: "MALDITA: registrazioni, posti, approvazioni, WhatsApp",
-              acceso: true,
-            },
-            // Le liste delle serate passate (17/10, 30/10) non stanno più qui (Luka, 3/11):
-            // le pagine restano su /admin/maldita e /admin/backto2010, e i contatti si
-            // trovano in Membri → "non iscritti", con la serata per cui si erano iscritti.
+            // Le liste delle serate passate (17/10, 30/10, 7/11) non stanno più qui (Luka, 3/11 e 10/11):
+            // le pagine restano su /admin/maldita, /admin/backto2010 e /admin/maldita7, niente è
+            // cancellato, e i contatti si trovano in Membri → "non iscritti", con la serata per cui
+            // si erano iscritti.
             {
               href: "/admin/eventi",
               emoji: "📅",
@@ -394,7 +388,6 @@ export default function AdminDashboardPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           {[
             ["/admin/pr", "Prevendite e PR"],
-            ["/admin/maldita7", "Shot omaggio 7/11"],
             ["/admin/slings", "Donna omaggio 13/11"],
             ["/admin/porta", "Porta"],
             ["/admin/scan", "Estrazione premi"],
