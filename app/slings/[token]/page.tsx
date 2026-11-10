@@ -265,7 +265,7 @@ export default function MioPage({ params }: { params: Promise<{ token: string }>
 
       {m.stato === "lista_attesa" && (
         <Riquadro colore="ambra" titolo="Sei in lista d'attesa">
-          I 50 omaggi sono tutti assegnati. <strong>Ricontrolla tu questa pagina:</strong> se se ne libera
+          I 100 omaggi sono tutti assegnati. <strong>Ricontrolla tu questa pagina:</strong> se se ne libera
           uno la luce diventa <strong>verde</strong> e il QR compare qui.
         </Riquadro>
       )}

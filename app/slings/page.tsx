@@ -37,7 +37,7 @@ const ERRORI: Record<string, string> = {
  * unpercento.it/slings — DONNA OMAGGIO a CULTURE con gli SLINGS,
  * venerdì 13 novembre (script 56). Copia di /maldita7 con le parole di
  * /maldita: il QR è l'ingresso omaggio, lo scansiona la cassa entro le
- * 00:30. Le prime 50 sono approvate da sole, poi lista d'attesa.
+ * 00:30. Le prime 100 (erano 50, raddoppiate il 10/11) sono approvate da sole, poi lista d'attesa.
  */
 export default function SlingsPage() {
   const router = useRouter();
@@ -171,8 +171,11 @@ export default function SlingsPage() {
           <br />
           omaggio
         </h1>
+        <p className="mt-4 inline-block bg-[#e6fb05] px-3 py-1.5 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-black">
+          troppa richiesta · posti raddoppiati
+        </p>
         <p className="mt-3 text-sm text-white/80">
-          Le <strong className="text-white">prime 50 ragazze</strong> che prenotano qui entrano gratis: fai
+          Le <strong className="text-white">prime 100 ragazze</strong> che prenotano qui entrano gratis: fai
           scansionare il tuo QR in cassa <strong className="text-white">{allOra("entro", ora)}</strong>.
         </p>
         <p className="mt-2 text-[13px] text-white/60">Special guest SLINGS · DJ ISM · start 23:30 · serata 16+</p>
@@ -181,7 +184,7 @@ export default function SlingsPage() {
       {/* Le regole: corte, si leggono in tre secondi */}
       <ul className="mt-6 grid grid-cols-2 gap-2">
         {[
-          ["prime 50", "poi lista d'attesa"],
+          ["prime 100", "poi lista d'attesa"],
           [allOra("entro", ora), "dopo l'ingresso si paga"],
           ["serata 16+", "omaggio solo ragazze"],
           ["documento vero", "in mano, non la foto"],
@@ -230,7 +233,7 @@ export default function SlingsPage() {
           </p>
           <p className="mt-2 text-[12px] leading-relaxed text-white/60">
             {info.esauriti
-              ? "I 50 omaggi sono tutti assegnati. Lascia i tuoi dati: se se ne libera uno compare sulla tua pagina."
+              ? "I 100 omaggi sono tutti assegnati. Lascia i tuoi dati: se se ne libera uno compare sulla tua pagina."
               : "Scrivi i dati come sul documento: all'ingresso li controlliamo."}
           </p>
 
