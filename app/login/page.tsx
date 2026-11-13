@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { problemaMail, pulisciMail } from "@/lib/mail";
+import { SuggerimentoMail } from "@/components/SuggerimentoMail";
 
 /**
  * Rientro.
@@ -30,6 +32,8 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  // La mail che la persona ha detto giusta anche se sembrava sbagliata.
+  const [mailConfermata, setMailConfermata] = useState<string | null>(null);
   const [codice, setCodice] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -64,11 +68,20 @@ function LoginForm() {
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
+    // Una mail scritta male = il codice parte verso il nulla e lui resta
+    // fuori (13 nov: "matteospcassan@gmail" senza .com).
+    const mail = pulisciMail(email);
+    const problema = problemaMail(mail, mailConfermata);
+    if (problema) {
+      setError(problema);
+      return;
+    }
+    setEmail(mail);
     setLoading(true);
     setError("");
     const supabase = createClient();
     const { error: err } = await supabase.auth.signInWithOtp({
-      email,
+      email: mail,
       options: {
         emailRedirectTo:
           `${window.location.origin}/auth/callback` +
@@ -229,15 +242,33 @@ function LoginForm() {
         Inserisci la tua email. Ti mandiamo un codice e un link: ne basta uno.
       </p>
 
-      <form onSubmit={handleSend} className="w-full max-w-xs flex flex-col gap-4">
+      <form onSubmit={handleSend} noValidate className="w-full max-w-xs flex flex-col gap-4">
         <input
           type="email"
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
           placeholder="la tua email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setError("");
+          }}
           required
           autoFocus
           className="input-line text-sm"
+        />
+        <SuggerimentoMail
+          email={email}
+          onCorreggi={(m) => {
+            setEmail(m);
+            setError("");
+          }}
+          onConferma={(m) => {
+            setMailConfermata(m);
+            setError("");
+          }}
+          confermata={mailConfermata}
         />
         {error && <p className="text-brand-red text-sm">{error}</p>}
         <button type="submit" disabled={loading} className="btn btn-primary mt-2 w-full">

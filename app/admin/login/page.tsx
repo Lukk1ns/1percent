@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { mailCompleta, pulisciMail } from "@/lib/mail";
+import { SuggerimentoMail } from "@/components/SuggerimentoMail";
 
 /**
  * Accesso staff.
@@ -77,11 +79,17 @@ export default function AdminLoginPage() {
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
+    const mail = pulisciMail(email);
+    if (!mailCompleta(mail)) {
+      setError("La mail non è completa: manca il finale, tipo .com o .it.");
+      return;
+    }
+    setEmail(mail);
     setLoading(true);
     setError("");
     const supabase = createClient();
     const { error: err } = await supabase.auth.signInWithOtp({
-      email,
+      email: mail,
       options: {
         // Solo account già esistenti (lo staff): niente creazione da qui.
         shouldCreateUser: false,
@@ -153,9 +161,12 @@ export default function AdminLoginPage() {
       <p className="text-brand-gray text-xs uppercase tracking-widest mb-10">
         accesso riservato
       </p>
-      <form onSubmit={handleSend} className="w-full max-w-xs flex flex-col gap-4">
+      <form onSubmit={handleSend} noValidate className="w-full max-w-xs flex flex-col gap-4">
         <input
           type="email"
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
           placeholder="email staff"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -163,6 +174,7 @@ export default function AdminLoginPage() {
           autoFocus
           className="bg-transparent border-b border-white/20 text-white placeholder-brand-gray/50 pb-2 outline-none focus:border-brand-red transition-colors text-sm"
         />
+        <SuggerimentoMail email={email} onCorreggi={setEmail} />
         {error && <p className="text-brand-red text-sm">{error}</p>}
         {error && (
           // Operatori e baristi nuovi: qui il codice non arriva, da /login sì

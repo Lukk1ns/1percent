@@ -4,6 +4,8 @@ import { useState } from "react";
 import { createClient as creaClientSupabase } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { normalizzaNumero } from "@/lib/whatsapp";
+import { problemaMail, pulisciMail } from "@/lib/mail";
+import { SuggerimentoMail } from "@/components/SuggerimentoMail";
 
 /**
  * Un PR aggiunto a mano dal pannello (7 ott).
@@ -89,6 +91,7 @@ export function NuovoPR({
   const [nome, setNome] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
+  const [mailConfermata, setMailConfermata] = useState<string | null>(null);
   const [alias, setAlias] = useState("");
   const [serata, setSerata] = useState("");
   const [lavorando, setLavorando] = useState(false);
@@ -113,14 +116,13 @@ export function NuovoPR({
 
     const nomeVero = nome.trim().replace(/\s+/g, " ");
     const tel = normalizzaNumero(telefono);
-    const mail = email.trim().toLowerCase();
+    const mail = pulisciMail(email);
     if (nomeVero.length < 2) return setErrore("Scrivi nome e cognome.");
     if (!tel) {
       return setErrore("Il numero WhatsApp non è giusto (se non è italiano, col prefisso +).");
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
-      return setErrore("La mail non è giusta: è quella con cui entrerà nel sito.");
-    }
+    const problemaM = problemaMail(mail, mailConfermata);
+    if (problemaM) return setErrore(problemaM);
     const aliasScelto = alias.trim().toLowerCase();
     if (aliasScelto && !ALIAS_OK.test(aliasScelto)) {
       return setErrore("Alias: almeno 2 caratteri, solo lettere, numeri, punto, - e _.");
@@ -286,7 +288,7 @@ export function NuovoPR({
     "w-full border border-white/15 bg-black px-3 py-3 text-sm text-white placeholder-brand-gray/50 outline-none focus:border-emerald-400";
 
   return (
-    <form onSubmit={crea} className="mb-8 border border-emerald-400/50 px-4 py-5">
+    <form onSubmit={crea} noValidate className="mb-8 border border-emerald-400/50 px-4 py-5">
       <div className="mb-4 flex items-baseline justify-between gap-3">
         <p className="text-xs uppercase tracking-widest text-emerald-400">Nuovo PR</p>
         <button
@@ -345,6 +347,12 @@ export function NuovoPR({
             className={campo}
           />
         </label>
+        <SuggerimentoMail
+          email={email}
+          onCorreggi={setEmail}
+          onConferma={setMailConfermata}
+          confermata={mailConfermata}
+        />
         <label className="block">
           <span className="mb-1 block text-[10px] uppercase tracking-widest text-brand-gray">
             alias · facoltativo

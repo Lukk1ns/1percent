@@ -14,6 +14,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { type Bozza } from "@/lib/registrazione";
 import { normalizzaNumero } from "@/lib/whatsapp";
+import { problemaMail, pulisciMail } from "@/lib/mail";
+import { SuggerimentoMail } from "@/components/SuggerimentoMail";
 
 // Schermata mostrata quando le iscrizioni sono chiuse (interruttore admin)
 /** Porta chiusa a chi non ha il link di nessuno. */
@@ -138,6 +140,7 @@ function JoinForm() {
   const [alias, setAlias] = useState("");
   const [avatarId, setAvatarId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
+  const [mailConfermata, setMailConfermata] = useState<string | null>(null);
   const [gender, setGender] = useState<"M" | "F" | null>(null);
   const [consent, setConsent] = useState(false);
   const [aliasError, setAliasError] = useState("");
@@ -178,8 +181,10 @@ function JoinForm() {
       setAliasError("Seleziona M o F.");
       return false;
     }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setAliasError("Inserisci una email valida — ti serve per rientrare.");
+    // Scritta male = il codice per rientrare non le arriverà mai (13 nov).
+    const problema = problemaMail(pulisciMail(email), mailConfermata);
+    if (problema) {
+      setAliasError(problema);
       return false;
     }
     if (vuoleStaff && nome.trim().length < 2) {
@@ -212,7 +217,7 @@ function JoinForm() {
     const bozza: Bozza = {
       alias: alias.trim().toLowerCase(),
       avatarId,
-      email: email.trim(),
+      email: pulisciMail(email),
       gender,
       refCode: refCode || null,
       crewRequest: vuoleStaff,
@@ -362,8 +367,19 @@ function JoinForm() {
           placeholder="la tua email *"
           value={email}
           onChange={(e) => { setEmail(e.target.value); setAliasError(""); }}
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
           className="input-line text-sm"
         />
+        <div className="mt-2">
+          <SuggerimentoMail
+            email={email}
+            onCorreggi={(m) => { setEmail(m); setAliasError(""); }}
+            onConferma={(m) => { setMailConfermata(m); setAliasError(""); }}
+            confermata={mailConfermata}
+          />
+        </div>
         <p className="text-[10px] text-brand-gray/40 mt-2 uppercase tracking-widest">
           Serve per rientrare dal sito — niente spam
         </p>
