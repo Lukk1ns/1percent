@@ -4,6 +4,15 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**MAIL SCRITTE MALE (13 nov, `lib/mail.ts`, `components/SuggerimentoMail.tsx`, commit 29617ce, NESSUNO SCRIPT).** Luka riceveva
+"Indirizzo non trovato" per i codici: `matteospcassan@gmail` senza .com (il campo `type="email"` lo accetta, `/login` non
+controllava niente). Ora `pulisciMail` (spazi, minuscole, virgola→punto) + `problemaMail` (blocca le incomplete) +
+`correggiMail` ("Intendevi …?": fornitori noti con le loro estensioni vere, typo a distanza 1–2 tipo gmial/hotmial/liber, .con/.cm
+→ .com; domini sconosciuti si toccano solo su .con/.comm…). Su **`/login`, `/unisciti`, `NuovoPR`** blocca anche il typo finché non
+si preme "sì, correggi" o "no, è giusta"; **`/admin/login`** blocca solo le incomplete. Form con `noValidate`. Provato su 42 mail.
+⚠️ `email.it`, `mail.com`, `tin.it`… sono veri: stanno in `FORNITORI`, se no diventavano gmail. Profili già iscritti con la mail
+sbagliata NON sono corretti (non c'è una funzione admin per cambiare la mail).
+
 **I PR SI ISCRIVONO DA SOLI ALLA SERATA (13 nov, `supabase/59_pr_iscrizione_libera.sql`, `/pr`, `/admin/pr`, commit 8c9f48b).**
 Luka, creato un evento nuovo: *"dovrei attivare ogni PR che me lo richiede... ogni PR approvato abbia la possibilità di
 auto-iscriversi all'evento e auto-aggiungersi le prime 5 prevendite... facile e che non faccia casini su altre funzioni"*.
@@ -24,7 +33,7 @@ auto-iscriversi all'evento e auto-aggiungersi le prime 5 prevendite... facile e 
 neanche metterle lì a scelta per i PR"* → **`60_iscrizione_libera_senza_omaggi.sql`** (commit 65a7288): serata con **qualsiasi**
 riga in `omaggio_liste` = mai iscrizione libera (spenta se accesa, `admin_set` → `omaggio`, `admin_pr_iscrizione_libera` ha la
 colonna `omaggio` e il pannello nasconde il riquadro, PR non la vede, `pr_iscriviti` → `chiusa`). Agganci a mano intatti.
-PGlite 53/53. **PENDING Luka: incollare il 60** (verifica: `admin_pr_iscrizione_libera` con `?select=omaggio`).
+PGlite 53/53. **60 DENTRO (13/11, `?select=omaggio` → 42501).**
 
 **DONNA OMAGGIO · CULTURE con gli SLINGS VEN 13/11 (5 nov, `supabase/56_culture_slings_13_novembre.sql`, `/slings`,
 `/admin/slings`, commit f5acb40).** Luka: *"serve anche fare la prenotazione per le donne gratis e mettere 50 posti"*.
