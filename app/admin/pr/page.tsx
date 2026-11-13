@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, dataLunga, giornoEData, ora } from "@/lib/eventi";
 import { delegaPerLocale, forseUnder16 } from "@/lib/event";
 import { graficaBigliettoUrl } from "@/lib/biglietto";
+import { downscaleImage } from "@/lib/downscale";
 import { CinqueStelle } from "@/components/Stelle";
 import { MandaBiglietto } from "@/components/MandaBiglietto";
 import {
@@ -194,8 +195,12 @@ function SlotGrafica({
   async function carica(f: File) {
     setLavorando(true);
     setErrore(null);
+    // Comprimo nel browser: le grafiche esportate (PNG 2160x3840) pesano oltre 4,5 MB
+    // e Vercel le respinge con 413 prima ancora di arrivare al server.
+    // 1920 sul lato lungo = già la misura finale del server (1080x1920).
+    const piccola = await downscaleImage(f, 1920, 0.92);
     const fd = new FormData();
-    fd.append("file", f);
+    fd.append("file", piccola, "grafica.jpg");
     fd.append("event_id", evento);
     const res = await fetch("/api/biglietto-grafica", { method: "POST", body: fd });
     setLavorando(false);
@@ -203,8 +208,8 @@ function SlotGrafica({
     if (!res.ok) {
       const j = await res.json().catch(() => null);
       setErrore(
-        j?.error === "troppo-grande"
-          ? "Immagine troppo pesante (massimo 12 MB)."
+        j?.error === "troppo-grande" || res.status === 413
+          ? "Immagine troppo pesante."
           : j?.error === "non-e-un-immagine"
             ? "Questo file non è un'immagine."
             : `Non caricata (${j?.error ?? res.status}).`,

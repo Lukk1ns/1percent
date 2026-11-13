@@ -19,7 +19,7 @@ async function loadViaImageElement(file: File): Promise<HTMLImageElement> {
   }
 }
 
-export async function downscaleImage(file: File, maxSide = 1024): Promise<Blob> {
+export async function downscaleImage(file: File, maxSide = 1024, quality = 0.85): Promise<Blob> {
   try {
     let width = 0;
     let height = 0;
@@ -53,7 +53,7 @@ export async function downscaleImage(file: File, maxSide = 1024): Promise<Blob> 
     if (source instanceof ImageBitmap) source.close();
 
     const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.85),
+      canvas.toBlob(resolve, "image/jpeg", quality),
     );
     // Se il browser non collabora, meglio l'originale che niente:
     // il server ha comunque i suoi controlli.
