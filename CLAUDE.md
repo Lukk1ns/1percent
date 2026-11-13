@@ -20,8 +20,11 @@ auto-iscriversi all'evento e auto-aggiungersi le prime 5 prevendite... facile e 
 - **Nessuna funzione esistente riscritta.** `pr_serate_libere()` usa `_pr_agganciato` (ultima = 56) senza ridefinirla.
   ⚠️ Una festa staccata (lista omaggio) con l'interruttore acceso compare ai PR ma risponde "chiusa": non accenderlo lì.
 - Provato su PGlite **44/44**. Build ok. Senza script: lista vuota per i PR, il tasto nel pannello dice cosa incollare.
-**PENDING Luka: incollare il 59** (verifica: `pr_serate_libere` con la chiave anon → `42501` = c'è) · accendere l'interruttore
-sulla serata nuova · mandare il messaggio ai PR.
+**59 DENTRO (13/11, verificato: `pr_serate_libere` → 42501).** Poi Luka: *"le date free entry o iscrizioni shot non dovresti
+neanche metterle lì a scelta per i PR"* → **`60_iscrizione_libera_senza_omaggi.sql`** (commit 65a7288): serata con **qualsiasi**
+riga in `omaggio_liste` = mai iscrizione libera (spenta se accesa, `admin_set` → `omaggio`, `admin_pr_iscrizione_libera` ha la
+colonna `omaggio` e il pannello nasconde il riquadro, PR non la vede, `pr_iscriviti` → `chiusa`). Agganci a mano intatti.
+PGlite 53/53. **PENDING Luka: incollare il 60** (verifica: `admin_pr_iscrizione_libera` con `?select=omaggio`).
 
 **DONNA OMAGGIO · CULTURE con gli SLINGS VEN 13/11 (5 nov, `supabase/56_culture_slings_13_novembre.sql`, `/slings`,
 `/admin/slings`, commit f5acb40).** Luka: *"serve anche fare la prenotazione per le donne gratis e mettere 50 posti"*.
