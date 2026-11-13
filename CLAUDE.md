@@ -1,8 +1,27 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 3 novembre 2026
+> Ultimo aggiornamento: 13 novembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**I PR SI ISCRIVONO DA SOLI ALLA SERATA (13 nov, `supabase/59_pr_iscrizione_libera.sql`, `/pr`, `/admin/pr`, commit 8c9f48b).**
+Luka, creato un evento nuovo: *"dovrei attivare ogni PR che me lo richiede... ogni PR approvato abbia la possibilità di
+auto-iscriversi all'evento e auto-aggiungersi le prime 5 prevendite... facile e che non faccia casini su altre funzioni"*.
+- **Interruttore per serata** in `/admin/pr` → scheda PR, sopra "agganciati a questa serata": **iscrizione libera dei pr ·
+  accesa/spenta** (+ "iscritti da soli: N"). **Spento di serie**: nessuna serata cambia finché Luka non lo accende.
+  Tabella nuova **`pr_iscrizione_libera`** (riga = aperta), `admin_pr_iscrizione_libera(event)` / `admin_set_pr_iscrizione_libera(event, on)`.
+- **Il PR** su `/pr` vede il riquadro verde **"serate aperte · iscriviti"** → tasto **"iscriviti · ricevi N prevendite"** →
+  `pr_iscriviti(event)`: riga in `pr_serate` con `created_by 'da solo: <mail>'` + `pr_allocations` di `blocchetti_iniziali`
+  (nota `dotazione di partenza · iscritto da solo`) + riga `pr_iscritto_da_solo` in `admin_log`. Esiti `ok:<n>`, `gia`,
+  `chiusa` (spenta, passata, area chiusa, **festa staccata**: l'aggancio si toglie subito), `tolto`.
+- **Regole:** chi Luka ha **sganciato** da quella serata (`pr_sgancia` in `admin_log`) non rientra da solo; **non raddoppia**
+  (se su quella serata ha già avuto prevendite, `ok:0`); doppio tocco = una consegna (solo chi inserisce la riga consegna);
+  admin e **account manager** non vedono niente (vendono già ovunque); clienti → Non autorizzato. Spegnendo, chi è dentro resta.
+- **Nessuna funzione esistente riscritta.** `pr_serate_libere()` usa `_pr_agganciato` (ultima = 56) senza ridefinirla.
+  ⚠️ Una festa staccata (lista omaggio) con l'interruttore acceso compare ai PR ma risponde "chiusa": non accenderlo lì.
+- Provato su PGlite **44/44**. Build ok. Senza script: lista vuota per i PR, il tasto nel pannello dice cosa incollare.
+**PENDING Luka: incollare il 59** (verifica: `pr_serate_libere` con la chiave anon → `42501` = c'è) · accendere l'interruttore
+sulla serata nuova · mandare il messaggio ai PR.
 
 **DONNA OMAGGIO · CULTURE con gli SLINGS VEN 13/11 (5 nov, `supabase/56_culture_slings_13_novembre.sql`, `/slings`,
 `/admin/slings`, commit f5acb40).** Luka: *"serve anche fare la prenotazione per le donne gratis e mettere 50 posti"*.
