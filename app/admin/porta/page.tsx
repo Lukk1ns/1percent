@@ -146,6 +146,11 @@ export default function PortaPage() {
   const [inCoda, setInCoda] = useState(0);
   const [scaricando, setScaricando] = useState(false);
   const [localeEntrati, setLocaleEntrati] = useState<{ entrati: number; totali: number } | null>(null);
+  // Chi è dentro: si apre toccando il numero degli entrati (Luka, 13/11).
+  // Mentre è aperta lo scanner non legge, così un QR inquadrato per caso
+  // non passa "di nascosto" dietro la lista.
+  const [chiAperta, setChiAperta] = useState(false);
+  const listaAperta = useRef(false);
 
   const aggiornaRiepilogo = useCallback(async (ev: string) => {
     if (!ev) return;
@@ -370,7 +375,7 @@ export default function PortaPage() {
             },
           },
           (letto: string) => {
-            if (occupato.current) return;
+            if (occupato.current || listaAperta.current) return;
             const token = tokenDa(letto);
             const u = ultimoQR.current;
             if (token === u.token && Date.now() - u.at < 4000) return;
@@ -559,14 +564,22 @@ export default function PortaPage() {
               {ev?.nome ?? "—"}
             </p>
           </div>
-          <div className="flex-shrink-0 text-right">
+          <button
+            onClick={() => {
+              if (!serata) return;
+              listaAperta.current = true;
+              setChiAperta(true);
+            }}
+            className="flex-shrink-0 text-right"
+            aria-label="Vedi chi è entrato"
+          >
             <p className="font-display text-3xl leading-none text-white">
               {riepilogo?.entrati ?? 0}
             </p>
             <p className="font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray">
-              entrati / {riepilogo?.attesi ?? 0}
+              entrati / {riepilogo?.attesi ?? 0} ›
             </p>
-          </div>
+          </button>
         </div>
 
         {/* Com'è messa la porta adesso: rete, lista, cose da mandare */}
@@ -790,7 +803,207 @@ export default function PortaPage() {
           </p>
         )}
       </div>
+
+      {chiAperta && serata && (
+        <ChiDentro
+          serata={serata}
+          nomeSerata={ev?.nome ?? "serata"}
+          onChiudi={() => {
+            listaAperta.current = false;
+            setChiAperta(false);
+            aggiornaRiepilogo(serata);
+          }}
+        />
+      )}
     </main>
+  );
+}
+
+/**
+ * Chi è entrato, e chi deve ancora arrivare. La lista è quella dei
+ * biglietti della serata (prevendite, omaggi, prenotazioni): con la
+ * rete si chiede al server, senza si guarda quella scaricata sul telefono.
+ */
+function ChiDentro({
+  serata,
+  nomeSerata,
+  onChiudi,
+}: {
+  serata: string;
+  nomeSerata: string;
+  onChiudi: () => void;
+}) {
+  const [righe, setRighe] = useState<BigliettoLocale[] | null>(null);
+  const [daTelefono, setDaTelefono] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
+  const [vista, setVista] = useState<"dentro" | "fuori">("dentro");
+  const [tipo, setTipo] = useState<string | null>(null);
+  const [cerca, setCerca] = useState("");
+  const [giro, setGiro] = useState(0);
+
+  useEffect(() => {
+    let annullato = false;
+    (async () => {
+      setErrore(null);
+      const locale = depositoAttuale();
+      const usaLocale = () => {
+        if (locale && locale.eventId === serata) {
+          setRighe(locale.biglietti);
+          setDaTelefono(true);
+          return true;
+        }
+        return false;
+      };
+      if (!navigator.onLine) {
+        if (!usaLocale()) setErrore("Senza rete, e sul telefono non c'è la lista di stasera.");
+        return;
+      }
+      const { data, error } = await createClient().rpc("porta_lista", { p_event: serata });
+      if (annullato) return;
+      if (error) {
+        if (!usaLocale()) setErrore(error.message);
+        return;
+      }
+      setRighe((data ?? []) as BigliettoLocale[]);
+      setDaTelefono(false);
+    })();
+    return () => {
+      annullato = true;
+    };
+  }, [serata, giro]);
+
+  const validi = (righe ?? []).filter((b) => b.stato !== "in_attesa");
+  const dentro = validi.filter((b) => b.stato === "usata");
+  const fuori = validi.filter((b) => b.stato !== "usata");
+  const base = vista === "dentro" ? dentro : fuori;
+
+  // Per tipo di biglietto (prevendita, omaggio donna, tavolo…): si toccano e filtrano
+  const tipi = Array.from(
+    base.reduce((m, b) => m.set(b.tier_label || "—", (m.get(b.tier_label || "—") ?? 0) + 1), new Map<string, number>()),
+  ).sort((a, b) => b[1] - a[1]);
+
+  const q = cerca.trim().toLowerCase();
+  const visibili = base.filter(
+    (b) =>
+      (!tipo || (b.tier_label || "—") === tipo) &&
+      (!q || `${b.nome} ${b.cognome} ${b.pr_alias}`.toLowerCase().includes(q)),
+  );
+
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+        <div className="min-w-0">
+          <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">chi è entrato</p>
+          <p className="truncate font-display text-xl uppercase leading-none text-white">{nomeSerata}</p>
+        </div>
+        <button
+          onClick={onChiudi}
+          className="flex-shrink-0 border border-white/20 px-4 py-2.5 font-tech text-[11px] uppercase tracking-[0.15em] text-white"
+        >
+          ✕ chiudi
+        </button>
+      </div>
+
+      <div className="border-b border-white/10 px-4 py-3">
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              ["dentro", "entrati", dentro.length],
+              ["fuori", "da entrare", fuori.length],
+            ] as const
+          ).map(([v, t, n]) => (
+            <button
+              key={v}
+              onClick={() => {
+                setVista(v);
+                setTipo(null);
+              }}
+              className={`px-3 py-2.5 text-left ${
+                vista === v ? "bg-white text-black" : "border border-white/15 text-white/70"
+              }`}
+            >
+              <span className="font-display text-2xl leading-none">{righe ? n : "…"}</span>{" "}
+              <span className="font-tech text-[10px] uppercase tracking-[0.15em]">{t}</span>
+            </button>
+          ))}
+        </div>
+
+        {tipi.length > 1 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {tipi.map(([t, n]) => (
+              <button
+                key={t}
+                onClick={() => setTipo(tipo === t ? null : t)}
+                className={`border px-2.5 py-1.5 font-tech text-[10px] uppercase tracking-[0.1em] ${
+                  tipo === t ? "border-brand-red bg-brand-red/15 text-white" : "border-white/10 text-brand-gray"
+                }`}
+              >
+                {t} <span className="text-white/80">{n}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <input
+          type="search"
+          value={cerca}
+          onChange={(e) => setCerca(e.target.value)}
+          placeholder="cerca nome o PR"
+          className="mt-2 w-full border border-white/15 bg-black px-3 py-2.5 text-base text-white placeholder-brand-gray/50 outline-none focus:border-brand-red"
+        />
+        {daTelefono && (
+          <p className="mt-2 text-[11px] text-amber-300">
+            Senza rete: è la lista sul telefono, vede solo gli ingressi fatti qui.
+          </p>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {errore && (
+          <p className="m-4 border border-brand-red/50 bg-brand-red/10 p-3 text-xs text-brand-red">{errore}</p>
+        )}
+        {!righe && !errore && (
+          <p className="px-4 py-10 text-center font-tech text-[11px] uppercase tracking-[0.3em] text-brand-gray">
+            un attimo…
+          </p>
+        )}
+        {righe && visibili.length === 0 && (
+          <p className="px-4 py-10 text-center text-[13px] text-white/50">
+            {q ? "Nessuno con questo nome." : vista === "dentro" ? "Ancora nessuno entrato." : "Sono entrati tutti."}
+          </p>
+        )}
+        <ul className="divide-y divide-white/[0.07]">
+          {visibili.map((b) => (
+            <li key={b.token} className="flex items-center justify-between gap-3 px-4 py-2.5">
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-semibold text-white">
+                  {b.cognome} {b.nome}
+                </p>
+                <p className="truncate text-[12px] text-white/50">
+                  {b.tier_label || "—"} · {b.pr_alias}
+                </p>
+              </div>
+              {b.minorenne && (
+                <span className="flex-shrink-0 font-tech text-[9px] uppercase tracking-[0.15em] text-amber-300">
+                  {b.under16 ? "under 16" : "minorenne"}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <button
+        onClick={() => {
+          setRighe(null);
+          setGiro((g) => g + 1);
+        }}
+        className="border-t border-white/10 py-3.5 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray"
+        style={{ paddingBottom: "calc(0.875rem + env(safe-area-inset-bottom))" }}
+      >
+        ↻ aggiorna
+      </button>
+    </div>
   );
 }
 

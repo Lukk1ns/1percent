@@ -49,7 +49,7 @@ type Richiesta = {
   entrata_at: string | null;
 };
 
-type Filtro = "da_decidere" | "lista_attesa" | "approvata" | "rifiutata" | "tutte";
+type Filtro = "da_decidere" | "lista_attesa" | "approvata" | "entrate" | "rifiutata" | "tutte";
 type Messaggio = "conferma" | "sorpresa";
 
 function quando(iso: string): string {
@@ -248,6 +248,16 @@ export default function PannelloOmaggio({
     segna([r.id], cosa, true);
   }
 
+  /** Tocco su un numero in alto: filtro giusto e giù alla lista. */
+  function apriLista(f: Filtro) {
+    setFiltro(f);
+    setScelte(new Set());
+    setCerca("");
+    requestAnimationFrame(() =>
+      document.getElementById("richieste")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }
+
   function scaricaCsv() {
     const intest = ["nome", "cognome", "anno di nascita", "whatsapp", "stato", "iscrizione", "entrata", "shot", "avvisatemi"];
     const righeCsv = righe.map((r) =>
@@ -268,15 +278,21 @@ export default function PannelloOmaggio({
 
   const visibili = useMemo(() => {
     const q = cerca.trim().toLowerCase();
-    return righe.filter((r) => {
+    const trovate = righe.filter((r) => {
       const ok =
         filtro === "tutte" ||
         (filtro === "da_decidere" && r.stato === "in_attesa") ||
+        (filtro === "entrate" && !!r.entrata_at) ||
         r.stato === filtro;
       if (!ok) return false;
       if (!q) return true;
       return `${r.nome} ${r.cognome} ${r.instagram ?? ""} ${r.telefono}`.toLowerCase().includes(q);
     });
+    // Chi è entrata: l'ultima arrivata in cima, come si guarda la porta.
+    if (filtro === "entrate") {
+      trovate.sort((a, b) => (b.entrata_at ?? "").localeCompare(a.entrata_at ?? ""));
+    }
+    return trovate;
   }, [righe, filtro, cerca]);
 
   const daScrivere = useMemo(
@@ -311,6 +327,7 @@ export default function PannelloOmaggio({
     da_decidere: lista.n_attesa,
     lista_attesa: lista.n_lista_attesa,
     approvata: lista.n_approvate,
+    entrate: righe.filter((r) => r.entrata_at).length,
     rifiutata: lista.n_rifiutate,
     tutte: righe.length,
   };
@@ -356,7 +373,10 @@ export default function PannelloOmaggio({
 
       {/* I NUMERI */}
       <section className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-5">
-        <div className="col-span-2 border border-brand-red/60 bg-brand-red/10 px-4 py-4 sm:col-span-1">
+        <button
+          onClick={() => apriLista("approvata")}
+          className="col-span-2 border border-brand-red/60 bg-brand-red/10 px-4 py-4 text-left sm:col-span-1"
+        >
           <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">approvate</p>
           <p className="mt-1 font-display text-5xl leading-none text-white">
             {lista.n_approvate}
@@ -365,18 +385,35 @@ export default function PannelloOmaggio({
           <p className="mt-1 text-[11px] text-white/60">
             {liberi === null ? "posti da decidere" : liberi === 0 ? "posti pieni" : `${liberi} posti liberi`}
           </p>
-        </div>
-        {[
-          ["da decidere", lista.n_attesa],
-          ["lista d'attesa", lista.n_lista_attesa],
-          ["entrate", lista.n_entrate],
-          ["shot", lista.n_shot],
-        ].map(([t, n]) => (
-          <div key={t} className="border border-white/10 px-4 py-4">
-            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">{t}</p>
-            <p className="mt-1 font-display text-4xl leading-none text-white">{n}</p>
-          </div>
-        ))}
+        </button>
+        {/* I numeri si toccano: aprono qui sotto la lista di chi c'è dentro
+            (Luka, 13/11: "cliccare sul numero di ingressi e vedere chi è entrato"). */}
+        {(
+          [
+            ["da decidere", lista.n_attesa, "da_decidere"],
+            ["lista d'attesa", lista.n_lista_attesa, "lista_attesa"],
+            ["entrate", lista.n_entrate, "entrate"],
+            ["shot", lista.n_shot, null],
+          ] as const
+        ).map(([t, n, f]) =>
+          f ? (
+            <button
+              key={t}
+              onClick={() => apriLista(f)}
+              className={`border px-4 py-4 text-left ${
+                filtro === f ? "border-white/40 bg-white/[0.06]" : "border-white/10"
+              }`}
+            >
+              <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">{t} ›</p>
+              <p className="mt-1 font-display text-4xl leading-none text-white">{n}</p>
+            </button>
+          ) : (
+            <div key={t} className="border border-white/10 px-4 py-4">
+              <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray">{t}</p>
+              <p className="mt-1 font-display text-4xl leading-none text-white">{n}</p>
+            </div>
+          ),
+        )}
       </section>
 
       {avviso && (
@@ -492,7 +529,7 @@ export default function PannelloOmaggio({
       </section>
 
       {/* LE RICHIESTE */}
-      <section className="mt-8">
+      <section id="richieste" className="mt-8 scroll-mt-16">
         <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">le richieste</p>
         <div className="mt-3 flex gap-1 overflow-x-auto">
           {(
@@ -500,6 +537,7 @@ export default function PannelloOmaggio({
               ["da_decidere", "da decidere"],
               ["lista_attesa", "lista d'attesa"],
               ["approvata", "approvate"],
+              ["entrate", "entrate"],
               ["rifiutata", "rifiutate"],
               ["tutte", "tutte"],
             ] as const
