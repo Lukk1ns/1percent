@@ -553,9 +553,13 @@ export default function AdminPrPage() {
   const [mostraNonAgganciati, setMostraNonAgganciati] = useState(false);
   // Iscrizione libera dei PR a questa serata (script 59). `manca` = lo
   // script non è incollato: il riquadro c'è, il tasto dice cosa manca.
-  const [libera, setLibera] = useState<{ aperta: boolean; da_soli: number; manca?: boolean } | null>(
-    null,
-  );
+  // `omaggio` = serata con free entry / shot (script 60): niente interruttore.
+  const [libera, setLibera] = useState<{
+    aperta: boolean;
+    da_soli: number;
+    manca?: boolean;
+    omaggio?: boolean;
+  } | null>(null);
   const [fasce, setFasce] = useState<Fascia[]>([]);
   const [biglietti, setBiglietti] = useState<BigliettoAdmin[]>([]);
   const [cruscotto, setCruscotto] = useState<Cruscotto | null>(null);
@@ -701,7 +705,12 @@ export default function AdminPrPage() {
     setLibera(null);
     supabase.rpc("admin_pr_iscrizione_libera", { p_event: id }).then(({ data, error }) => {
       if (error) setLibera({ aperta: false, da_soli: 0, manca: true });
-      else setLibera({ aperta: Boolean(data?.[0]?.aperta), da_soli: Number(data?.[0]?.da_soli ?? 0) });
+      else
+        setLibera({
+          aperta: Boolean(data?.[0]?.aperta),
+          da_soli: Number(data?.[0]?.da_soli ?? 0),
+          omaggio: Boolean(data?.[0]?.omaggio),
+        });
     });
     // E per i punti: finché 38_punti_pr.sql non è incollato niente stelle.
     supabase
@@ -877,7 +886,7 @@ export default function AdminPrPage() {
       )
     )
       return;
-    const { error } = await createClient().rpc("admin_set_pr_iscrizione_libera", {
+    const { data, error } = await createClient().rpc("admin_set_pr_iscrizione_libera", {
       p_event: evento,
       p_on: accendi,
     });
@@ -885,6 +894,8 @@ export default function AdminPrPage() {
       window.alert(error.message);
       return;
     }
+    if (data === "omaggio")
+      window.alert("Questa serata ha una lista omaggio (free entry o shot): niente iscrizione libera.");
     await caricaEvento(evento);
   }
 
@@ -2405,7 +2416,7 @@ export default function AdminPrPage() {
               </button>
             </div>
 
-            {libera && ev && !ev.passato && (
+            {libera && !libera.omaggio && ev && !ev.passato && (
               <div
                 className={`mt-1 border px-4 py-3 ${
                   libera.aperta ? "border-emerald-400/50 bg-emerald-400/5" : "border-white/15"
