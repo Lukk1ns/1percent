@@ -551,6 +551,11 @@ export default function AdminPrPage() {
   const [agganci, setAgganci] = useState<Record<string, string[]> | null>(null);
   // I non agganciati a questa serata stanno chiusi in fondo alla lista.
   const [mostraNonAgganciati, setMostraNonAgganciati] = useState(false);
+  // Iscrizione libera dei PR a questa serata (script 59). `manca` = lo
+  // script non è incollato: il riquadro c'è, il tasto dice cosa manca.
+  const [libera, setLibera] = useState<{ aperta: boolean; da_soli: number; manca?: boolean } | null>(
+    null,
+  );
   const [fasce, setFasce] = useState<Fascia[]>([]);
   const [biglietti, setBiglietti] = useState<BigliettoAdmin[]>([]);
   const [cruscotto, setCruscotto] = useState<Cruscotto | null>(null);
@@ -692,6 +697,11 @@ export default function AdminPrPage() {
         (mappa[r.pr_id] ??= []).push(r.event_id);
       }
       setAgganci(mappa);
+    });
+    setLibera(null);
+    supabase.rpc("admin_pr_iscrizione_libera", { p_event: id }).then(({ data, error }) => {
+      if (error) setLibera({ aperta: false, da_soli: 0, manca: true });
+      else setLibera({ aperta: Boolean(data?.[0]?.aperta), da_soli: Number(data?.[0]?.da_soli ?? 0) });
     });
     // E per i punti: finché 38_punti_pr.sql non è incollato niente stelle.
     supabase
@@ -844,6 +854,35 @@ export default function AdminPrPage() {
           ? "Manca un pezzo sul database: incolla supabase/30_ingresso_pr.sql nel SQL Editor."
           : error.message,
       );
+      return;
+    }
+    await caricaEvento(evento);
+  }
+
+  async function cambiaIscrizioneLibera() {
+    if (!libera || !evento) return;
+    if (libera.manca) {
+      window.alert(
+        "Manca un pezzo sul database: incolla supabase/59_pr_iscrizione_libera.sql nel SQL Editor.",
+      );
+      return;
+    }
+    const nome = eventi.find((e) => e.event_id === evento)?.nome ?? "questa serata";
+    const accendi = !libera.aperta;
+    if (
+      !window.confirm(
+        accendi
+          ? `Aprire ${nome} a tutti i PR?\n\nOgni PR approvato la trova in «Le tue prevendite» e si iscrive da solo con un tasto, ricevendo ${iniziali || 5} prevendite. Chi hai tolto tu da questa serata non può rientrare da solo.`
+          : `Chiudere l'iscrizione libera a ${nome}?\n\nChi si è già iscritto resta agganciato con le sue prevendite; nessun altro può più iscriversi da solo.`,
+      )
+    )
+      return;
+    const { error } = await createClient().rpc("admin_set_pr_iscrizione_libera", {
+      p_event: evento,
+      p_on: accendi,
+    });
+    if (error) {
+      window.alert(error.message);
       return;
     }
     await caricaEvento(evento);
@@ -2365,6 +2404,47 @@ export default function AdminPrPage() {
                 ritira a tutti
               </button>
             </div>
+
+            {libera && ev && !ev.passato && (
+              <div
+                className={`mt-1 border px-4 py-3 ${
+                  libera.aperta ? "border-emerald-400/50 bg-emerald-400/5" : "border-white/15"
+                }`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p
+                      className={`font-tech text-[10px] uppercase tracking-[0.2em] ${
+                        libera.aperta ? "text-emerald-300" : "text-brand-gray"
+                      }`}
+                    >
+                      iscrizione libera dei pr · {libera.aperta ? "accesa" : "spenta"}
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-white/70">
+                      {libera.aperta
+                        ? `Ogni PR approvato si iscrive da solo a questa serata e riceve ${iniziali || 5} prevendite.`
+                        : "Accendila e i PR approvati si iscrivono da soli, con le prime prevendite, senza che tu li agganci uno a uno."}
+                      {libera.da_soli > 0 && (
+                        <span className="text-emerald-300">
+                          {" "}
+                          Iscritti da soli: {libera.da_soli}.
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    onClick={cambiaIscrizioneLibera}
+                    className={`flex-shrink-0 border px-4 py-3 font-tech text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                      libera.aperta
+                        ? "border-white/20 text-brand-gray hover:text-white"
+                        : "border-emerald-400/60 text-emerald-300 hover:bg-emerald-400/10"
+                    }`}
+                  >
+                    {libera.aperta ? "spegni" : "accendi"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {agganci !== null && (
               <p className="font-tech text-[10px] uppercase tracking-[0.15em] text-brand-gray">

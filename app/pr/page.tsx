@@ -22,6 +22,15 @@ type EventoPR = {
   puo_vendere?: boolean;
 };
 
+/** Una serata aperta all'iscrizione libera (script 59). */
+type SerataLibera = {
+  event_id: string;
+  nome: string;
+  locale: string | null;
+  starts_at: string;
+  quante: number;
+};
+
 type Stato = {
   aperta: boolean;
   vendite_on: boolean;
@@ -52,6 +61,11 @@ export default function PrPage() {
   // (la lezione dell'area PR senza link, 24 set).
   const [sonoManager, setSonoManager] = useState(false);
   const [eventi, setEventi] = useState<EventoPR[]>([]);
+  // Le serate a cui si può iscrivere da solo (script 59). Finché lo
+  // script non è incollato la chiamata fallisce e la lista resta vuota.
+  const [libere, setLibere] = useState<SerataLibera[]>([]);
+  const [iscrivo, setIscrivo] = useState<string | null>(null);
+  const [iscritto, setIscritto] = useState<{ nome: string; quante: number } | null>(null);
   // Le stelle (30 set). Null finché 38_punti_pr.sql non è incollato:
   // la scheda semplicemente non compare.
   const [punti, setPunti] = useState<Punti | null>(null);
@@ -157,6 +171,11 @@ export default function PrPage() {
         }
         const lista: EventoPR[] = evRes.data ?? [];
         setEventi(lista);
+        if (!s.sono_admin) {
+          supabase.rpc("pr_serate_libere").then(({ data, error }) => {
+            if (!error) setLibere((data as SerataLibera[]) ?? []);
+          });
+        }
         if (ptRes && !ptRes.error && ptRes.data?.[0]) setPunti(ptRes.data[0] as Punti);
         // La serata della scheda: la più vicina non ancora finita, con
         // dodici ore di margine così durante la notte resta quella.
@@ -168,6 +187,50 @@ export default function PrPage() {
       setLoading(false);
     })();
   }, [router]);
+
+  // "Iscriviti" su una serata aperta (script 59): agganciato + prevendite
+  // di partenza in un colpo. Poi si rileggono le serate, così la trova
+  // subito sotto con il tasto rosso.
+  async function iscriviti(sl: SerataLibera) {
+    if (
+      !window.confirm(
+        `Ti iscrivi a ${sl.nome} (${giornoEData(sl.starts_at)})?\n\n` +
+          (sl.quante > 0
+            ? `Ricevi subito ${sl.quante} prevendite da vendere per questa serata.`
+            : "Potrai vendere prevendite per questa serata."),
+      )
+    )
+      return;
+    setIscrivo(sl.event_id);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("pr_iscriviti", { p_event: sl.event_id });
+    setIscrivo(null);
+    if (error) {
+      window.alert(
+        error.code
+          ? "Non è andata: scrivi a Luka."
+          : "Niente connessione: spostati dove prende e riprova.",
+      );
+      return;
+    }
+    const esito = String(data ?? "");
+    if (esito === "tolto") {
+      window.alert("Da questa serata ti ha tolto Luka: se vuoi rientrare, parlane con lui.");
+    } else if (esito === "chiusa") {
+      window.alert("Questa serata non è aperta alle iscrizioni dei PR.");
+      // Resta fuori dalla lista anche se il database la ripropone.
+      setLibere((l) => l.filter((x) => x.event_id !== sl.event_id));
+      return;
+    } else if (esito.startsWith("ok:")) {
+      setIscritto({ nome: sl.nome, quante: Number(esito.slice(3)) || 0 });
+    }
+    const [evRes, libRes] = await Promise.all([
+      supabase.rpc("pr_eventi"),
+      supabase.rpc("pr_serate_libere"),
+    ]);
+    if (!evRes.error) setEventi(evRes.data ?? []);
+    if (!libRes.error) setLibere((libRes.data as SerataLibera[]) ?? []);
+  }
 
   if (loading) {
     return (
@@ -373,6 +436,62 @@ export default function PrPage() {
           </span>
         </a>
 
+        {/* Serate aperte all'iscrizione libera (script 59): il PR si
+            aggancia da solo e prende le prevendite di partenza. */}
+        {iscritto && (
+          <div className="mb-6 border border-emerald-400/50 bg-emerald-400/5 px-4 py-3">
+            <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-emerald-300">
+              sei dentro ✓
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-white">
+              {iscritto.quante > 0
+                ? `Hai ${iscritto.quante} prevendite per ${iscritto.nome}: la trovi qui sotto, tocca «vendi prevendita».`
+                : `Puoi vendere per ${iscritto.nome}: la trovi qui sotto.`}
+            </p>
+          </div>
+        )}
+        {libere.length > 0 && (
+          <div className="mb-8">
+            <p className="font-tech text-[10px] uppercase tracking-[0.35em] text-emerald-300">
+              serate aperte · iscriviti
+            </p>
+            <div className="mt-3 flex flex-col gap-3">
+              {libere.map((sl) => (
+                <div
+                  key={sl.event_id}
+                  className="border border-l-4 border-emerald-400/40 px-4 py-4"
+                  style={{ borderLeftColor: accentoSerata(sl.event_id) }}
+                >
+                  <p
+                    className="font-tech text-[10px] uppercase tracking-[0.3em]"
+                    style={{ color: accentoSerata(sl.event_id) }}
+                  >
+                    {giornoEData(sl.starts_at)}
+                  </p>
+                  <p className="mt-1 font-display text-xl uppercase leading-none text-white">
+                    {sl.nome}
+                  </p>
+                  <p className="mt-1.5 text-[11px] text-brand-gray">
+                    {dataLunga(sl.starts_at)}
+                    {sl.locale ? ` · ${sl.locale}` : ""}
+                  </p>
+                  <button
+                    disabled={iscrivo !== null}
+                    onClick={() => iscriviti(sl)}
+                    className="mt-4 block w-full bg-emerald-500 py-3.5 text-center text-[12px] font-semibold uppercase tracking-widest text-black disabled:opacity-50"
+                  >
+                    {iscrivo === sl.event_id
+                      ? "un attimo…"
+                      : sl.quante > 0
+                        ? `iscriviti · ricevi ${sl.quante} prevendite`
+                        : "iscriviti a questa serata"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <p className="font-tech text-[10px] uppercase tracking-[0.35em] text-brand-gray">
           le tue prevendite
         </p>
@@ -386,7 +505,9 @@ export default function PrPage() {
             <p className="mt-2 text-[12px] leading-relaxed text-brand-gray">
               {stato.sono_admin
                 ? "Creane una da /admin/eventi e comparirà qui."
-                : "Ogni PR vende solo per le serate a cui lo aggancia Luka. Appena ti aggancia, la trovi qui."}
+                : libere.length > 0
+                  ? "Iscriviti a una serata qui sopra e la trovi qui, con le tue prevendite."
+                  : "Ogni PR vende solo per le serate a cui lo aggancia Luka. Appena ti aggancia, la trovi qui."}
             </p>
           </div>
         ) : (
