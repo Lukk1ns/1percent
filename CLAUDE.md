@@ -11,7 +11,10 @@ la colonna `foto` e `papion_pr_foto` restano nel DB, inutili). E *"ogni 10 prese
 `papion_pr_cassa`/`papion_pr_bar`/`papion_pr_bar_usa` (drop + create: colonne nuove `drink_tot/usati`, `shot_tot/usati`, `rimasti`)
 e aggiorna app/pannello/presenza a mano. Tessera = **10 battiti su due righe** (SHOT al 5°, 2+2 al 10°, `tessera()`).
 PGlite 29/29 sopra il 61. Messaggio ai PR: `ClaudeLukkins/MESSAGGI_PR/2026-11-17_PAPION_app_pr_messaggio.txt` (chiede NOME + numero).
-**PENDING Luka: incollare il 62** (verifica: `papion_pr_bar_usa` con `?select=rimasti` → 42501 = c'è, 42703 = manca).
+**62 DENTRO (17/11, verificato: `papion_pr_bar_usa?select=rimasti` → 42501, colonna finta → 42703).**
+Prima PR attivata: **Lara Anzolin** (17/11, inserita con un insert dal SQL Editor, `created_by 'claude (per Luka)'`).
+Per sapere da fuori se un link esiste **senza segnarlo come aperto**: `papion_pr_tavolo` con `p_serata '2000-01-01'` →
+`data` = c'è, `link` = no (`papion_pr_app` invece scrive `aperta_at` e spegne il tasto verde del pannello).
 
 **I PR DEL PAPI-ON (17 nov, `supabase/61_pr_papion.sql`, `/papion/pr/<link>`, `/admin/papion-pr`, `/admin/bar`).** Luka: *"una
 nuova funzione per i PR del Papi... ognuno abbia il proprio profilo online, gli vengano segnati gli ingressi, si faccia
