@@ -35,8 +35,8 @@ possa segnare i tavoli prenotati da lui"*. Poi: *"i PR del PAPI-ON hanno altre r
 - **Pannello** `/admin/papion-pr` (tile in dashboard): scheda PR (manda app, copia link, apri app, foto, modifica, attivo,
   prevendite 1%, presenza a mano / togli, tavoli, link nuovo, elimina) e scheda **Serate** (entrati, drink, shot, sconti,
   tavoli col budget). "app ✓" = aperta almeno una volta dall'icona sulla Home.
-- Provato su PGlite **67/67**. Build ok, app fotografata. **PENDING Luka: incollare il 61** (senza: pannello e porta dicono
-  cosa incollare). Verifica da fuori: `admin_papion_pr_lista` → 42501 = c'è. Baristi: servono come operatori (`/admin/regali`).
+- Provato su PGlite **67/67**. Build ok, app fotografata. **61 DENTRO (17/11, incollato da Luka; `admin_papion_pr_lista` →
+  42501, `papion_pr_app` → null).** Online verificato (link inventato → "Link non valido"). Baristi: servono come operatori (`/admin/regali`).
 
 **MAIL SCRITTE MALE (13 nov, `lib/mail.ts`, `components/SuggerimentoMail.tsx`, commit 29617ce, NESSUNO SCRIPT).** Luka riceveva
 "Indirizzo non trovato" per i codici: `matteospcassan@gmail` senza .com (il campo `type="email"` lo accetta, `/login` non
