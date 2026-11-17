@@ -416,11 +416,24 @@ type Riga = { nome: string; cognome: string; telefono: string | null; problema: 
  * poi si copia a mano.
  */
 function leggiRiga(testo: string, esistenti: PR[]): Riga {
-  const pulito = testo.replace(/[\t;,|]+/g, " ").trim();
+  const pulito = testo
+    // copiato da WhatsApp: "[17/11/26, 19:02] Mario: …" (iPhone) o "17/11/26, 19:02 - Mario: …" (Android)
+    .replace(/^\s*\[[^\]]*\]\s*[^:]{1,40}:\s*/, "")
+    .replace(/^\s*\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}\s*-\s*[^:]{1,40}:\s*/, "")
+    // "Nick: … Tel: …"
+    .replace(/(^|\s)(nick(name)?|nome|tel(efono)?|numero|num|cell(ulare)?)\s*[:=.]/gi, " ")
+    .replace(/[\t;,|]+/g, " ")
+    .trim();
   const m = pulito.match(/(\+|00)?\d[\d\s.\-/]{6,}\d/);
   const grezzo = m ? m[0] : "";
   const telefono = grezzo ? normalizzaNumero(grezzo) : null;
-  const parole = pulito.replace(grezzo, " ").replace(/[^\p{L}\p{M}'’\s-]/gu, " ").split(/\s+/).filter(Boolean);
+  // il nick resta com'è scritto (anche con _ . e numeri), senza @ e simboli
+  const parole = pulito
+    .replace(grezzo, " ")
+    .replace(/[^\p{L}\p{M}\d_.'’\s-]/gu, " ")
+    .split(/\s+/)
+    .map((w) => w.replace(/^[.\-_]+|[.\-_]+$/g, ""))
+    .filter(Boolean);
   const nome = parole[0] ?? "";
   const cognome = parole.slice(1).join(" ");
   const chiave = `${nome} ${cognome}`.toLowerCase();
