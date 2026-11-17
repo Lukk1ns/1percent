@@ -88,7 +88,28 @@ export default function PannelloPapionPR() {
   const [manca, setManca] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   const [aperto, setAperto] = useState<string | null>(null);
-  const [nuovo, setNuovo] = useState(false);
+  const [nuovo, setNuovo] = useState<false | "uno" | "lista">(false);
+  const [mandati, setMandati] = useState<string[]>([]);
+
+  // A chi Luka ha già toccato il tasto verde (su questo telefono): WhatsApp non lo dice al sito
+  useEffect(() => {
+    try {
+      setMandati(JSON.parse(localStorage.getItem("papion_pr_mandati") ?? "[]"));
+    } catch {
+      // niente memoria: si parte da zero
+    }
+  }, []);
+  const segnaMandato = useCallback((id: string) => {
+    setMandati((m) => {
+      const n = m.includes(id) ? m : [...m, id];
+      try {
+        localStorage.setItem("papion_pr_mandati", JSON.stringify(n));
+      } catch {
+        // pazienza
+      }
+      return n;
+    });
+  }, []);
 
   const carica = useCallback(async () => {
     const { data, error } = await createClient().rpc("admin_papion_pr_lista");
@@ -156,14 +177,23 @@ export default function PannelloPapionPR() {
       {vista === "pr" ? (
         <section className="mt-5">
           {!nuovo ? (
-            <button
-              onClick={() => setNuovo(true)}
-              disabled={manca}
-              className="w-full bg-brand-red px-4 py-3.5 text-[12px] font-semibold uppercase tracking-widest text-white disabled:opacity-40"
-            >
-              + aggiungi un PR
-            </button>
-          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setNuovo("uno")}
+                disabled={manca}
+                className="bg-brand-red px-4 py-3.5 text-[12px] font-semibold uppercase tracking-widest text-white disabled:opacity-40"
+              >
+                + aggiungi un PR
+              </button>
+              <button
+                onClick={() => setNuovo("lista")}
+                disabled={manca}
+                className="border border-brand-red px-4 py-3.5 text-[12px] font-semibold uppercase tracking-widest text-white disabled:opacity-40"
+              >
+                + incolla una lista
+              </button>
+            </div>
+          ) : nuovo === "uno" ? (
             <ModuloPR
               onAnnulla={() => setNuovo(false)}
               onFatto={async (id) => {
@@ -172,6 +202,24 @@ export default function PannelloPapionPR() {
                 setAperto(id);
               }}
             />
+          ) : (
+            <IncollaLista
+              esistenti={lista ?? []}
+              onAnnulla={() => setNuovo(false)}
+              onFatto={async () => {
+                setNuovo(false);
+                await carica();
+              }}
+            />
+          )}
+
+          {attivi.some((p) => p.telefono && !p.aperta_at && !mandati.includes(p.id)) && (
+            <p className="mt-5 border-l-2 border-[#25D366] pl-3 text-[12px] leading-relaxed text-white/80">
+              <strong className="text-white">
+                {attivi.filter((p) => p.telefono && !p.aperta_at && !mandati.includes(p.id)).length} PR senza app:
+              </strong>{" "}
+              tocca il tasto verde su ognuno, WhatsApp si apre col messaggio già scritto. Torna qui e vai al prossimo.
+            </p>
           )}
 
           {lista === null && <p className="mt-6 font-tech text-[11px] uppercase tracking-[0.3em] text-brand-gray">un attimo…</p>}
@@ -181,7 +229,15 @@ export default function PannelloPapionPR() {
 
           <ul className="mt-4 flex flex-col gap-2">
             {attivi.map((p) => (
-              <RigaPR key={p.id} p={p} aperta={aperto === p.id} onApri={() => setAperto(aperto === p.id ? null : p.id)} onCambio={carica} />
+              <RigaPR
+                key={p.id}
+                p={p}
+                aperta={aperto === p.id}
+                onApri={() => setAperto(aperto === p.id ? null : p.id)}
+                onCambio={carica}
+                mandato={mandati.includes(p.id)}
+                onMandato={() => segnaMandato(p.id)}
+              />
             ))}
           </ul>
 
@@ -229,9 +285,39 @@ function Avatar({ nome, cognome, foto, lato = 44 }: { nome: string; cognome: str
   );
 }
 
-function RigaPR({ p, aperta, onApri, onCambio }: { p: PR; aperta: boolean; onApri: () => void; onCambio: () => void }) {
+function RigaPR({
+  p,
+  aperta,
+  onApri,
+  onCambio,
+  mandato,
+  onMandato,
+}: {
+  p: PR;
+  aperta: boolean;
+  onApri: () => void;
+  onCambio: () => void;
+  mandato?: boolean;
+  onMandato?: () => void;
+}) {
+  // Chi non ha mai aperto l'app ha il tasto verde subito in riga: si manda senza aprire la scheda
+  const daMandare = Boolean(p.telefono && !p.aperta_at && p.attivo && onMandato);
   return (
     <li className={`border ${aperta ? "border-white/30" : "border-white/10"}`}>
+      {daMandare && (
+        <button
+          onClick={() => {
+            apriWhatsapp(p.telefono!, messaggioBenvenutoPapion(p.nome, p.link));
+            onMandato?.();
+          }}
+          className={`flex w-full items-center justify-between px-3 py-2.5 text-left text-[12px] font-semibold uppercase tracking-widest ${
+            mandato ? "border-b border-white/10 text-[#25D366]" : "bg-[#25D366] text-black"
+          }`}
+        >
+          <span>{mandato ? "mandata ✓ · rimanda" : `manda l'app a ${p.nome}`}</span>
+          <span aria-hidden>→</span>
+        </button>
+      )}
       <button onClick={onApri} className="flex w-full items-center gap-3 px-3 py-3 text-left">
         <Avatar nome={p.nome} cognome={p.cognome} foto={p.foto} />
         <div className="min-w-0 flex-1">
@@ -318,6 +404,131 @@ function ModuloPR({
         </button>
       </div>
     </form>
+  );
+}
+
+type Riga = { nome: string; cognome: string; telefono: string | null; problema: string | null; testo: string };
+
+/**
+ * Una riga = un PR: "Mario Rossi 347 123 4567". Il numero è il pezzo di
+ * cifre in fondo (o in mezzo), il resto è il nome: la prima parola è il
+ * nome, le altre il cognome. Senza numero si crea lo stesso, il messaggio
+ * poi si copia a mano.
+ */
+function leggiRiga(testo: string, esistenti: PR[]): Riga {
+  const pulito = testo.replace(/[\t;,|]+/g, " ").trim();
+  const m = pulito.match(/(\+|00)?\d[\d\s.\-/]{6,}\d/);
+  const grezzo = m ? m[0] : "";
+  const telefono = grezzo ? normalizzaNumero(grezzo) : null;
+  const parole = pulito.replace(grezzo, " ").replace(/[^\p{L}\p{M}'’\s-]/gu, " ").split(/\s+/).filter(Boolean);
+  const nome = parole[0] ?? "";
+  const cognome = parole.slice(1).join(" ");
+  const chiave = `${nome} ${cognome}`.toLowerCase();
+  let problema: string | null = null;
+  if (!nome) problema = "manca il nome";
+  else if (grezzo && !telefono) problema = "numero da controllare";
+  else if (telefono && esistenti.some((e) => e.telefono === telefono)) problema = "c'è già (stesso numero)";
+  else if (esistenti.some((e) => `${e.nome} ${e.cognome}`.toLowerCase().trim() === chiave.trim())) problema = "c'è già (stesso nome)";
+  return { nome, cognome, telefono, problema, testo };
+}
+
+function IncollaLista({
+  esistenti,
+  onAnnulla,
+  onFatto,
+}: {
+  esistenti: PR[];
+  onAnnulla: () => void;
+  onFatto: () => void;
+}) {
+  const [testo, setTesto] = useState("");
+  const [fatti, setFatti] = useState<number | null>(null);
+  const [errori, setErrori] = useState<string[]>([]);
+  const righe = testo
+    .split(/\n/)
+    .map((r) => r.trim())
+    .filter(Boolean)
+    .map((r) => leggiRiga(r, esistenti));
+  const buone = righe.filter((r) => !r.problema);
+
+  async function aggiungi() {
+    setErrori([]);
+    setFatti(0);
+    const sbagliate: string[] = [];
+    const supabase = createClient();
+    for (const r of buone) {
+      const { error } = await supabase.rpc("admin_papion_pr_salva", {
+        p_id: null,
+        p_nome: r.nome,
+        p_cognome: r.cognome,
+        p_telefono: r.telefono,
+        p_attivo: true,
+        p_prevendite_1p: false,
+      });
+      if (error) sbagliate.push(`${r.testo} → ${error.message}`);
+      else setFatti((n) => (n ?? 0) + 1);
+    }
+    setErrori(sbagliate);
+    if (sbagliate.length === 0) onFatto();
+  }
+
+  return (
+    <div className="border border-white/20 bg-white/[0.03] px-4 py-4">
+      <p className="text-[13px] leading-relaxed text-white/80">
+        Un PR per riga: <strong className="text-white">nome cognome numero</strong>. Va bene anche copiato dalla rubrica o
+        da WhatsApp.
+      </p>
+      <textarea
+        value={testo}
+        onChange={(e) => setTesto(e.target.value)}
+        rows={8}
+        autoFocus
+        placeholder={"Mario Rossi 347 123 4567\nGiulia Bianchi +39 338 765 4321"}
+        className="mt-3 w-full border border-white/20 bg-black px-3 py-2 font-tech text-[13px] text-white placeholder-white/25 outline-none focus:border-white"
+      />
+      {righe.length > 0 && (
+        <ul className="mt-3 divide-y divide-white/[0.06]">
+          {righe.map((r, i) => (
+            <li key={i} className="flex items-center justify-between gap-2 py-1.5 text-[12px]">
+              <span className={r.problema ? "text-white/40" : "text-white"}>
+                {r.nome} <span className="text-white/70">{r.cognome}</span>
+              </span>
+              <span className={`shrink-0 font-tech text-[11px] ${r.problema ? "text-amber-300" : "text-white/60"}`}>
+                {r.problema ?? (r.telefono ? mostraNumero(r.telefono) : "senza numero")}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {errori.length > 0 && (
+        <div className="mt-3 border border-brand-red/50 bg-brand-red/10 p-3 text-[12px] text-brand-red">
+          Non aggiunti:
+          {errori.map((e) => (
+            <p key={e} className="mt-1">
+              {e}
+            </p>
+          ))}
+        </div>
+      )}
+      <div className="mt-4 flex gap-2">
+        <button
+          onClick={aggiungi}
+          disabled={buone.length === 0 || fatti !== null}
+          className="flex-1 bg-white py-3 text-[12px] font-semibold uppercase tracking-widest text-black disabled:opacity-40"
+        >
+          {fatti !== null ? `aggiunti ${fatti} di ${buone.length}…` : `aggiungi ${buone.length} PR`}
+        </button>
+        <button
+          onClick={errori.length ? onFatto : onAnnulla}
+          className="border border-white/20 px-4 text-[11px] uppercase tracking-widest text-brand-gray"
+        >
+          {errori.length ? "chiudi" : "annulla"}
+        </button>
+      </div>
+      {righe.some((r) => r.problema) && (
+        <p className="mt-2 text-[11px] text-amber-300">Le righe in giallo non si aggiungono: correggile o toglile.</p>
+      )}
+    </div>
   );
 }
 
