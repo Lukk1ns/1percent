@@ -4,6 +4,15 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**PR PAPI-ON, stesso giorno (17 nov, `62_pr_papion_premio_10.sql`, commit 3caeeea).** Luka: *"lascia stare il discorso foto
+(app e messaggio), sennò casino"* → **foto tolte ovunque** (app, bar, porta, pannello, rotta `/api/papion-pr/foto` cancellata;
+la colonna `foto` e `papion_pr_foto` restano nel DB, inutili). E *"ogni 10 presenze anche un drink e un secondo shot"* →
+**10ª, 20ª…: 2 drink + 2 shot** (`extra`, `drink2_at`, `shot2_at`, `_papion_ogni_extra()` = 10 = `OGNI_EXTRA`). Il 62 rifà
+`papion_pr_cassa`/`papion_pr_bar`/`papion_pr_bar_usa` (drop + create: colonne nuove `drink_tot/usati`, `shot_tot/usati`, `rimasti`)
+e aggiorna app/pannello/presenza a mano. Tessera = **10 battiti su due righe** (SHOT al 5°, 2+2 al 10°, `tessera()`).
+PGlite 29/29 sopra il 61. Messaggio ai PR: `ClaudeLukkins/MESSAGGI_PR/2026-11-17_PAPION_app_pr_messaggio.txt` (chiede NOME + numero).
+**PENDING Luka: incollare il 62** (verifica: `papion_pr_bar_usa` con `?select=rimasti` → 42501 = c'è, 42703 = manca).
+
 **I PR DEL PAPI-ON (17 nov, `supabase/61_pr_papion.sql`, `/papion/pr/<link>`, `/admin/papion-pr`, `/admin/bar`).** Luka: *"una
 nuova funzione per i PR del Papi... ognuno abbia il proprio profilo online, gli vengano segnati gli ingressi, si faccia
 scannerizzare il codice quando entra dalla cassiera e riceve un drink in omaggio, ogni cinque presenze anche uno shot, e
