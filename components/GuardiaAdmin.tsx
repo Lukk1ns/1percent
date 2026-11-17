@@ -29,7 +29,7 @@ import { createClient } from "@/lib/supabase/client";
  */
 
 const LIBERE = ["/admin/login"];
-const DA_STAFF = ["/admin/porta", "/admin/scan"];
+const DA_STAFF = ["/admin/porta", "/admin/scan", "/admin/bar"];
 
 type Esito = "controllo" | "dentro" | "fuori";
 

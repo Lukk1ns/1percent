@@ -21,7 +21,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * una porta in meno che chiudere fuori Luka in mezzo a una serata.
  */
 
-const DA_STAFF = ["/admin/porta", "/admin/scan"];
+const DA_STAFF = ["/admin/porta", "/admin/scan", "/admin/bar"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });

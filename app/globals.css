@@ -614,3 +614,29 @@ body::after {
   .led-dot, .led-reveal { animation: none !important; }
   .led-reveal { opacity: 1; transform: none; }
 }
+
+/* ── App dei PR del PAPI-ON (/papion/pr/<link>) ─────────────────────────── */
+/* Il battito sul pass, quando il PR è dentro: il tracciato scorre come un monitor */
+.ppr-traccia {
+  stroke-dasharray: 90 330;
+  animation: ppr-scorre 2.4s linear infinite;
+}
+@keyframes ppr-scorre {
+  from { stroke-dashoffset: 420; }
+  to   { stroke-dashoffset: 0; }
+}
+/* La luce "sei dentro" */
+.ppr-luce { animation: ppr-pulsa 1.6s ease-in-out infinite; }
+@keyframes ppr-pulsa {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(233,10,17,0.7); }
+  50%      { opacity: 0.55; box-shadow: 0 0 0 6px rgba(233,10,17,0); }
+}
+/* Il caricamento: il battito spento che si accende */
+.ppr-carica { stroke: #E90A11 !important; stroke-dasharray: 120; animation: ppr-disegna 1.2s ease-in-out infinite; }
+@keyframes ppr-disegna {
+  from { stroke-dashoffset: 120; }
+  to   { stroke-dashoffset: -120; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ppr-traccia, .ppr-luce, .ppr-carica { animation: none !important; stroke-dasharray: none; }
+}

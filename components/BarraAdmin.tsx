@@ -20,7 +20,7 @@ import { createClient } from "@/lib/supabase/client";
  * ancora nessuno da salutare.
  */
 
-const FUORI = ["/admin/login", "/admin/porta", "/admin/scan"];
+const FUORI = ["/admin/login", "/admin/porta", "/admin/scan", "/admin/bar"];
 
 export function BarraAdmin() {
   const pathname = usePathname() ?? "";

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, giornoEData, ora } from "@/lib/eventi";
 import { preparaAudio, suonaAttenzione, suonaNo, suonaOk } from "@/lib/suoni";
 import { inCassa } from "@/lib/biglietto-cliente";
+import { QR_PAPION, fotoUrl } from "@/lib/papion-pr";
 import {
   type BigliettoLocale,
   cercaOffline,
@@ -36,7 +37,9 @@ type Esito = {
     | "pr_ok"
     | "pr_non_attivo"
     // il server non ha risposto e la lista non c'è: solo sul telefono
-    | "rete";
+    | "rete"
+    // nessuna serata col sito stasera: si leggono solo i PR del PAPI-ON
+    | "senza_serata";
   nome: string | null;
   cognome: string | null;
   tier_label: string | null;
@@ -47,6 +50,19 @@ type Esito = {
   evento: string | null;
   entrata_at: string | null;
   presale_id: string | null;
+};
+
+/** Il PR del PAPI-ON in cassa (script 61): entra gratis, si segna la presenza. */
+type EsitoPapion = {
+  esito: "ok" | "gia" | "disattivo" | "sconosciuto" | "rete" | "errore";
+  nome: string | null;
+  cognome: string | null;
+  foto: string | null;
+  numero: number | null;
+  shot: boolean | null;
+  entrato_at: string | null;
+  da: string | null;
+  messaggio?: string;
 };
 
 type Riepilogo = {
@@ -111,6 +127,7 @@ export default function PortaPage() {
   const [serata, setSerata] = useState<string>("");
   const [riepilogo, setRiepilogo] = useState<Riepilogo | null>(null);
   const [esito, setEsito] = useState<Esito | null>(null);
+  const [papion, setPapion] = useState<EsitoPapion | null>(null);
   const [autorizzato, setAutorizzato] = useState<boolean | null>(null);
   const [sonoAdmin, setSonoAdmin] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -137,8 +154,52 @@ export default function PortaPage() {
     timerEsito.current = null;
     ultimoQR.current = { ...ultimoQR.current, at: Date.now() };
     setEsito(null);
+    setPapion(null);
     occupato.current = false;
   }, []);
+
+  /**
+   * Il QR di un PR del PAPI-ON (PPR-…): non è un biglietto e non dipende
+   * dalla serata del sito. Entra gratis, si segna la presenza e gli si
+   * carica il drink (lo dà il bar). Serve la rete: senza, si fa passare
+   * e la presenza non si conta.
+   */
+  const validaPapion = useCallback(
+    async (qr: string) => {
+      occupato.current = true;
+      ultimoQR.current = { token: qr, at: Date.now() };
+      setControllo(true);
+      let r: EsitoPapion;
+      const vuoto = { nome: null, cognome: null, foto: null, numero: null, shot: null, entrato_at: null, da: null };
+      try {
+        const freno = new AbortController();
+        const scade = setTimeout(() => freno.abort(), 6000);
+        const { data, error } = await createClient()
+          .rpc("papion_pr_cassa", { p_qr: qr })
+          .abortSignal(freno.signal);
+        clearTimeout(scade);
+        r = error
+          ? error.code === "PGRST202"
+            ? { esito: "errore", ...vuoto, messaggio: "Manca lo script 61 sul database: chiama Luka." }
+            : { esito: error.code ? "errore" : "rete", ...vuoto, messaggio: error.message }
+          : ((data?.[0] as EsitoPapion | undefined) ?? { esito: "rete", ...vuoto });
+      } catch {
+        r = { esito: "rete", ...vuoto };
+      } finally {
+        setControllo(false);
+      }
+
+      if (r.esito === "ok") suonaOk();
+      else if (r.esito === "gia") suonaAttenzione();
+      else suonaNo();
+      if (navigator.vibrate) navigator.vibrate(r.esito === "ok" ? 60 : r.esito === "gia" ? [80, 60, 80] : [250]);
+
+      setPapion(r);
+      if (timerEsito.current) clearTimeout(timerEsito.current);
+      timerEsito.current = setTimeout(chiudiEsito, r.esito === "ok" ? 1800 : 4200);
+    },
+    [chiudiEsito],
+  );
 
   // ── senza rete ──────────────────────────────────────────────
   const [inRete, setInRete] = useState(true);
@@ -224,7 +285,26 @@ export default function PortaPage() {
 
   const valida = useCallback(
     async (token: string) => {
-      if (occupato.current || !serata) return;
+      if (occupato.current) return;
+      if (QR_PAPION.test(token)) {
+        void validaPapion(token);
+        return;
+      }
+      if (!serata) {
+        // Stasera il sito non ha prevendite: lo scanner è acceso per i PR del PAPI-ON
+        occupato.current = true;
+        ultimoQR.current = { token, at: Date.now() };
+        suonaNo();
+        setEsito({
+          esito: "senza_serata",
+          nome: null, cognome: null, tier_label: null, prezzo: null,
+          minorenne: null, under16: null, pr_alias: null, evento: null,
+          entrata_at: null, presale_id: null,
+        });
+        if (timerEsito.current) clearTimeout(timerEsito.current);
+        timerEsito.current = setTimeout(chiudiEsito, 3200);
+        return;
+      }
       occupato.current = true;
       ultimoQR.current = { token, at: Date.now() };
       // Halloween 31/10, in porta: "quando scannerizzano non esce la
@@ -344,13 +424,14 @@ export default function PortaPage() {
       if (timerEsito.current) clearTimeout(timerEsito.current);
       timerEsito.current = setTimeout(chiudiEsito, quanto);
     },
-    [serata, aggiornaRiepilogo, chiudiEsito],
+    [serata, aggiornaRiepilogo, chiudiEsito, validaPapion],
   );
 
   // La fotocamera: sempre accesa (spegnerla e riaccenderla a ogni persona
   // costava un secondo buono). L'esito le si mette sopra.
   useEffect(() => {
-    if (!autorizzato || errore || modoCerca || !serata) return;
+    // Senza serata la fotocamera resta accesa lo stesso: legge i PR del PAPI-ON
+    if (!autorizzato || errore || modoCerca || (!serata && !serateLette)) return;
 
     let annullato = false;
     setCamErrore(null);
@@ -403,7 +484,7 @@ export default function PortaPage() {
       scannerRef.current = null;
       if (inst) inst.stop().then(() => inst.clear()).catch(() => {});
     };
-  }, [autorizzato, errore, modoCerca, serata, valida, tentativoCam]);
+  }, [autorizzato, errore, modoCerca, serata, serateLette, valida, tentativoCam]);
 
   // Ricerca per nome
   useEffect(() => {
@@ -695,30 +776,25 @@ export default function PortaPage() {
               )}
             </div>
           </div>
-        ) : serateLette && serate.length === 0 ? (
-          // Nessuna serata vicina: la porta non ha niente da controllare
-          <div className="flex h-full flex-col items-center justify-center px-8 py-16 text-center">
-            <p className="font-display text-2xl uppercase leading-tight text-white">
-              Stasera la porta è chiusa
-            </p>
-            <p className="mt-4 max-w-[34ch] text-sm leading-relaxed text-brand-gray">
-              La porta si accende da sola quando mancano 10 giorni alla serata: da lì si
-              scarica la lista e si leggono i biglietti.
-            </p>
-            {prossima && (
-              <p className="mt-5 max-w-[34ch] text-sm leading-relaxed text-white">
-                Prossima: <strong>{prossima.nome}</strong>
-                <br />
-                <span className="text-brand-gray">
-                  {giornoEData(prossima.starts_at)} · si apre dal{" "}
-                  {giornoEData(new Date(new Date(prossima.starts_at).getTime() - 10 * 86400000).toISOString())}
-                </span>
-              </p>
-            )}
-          </div>
         ) : (
           <>
             <div id="porta-reader" className="h-full w-full [&_video]:h-full [&_video]:object-cover" />
+            {serateLette && serate.length === 0 && !camErrore && (
+              // Nessuna serata vicina sul sito: niente biglietti da leggere, ma i PR
+              // del PAPI-ON entrano ogni sera (script 61)
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-[5] bg-black/80 px-4 py-3 text-center">
+                <p className="font-display text-xl uppercase leading-none text-white">Nessuna prevendita stasera</p>
+                <p className="mt-1.5 text-[11px] leading-snug text-brand-gray">
+                  Lo scanner legge i PR del PAPI-ON.
+                  {prossima && (
+                    <>
+                      {" "}Prossima serata col sito: <span className="text-white">{prossima.nome}</span>,{" "}
+                      {giornoEData(prossima.starts_at)} (la lista si apre 10 giorni prima).
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
             {camErrore && (
               <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
                 <button
@@ -743,6 +819,7 @@ export default function PortaPage() {
             </p>
           </div>
         )}
+        {papion && <RispostaPapion r={papion} onChiudi={chiudiEsito} />}
         {esito && (
           <Risposta
             esito={esito}
@@ -1073,6 +1150,7 @@ function Risposta({
     scaduto: { sfondo: "bg-brand-red", testo: "SCADUTO", colore: "text-white" },
     sconosciuto: { sfondo: "bg-neutral-700", testo: "NON È UN BIGLIETTO", colore: "text-white" },
     rete: { sfondo: "bg-neutral-700", testo: "NESSUNA RISPOSTA", colore: "text-white" },
+    senza_serata: { sfondo: "bg-neutral-700", testo: "NESSUNA SERATA", colore: "text-white" },
     // Verde come un biglietto valido, ma la scritta dice che è uno
     // della crew: in porta si capisce chi sta entrando e con che
     // diritto, senza chiedere niente a nessuno.
@@ -1138,6 +1216,12 @@ function Risposta({
         </p>
       )}
 
+      {esito.esito === "senza_serata" && (
+        <p className="mt-4 max-w-[28ch] text-sm leading-relaxed opacity-90">
+          Stasera sul sito non ci sono prevendite: questo QR non vale. Lo scanner legge solo i PR del PAPI-ON.
+        </p>
+      )}
+
       {esito.esito === "rete" && (
         <p className="mt-4 max-w-[26ch] text-sm leading-relaxed opacity-90">
           Il telefono non ha campo o il server è lento. Scansiona di nuovo, oppure cercalo per
@@ -1184,6 +1268,74 @@ function Risposta({
       <p className="mt-8 font-tech text-[10px] uppercase tracking-[0.25em] opacity-60">
         tocca per continuare
       </p>
+    </button>
+  );
+}
+
+/**
+ * Il PR del PAPI-ON in cassa. Verde: entra gratis, presenza segnata,
+ * il drink gliel'ha caricato l'app (lo dà il bar). La foto serve alla
+ * cassiera per vedere che il telefono è il suo.
+ */
+function RispostaPapion({ r, onChiudi }: { r: EsitoPapion; onChiudi: () => void }) {
+  const nome = [r.nome, r.cognome].filter(Boolean).join(" ");
+  const foto = fotoUrl(r.foto);
+  const stile = {
+    ok: { sfondo: "bg-emerald-500 text-black", titolo: "PASSA · PR PAPI-ON" },
+    gia: { sfondo: "bg-amber-400 text-black", titolo: "PR · GIÀ DENTRO" },
+    disattivo: { sfondo: "bg-brand-red text-white", titolo: "PR NON ATTIVO" },
+    sconosciuto: { sfondo: "bg-brand-red text-white", titolo: "QR PR NON VALIDO" },
+    rete: { sfondo: "bg-neutral-700 text-white", titolo: "NESSUNA RISPOSTA" },
+    errore: { sfondo: "bg-neutral-700 text-white", titolo: "ERRORE" },
+  }[r.esito];
+
+  return (
+    <button
+      onClick={onChiudi}
+      className={`absolute inset-0 z-20 flex w-full flex-col items-center justify-center px-6 text-center ${stile.sfondo}`}
+    >
+      {foto && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={foto}
+          alt=""
+          width={120}
+          height={120}
+          style={{ width: 120, height: 120, objectFit: "cover" }}
+          className="mb-5 rounded-full border-4 border-black/20"
+        />
+      )}
+      <p className="font-display text-5xl uppercase leading-none">{stile.titolo}</p>
+      {nome && <p className="mt-4 font-display text-3xl uppercase leading-tight">{nome}</p>}
+
+      {r.esito === "ok" && (
+        <p className="mt-3 max-w-[28ch] text-sm leading-relaxed">
+          Entra gratis. Presenza n. {r.numero}: il drink omaggio lo prende al bar
+          {r.shot ? <strong>, e stasera anche lo shot</strong> : null}.
+        </p>
+      )}
+      {r.esito === "gia" && (
+        <p className="mt-3 max-w-[28ch] text-sm leading-relaxed">
+          È già passato stasera alle {r.entrato_at ? ora(r.entrato_at) : "—"}
+          {r.da === "bar" ? " (segnato dal bar)" : ""}. Se è uscito e rientra, passa: la presenza resta una.
+        </p>
+      )}
+      {r.esito === "disattivo" && (
+        <p className="mt-3 max-w-[28ch] text-sm leading-relaxed">Luka l&apos;ha tolto dai PR: paga l&apos;ingresso o chiama Luka.</p>
+      )}
+      {r.esito === "sconosciuto" && (
+        <p className="mt-3 max-w-[28ch] text-sm leading-relaxed">
+          QR vecchio o non suo. Il PR riapra l&apos;app con il link nuovo, oppure chiama Luka.
+        </p>
+      )}
+      {r.esito === "rete" && (
+        <p className="mt-3 max-w-[28ch] text-sm leading-relaxed">
+          Niente campo: se lo conosci fallo passare, la presenza stasera non si segna. Riprova appena c&apos;è rete.
+        </p>
+      )}
+      {r.esito === "errore" && r.messaggio && <p className="mt-3 max-w-[30ch] text-sm leading-relaxed">{r.messaggio}</p>}
+
+      <p className="mt-8 font-tech text-[10px] uppercase tracking-[0.25em] opacity-60">tocca per continuare</p>
     </button>
   );
 }

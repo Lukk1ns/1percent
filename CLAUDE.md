@@ -1,8 +1,42 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 13 novembre 2026
+> Ultimo aggiornamento: 17 novembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**I PR DEL PAPI-ON (17 nov, `supabase/61_pr_papion.sql`, `/papion/pr/<link>`, `/admin/papion-pr`, `/admin/bar`).** Luka: *"una
+nuova funzione per i PR del Papi... ognuno abbia il proprio profilo online, gli vengano segnati gli ingressi, si faccia
+scannerizzare il codice quando entra dalla cassiera e riceve un drink in omaggio, ogni cinque presenze anche uno shot, e
+possa segnare i tavoli prenotati da lui"*. Poi: *"i PR del PAPI-ON hanno altre regole... mi serve una cosa a parte"* →
+**gruppo separato dai PR dell'1%** (crew/prevendite): tabelle nuove `papion_pr`, `papion_pr_presenze`, `papion_pr_sconti`,
+`papion_pr_tavoli`, **nessuna funzione esistente riscritta**. Decisioni di Luka:
+- **Li aggiunge lui** dal pannello (nome, cognome, WhatsApp) e gli manda l'app col tasto verde (messaggio con link +
+  come metterla sulla Home + regole, `messaggioBenvenutoPapion` in `lib/papion-pr.ts`). **"Rimangano sempre connessi"** →
+  niente login: ogni PR ha un **link segreto** (`link`, 24 hex) = la sua app, con manifest personale (come `/maldita7/<token>`),
+  `sw-papion-pr.js` e copia in `localStorage` (il QR si vede senza campo). Il **QR** è un'altra cosa: `PPR-` + 20 hex.
+  "link nuovo" nel pannello cambia link **e** QR (telefono perso / link girato).
+- **Cassa** = scanner porta (`/admin/porta`): riconosce `PPR-` **nel browser** (`QR_PAPION`) e chiama `papion_pr_cassa`
+  invece di `porta_checkin` (non toccata). Verde **PASSA · PR PAPI-ON** (entra gratis), presenza della serata (una a sera,
+  seconda scansione = ambra "già dentro", rientro ok), si carica il **drink omaggio**. Alla 5ª/10ª/15ª presenza anche lo
+  **shot** (`_papion_ogni()` = 5, uguale a `OGNI`). **La porta ora tiene accesa la fotocamera anche senza serata del sito**
+  (striscia "Nessuna prevendita stasera · lo scanner legge i PR del PAPI-ON"); un biglietto letto così → "NESSUNA SERATA".
+- **Bar** = `/admin/bar` (operatori/manager, come la porta): scansione → foto + nome → tre tasti **DRINK OMAGGIO / SHOT
+  OMAGGIO / SCONTO 1 €**. Luka: *"il PR può ordinare 1 solo drink alla volta, prima di pagarlo se lo fa scannerizzare per
+  avere 1 euro in meno che il barista applica prima di fare lo scontrino"* (drink da 7 € in su). **Conta il tocco, non la
+  scansione**; sconto doppio entro 10 s = stesso drink (`gia`). Drink/shot al bar senza passaggio in cassa → la presenza
+  la segna il bar (`da = 'bar'`). Valgono solo quella sera. QR non PR → "Non è un PR, gli shot delle liste dalla Porta".
+- **Serata** = data della sera, dalle 12:00 alle 11:59 del giorno dopo (`_papion_serata()`), **non** gli eventi del sito.
+- **Tavoli**: il PR segna sera, a nome di chi, budget € e/o bottiglie (Luka ha scelto "bottiglia/budget"; il nome l'ho
+  aggiunto io). Può toglierli finché la sera non è passata e Luka non li ha segnati; Luka: venuto / non venuto.
+- **App del PR** (Montserrat del logo, nero + `#E90A11`): pass con foto (la mette lui toccando il cerchio, R2
+  `papion-pr/<id>/<x>.webp` via `/api/papion-pr/foto`, 512 px senza EXIF) e QR grande; "stasera" con drink/shot pronti o
+  presi; **tessera a battiti** (5 battiti del logo, si accendono a ogni presenza); −1 € al bar; tavoli; "i tuoi numeri" a
+  scontrino; ultime serate; tasto "Le tue prevendite" se Luka accende "fa anche prevendite 1%".
+- **Pannello** `/admin/papion-pr` (tile in dashboard): scheda PR (manda app, copia link, apri app, foto, modifica, attivo,
+  prevendite 1%, presenza a mano / togli, tavoli, link nuovo, elimina) e scheda **Serate** (entrati, drink, shot, sconti,
+  tavoli col budget). "app ✓" = aperta almeno una volta dall'icona sulla Home.
+- Provato su PGlite **67/67**. Build ok, app fotografata. **PENDING Luka: incollare il 61** (senza: pannello e porta dicono
+  cosa incollare). Verifica da fuori: `admin_papion_pr_lista` → 42501 = c'è. Baristi: servono come operatori (`/admin/regali`).
 
 **MAIL SCRITTE MALE (13 nov, `lib/mail.ts`, `components/SuggerimentoMail.tsx`, commit 29617ce, NESSUNO SCRIPT).** Luka riceveva
 "Indirizzo non trovato" per i codici: `matteospcassan@gmail` senza .com (il campo `type="email"` lo accetta, `/login` non

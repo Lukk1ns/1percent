@@ -290,6 +290,13 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {[
             {
+              href: "/admin/papion-pr",
+              emoji: "❤️‍🔥",
+              titolo: "PR PAPI-ON",
+              cosa: "La loro app: presenze, drink e shot, sconti al bar, tavoli",
+              acceso: true,
+            },
+            {
               href: "/admin/slings",
               emoji: "💛",
               titolo: "Donna omaggio 13/11",
@@ -388,6 +395,8 @@ export default function AdminDashboardPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           {[
             ["/admin/pr", "Prevendite e PR"],
+            ["/admin/papion-pr", "PR PAPI-ON"],
+            ["/admin/bar", "Bar (PR PAPI-ON)"],
             ["/admin/slings", "Donna omaggio 13/11"],
             ["/admin/porta", "Porta"],
             ["/admin/scan", "Estrazione premi"],
