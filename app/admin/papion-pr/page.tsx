@@ -1,14 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { downscaleImage } from "@/lib/downscale";
 import { apriWhatsapp, mostraNumero, normalizzaNumero } from "@/lib/whatsapp";
 import {
   SCONTO_EURO,
   dataCorta,
-  fotoUrl,
   iniziali,
   messaggioBenvenutoPapion,
   ora,
@@ -44,8 +42,10 @@ type Presenza = {
   da: "cassa" | "bar" | "direzione";
   numero: number;
   shot: boolean;
-  drink_at: string | null;
-  shot_at: string | null;
+  /** 10ª, 20ª…: 2 drink e 2 shot (script 62) */
+  extra: boolean;
+  drink: number;
+  shot_presi: number;
   sconti: number;
 };
 
@@ -68,7 +68,7 @@ type SchedaDati = {
 type SerataRiga = { serata: string; entrati: number; sconti: number; tavoli: number; adesso: boolean };
 
 type SerataDati = {
-  entrati: (Presenza & { pr_id: string; nome: string; cognome: string; foto: string | null })[];
+  entrati: (Presenza & { pr_id: string; nome: string; cognome: string })[];
   sconti_senza_ingresso: { pr_id: string; nome: string; cognome: string; n: number }[];
   tavoli: Tavolo[];
 };
@@ -137,7 +137,7 @@ export default function PannelloPapionPR() {
       <h1 className="mt-1 font-display text-4xl uppercase leading-none text-white">PR del PAPI-ON</h1>
       <p className="mt-3 max-w-prose text-[13px] leading-relaxed text-brand-gray">
         Ognuno ha la sua app a un link personale. In cassa entra gratis e si carica il drink; al bar drink, shot ogni 5
-        presenze e {SCONTO_EURO} € di sconto su un drink alla volta. Separati dai PR dell&apos;1%.
+        serate, alla 10ª 2 drink e 2 shot, e {SCONTO_EURO} € di sconto su un drink alla volta. Separati dai PR dell&apos;1%.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Link href="/admin/porta" className="border border-white/15 px-3 py-2 font-tech text-[10px] uppercase tracking-[0.15em] text-white">
@@ -261,21 +261,9 @@ export default function PannelloPapionPR() {
 
 /* ─────────────────────────────── I PR ─────────────────────────────── */
 
-function Avatar({ nome, cognome, foto, lato = 44 }: { nome: string; cognome: string; foto: string | null; lato?: number }) {
-  const [rotta, setRotta] = useState(false);
-  const url = fotoUrl(foto);
-  return url && !rotta ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={url}
-      alt=""
-      width={lato}
-      height={lato}
-      style={{ width: lato, height: lato, objectFit: "cover" }}
-      className="shrink-0 rounded-full"
-      onError={() => setRotta(true)}
-    />
-  ) : (
+/** Le iniziali nel cerchio: niente foto (Luka, 17/11). */
+function Avatar({ nome, cognome, lato = 44 }: { nome: string; cognome: string; lato?: number }) {
+  return (
     <span
       className="flex shrink-0 items-center justify-center rounded-full bg-white/10 font-display text-white/70"
       style={{ width: lato, height: lato, fontSize: lato * 0.38 }}
@@ -319,7 +307,7 @@ function RigaPR({
         </button>
       )}
       <button onClick={onApri} className="flex w-full items-center gap-3 px-3 py-3 text-left">
-        <Avatar nome={p.nome} cognome={p.cognome} foto={p.foto} />
+        <Avatar nome={p.nome} cognome={p.cognome} />
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-2 truncate text-[15px] font-semibold text-white">
             {p.nome} {p.cognome}
@@ -550,8 +538,6 @@ function SchedaPR({ p, onCambio }: { p: PR; onCambio: () => void }) {
   const [modifica, setModifica] = useState(false);
   const [copiato, setCopiato] = useState<string | null>(null);
   const [giorno, setGiorno] = useState("");
-  const [fotoStato, setFotoStato] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const leggi = useCallback(async () => {
     const { data } = await createClient().rpc("admin_papion_pr_scheda", { p_id: p.id });
@@ -580,20 +566,6 @@ function SchedaPR({ p, onCambio }: { p: PR; onCambio: () => void }) {
       return null;
     }
     return data;
-  }
-
-  async function caricaFoto(f: File) {
-    setFotoStato("carico…");
-    try {
-      const form = new FormData();
-      form.append("pr", p.id);
-      form.append("file", await downscaleImage(f, 1024, 0.88), "foto.jpg");
-      const r = await fetch("/api/papion-pr/foto", { method: "POST", body: form });
-      setFotoStato(r.ok ? null : "foto non caricata");
-      if (r.ok) onCambio();
-    } catch {
-      setFotoStato("foto non caricata");
-    }
   }
 
   const benvenuto = messaggioBenvenutoPapion(p.nome, p.link);
@@ -649,20 +621,6 @@ function SchedaPR({ p, onCambio }: { p: PR; onCambio: () => void }) {
         <button onClick={() => setModifica((v) => !v)} className="border border-white/15 px-3 py-2 font-tech text-[10px] uppercase tracking-[0.15em] text-white">
           {modifica ? "chiudi modifica" : "modifica nome / numero"}
         </button>
-        <button onClick={() => fileRef.current?.click()} className="border border-white/15 px-3 py-2 font-tech text-[10px] uppercase tracking-[0.15em] text-white">
-          {fotoStato ?? (p.foto ? "cambia foto" : "metti la foto")}
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = "";
-            if (f) void caricaFoto(f);
-          }}
-        />
         <Interruttore
           acceso={p.prevendite_1p}
           testo="fa anche prevendite 1%"
@@ -734,8 +692,8 @@ function SchedaPR({ p, onCambio }: { p: PR; onCambio: () => void }) {
               {dataCorta(x.serata)} <span className="text-brand-gray">· {ora(x.entrato_at)} {DA[x.da]} · n.{x.numero}</span>
             </span>
             <span className="flex items-center gap-2 font-tech text-[11px] text-white/70">
-              <span className={x.drink_at ? "" : "opacity-25 grayscale"}>🍸</span>
-              {x.shot && <span className={x.shot_at ? "" : "opacity-25 grayscale"}>🥃</span>}
+              <span className={x.drink ? "" : "opacity-25 grayscale"}>🍸{x.extra ? `×${x.drink}` : ""}</span>
+              {x.shot && <span className={x.shot_presi ? "" : "opacity-25 grayscale"}>🥃{x.extra ? `×${x.shot_presi}` : ""}</span>}
               {x.sconti > 0 && <span>−{x.sconti}€</span>}
               <button
                 onClick={async () => {
@@ -890,8 +848,8 @@ function Serate() {
     leggi();
   }, [leggi]);
 
-  const drink = d?.entrati.filter((e) => e.drink_at).length ?? 0;
-  const shot = d?.entrati.filter((e) => e.shot_at).length ?? 0;
+  const drink = d?.entrati.reduce((a, e) => a + e.drink, 0) ?? 0;
+  const shot = d?.entrati.reduce((a, e) => a + e.shot_presi, 0) ?? 0;
   const sconti =
     (d?.entrati.reduce((a, e) => a + e.sconti, 0) ?? 0) + (d?.sconti_senza_ingresso.reduce((a, s) => a + s.n, 0) ?? 0);
   const budget = d?.tavoli.filter((t) => t.stato !== "non_venuto").reduce((a, t) => a + (t.budget ?? 0), 0) ?? 0;
@@ -926,22 +884,23 @@ function Serate() {
           <ul className="mt-2 divide-y divide-white/[0.06]">
             {d.entrati.map((e) => (
               <li key={e.pr_id} className="flex items-center gap-3 py-2">
-                <Avatar nome={e.nome} cognome={e.cognome} foto={e.foto} lato={32} />
+                <Avatar nome={e.nome} cognome={e.cognome} lato={32} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] text-white">
                     {e.nome} {e.cognome}
                   </p>
                   <p className="text-[11px] text-brand-gray">
-                    {ora(e.entrato_at)} {DA[e.da]} · presenza n.{e.numero}
+                    {ora(e.entrato_at)} {DA[e.da]} · serata n.{e.numero}
+                    {e.extra ? " · premio dei 10" : e.shot ? " · shot" : ""}
                   </p>
                 </div>
                 <span className="flex items-center gap-2 font-tech text-[11px] text-white/70">
-                  <span className={e.drink_at ? "" : "opacity-25 grayscale"} title={e.drink_at ? `drink ${ora(e.drink_at)}` : "drink da prendere"}>
-                    🍸
+                  <span className={e.drink ? "" : "opacity-25 grayscale"} title="drink omaggio presi">
+                    🍸{e.extra ? `×${e.drink}` : ""}
                   </span>
                   {e.shot && (
-                    <span className={e.shot_at ? "" : "opacity-25 grayscale"} title={e.shot_at ? `shot ${ora(e.shot_at)}` : "shot da prendere"}>
-                      🥃
+                    <span className={e.shot_presi ? "" : "opacity-25 grayscale"} title="shot omaggio presi">
+                      🥃{e.extra ? `×${e.shot_presi}` : ""}
                     </span>
                   )}
                   {e.sconti > 0 && <span>−{e.sconti}€</span>}

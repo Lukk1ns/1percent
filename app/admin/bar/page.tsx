@@ -5,18 +5,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { preparaAudio, suonaAttenzione, suonaNo, suonaOk } from "@/lib/suoni";
-import { QR_PAPION, SCONTO_DA, SCONTO_EURO, fotoUrl, ora } from "@/lib/papion-pr";
+import { OGNI_EXTRA, QR_PAPION, SCONTO_DA, SCONTO_EURO, ora } from "@/lib/papion-pr";
 
+/** Cosa gli spetta stasera (script 62): drink 1 o 2, shot 0, 1 o 2. */
 type Scheda = {
   qr: string;
   esito: "ok" | "disattivo" | "sconosciuto";
   nome: string | null;
   cognome: string | null;
-  foto: string | null;
   entrato_at: string | null;
-  drink_at: string | null;
-  shot_previsto: boolean | null;
-  shot_at: string | null;
+  drink_tot: number | null;
+  drink_usati: number | null;
+  drink_ultimo: string | null;
+  shot_tot: number | null;
+  shot_usati: number | null;
+  shot_ultimo: string | null;
   sconti: number | null;
   ultimo_sconto: string | null;
   presenze: number | null;
@@ -29,6 +32,7 @@ type Fatto = {
   esito: "ok" | "gia" | "niente_shot" | "disattivo" | "sconosciuto" | "rete" | "errore";
   quando: string | null;
   sconti: number | null;
+  rimasti: number | null;
   nome: string;
 };
 
@@ -46,10 +50,9 @@ type Scanner = {
 /**
  * IL BAR — i PR del PAPI-ON (script 61).
  *
- * Il barista scansiona il QR del PR e vede foto e nome (così si vede che
- * il telefono è il suo), poi tocca una cosa sola:
- *   · DRINK OMAGGIO  — uno a sera, caricato quando entra;
- *   · SHOT OMAGGIO   — solo la sera della 5ª, 10ª, 15ª presenza;
+ * Il barista scansiona il QR del PR e vede il nome, poi tocca una cosa sola:
+ *   · DRINK OMAGGIO  — uno a sera, caricato quando entra (due alla 10ª, 20ª…);
+ *   · SHOT OMAGGIO   — alla 5ª, 15ª… presenza uno, alla 10ª, 20ª… due;
  *   · SCONTO 1 €     — sul drink che sta pagando (da 7 € in su), uno
  *                       alla volta: il barista lo toglie prima dello scontrino.
  * Scansionare non segna niente: conta il tocco. Così un QR letto due
@@ -149,10 +152,14 @@ export default function BarPage() {
     try {
       const { data, error } = await createClient().rpc("papion_pr_bar_usa", { p_qr: scheda.qr, p_cosa: cosa });
       f = error
-        ? { cosa, esito: error.code ? "errore" : "rete", quando: null, sconti: null, nome }
-        : { cosa, nome, ...((data?.[0] as Omit<Fatto, "cosa" | "nome">) ?? { esito: "rete", quando: null, sconti: null }) };
+        ? { cosa, esito: error.code ? "errore" : "rete", quando: null, sconti: null, rimasti: null, nome }
+        : {
+            cosa,
+            nome,
+            ...((data?.[0] as Omit<Fatto, "cosa" | "nome">) ?? { esito: "rete", quando: null, sconti: null, rimasti: null }),
+          };
     } catch {
-      f = { cosa, esito: "rete", quando: null, sconti: null, nome };
+      f = { cosa, esito: "rete", quando: null, sconti: null, rimasti: null, nome };
     }
     if (f.esito === "ok" || (cosa === "sconto" && f.esito === "gia")) suonaOk();
     else if (f.esito === "gia") suonaAttenzione();
@@ -313,7 +320,6 @@ function SchedaPR({
   onChiudi: () => void;
 }) {
   const nome = [s.nome, s.cognome].filter(Boolean).join(" ");
-  const foto = fotoUrl(s.foto);
 
   if (s.esito !== "ok") {
     return (
@@ -335,53 +341,53 @@ function SchedaPR({
     );
   }
 
-  const drinkLibero = !s.drink_at;
-  const shotLibero = Boolean(s.shot_previsto) && !s.shot_at;
+  const dTot = s.drink_tot ?? 1;
+  const dUsati = s.drink_usati ?? 0;
+  const sTot = s.shot_tot ?? 0;
+  const sUsati = s.shot_usati ?? 0;
+  const premio = dTot > 1;
 
   return (
     <div className="absolute inset-0 z-20 flex flex-col overflow-y-auto bg-black px-5 pb-6 pt-6">
-      <div className="flex items-center gap-4">
-        {foto ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={foto}
-            alt=""
-            width={104}
-            height={104}
-            style={{ width: 104, height: 104, objectFit: "cover" }}
-            className="shrink-0 rounded-full border-[3px] border-[#E90A11]"
-          />
-        ) : (
-          <span className="flex h-[104px] w-[104px] shrink-0 items-center justify-center rounded-full border-[3px] border-white/20 font-display text-4xl text-white/70">
-            {(s.nome?.[0] ?? "") + (s.cognome?.[0] ?? "")}
-          </span>
-        )}
-        <div className="min-w-0">
-          <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-[#ff6b6b]">pr papi-on</p>
-          <p className="mt-1 font-display text-3xl uppercase leading-none text-white">{nome}</p>
-          <p className="mt-2 text-[12px] text-brand-gray">
-            {s.entrato_at ? `dentro dalle ${ora(s.entrato_at)}` : "non è passato dalla cassa"} ·{" "}
-            {s.presenze ?? 0} presenze
-          </p>
-        </div>
-      </div>
+      <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-[#ff6b6b]">pr papi-on</p>
+      <p className="mt-1 font-display text-5xl uppercase leading-none text-white">{nome}</p>
+      <p className="mt-2 text-[12px] text-brand-gray">
+        {s.entrato_at ? `dentro dalle ${ora(s.entrato_at)}` : "non è passato dalla cassa"} · {s.presenze ?? 0} serate
+      </p>
+      {premio && (
+        <p className="mt-3 inline-block self-start bg-white px-3 py-1.5 font-display text-lg uppercase text-black">
+          premio dei {OGNI_EXTRA}: 2 drink + 2 shot
+        </p>
+      )}
 
       <div className="mt-6 flex flex-col gap-2.5">
         <Tasto
-          attivo={drinkLibero}
+          attivo={dUsati < dTot}
           caricando={invio === "drink"}
           onClick={() => onUsa("drink")}
-          titolo="Drink omaggio 🍸"
-          sotto={drinkLibero ? "uno a sera, gratis" : `già dato alle ${s.drink_at ? ora(s.drink_at) : "—"}`}
+          titolo={`Drink omaggio 🍸${dTot > 1 ? ` ${dUsati + 1 > dTot ? dTot : dUsati + 1}/${dTot}` : ""}`}
+          sotto={
+            dUsati < dTot
+              ? dTot > 1
+                ? `stasera ne ha ${dTot}, presi ${dUsati}`
+                : "uno a sera, gratis"
+              : `già ${dTot > 1 ? "dati tutti e due" : "dato"} · ${s.drink_ultimo ? ora(s.drink_ultimo) : "—"}`
+          }
           stile="rosso"
         />
-        {s.shot_previsto && (
+        {sTot > 0 && (
           <Tasto
-            attivo={shotLibero}
+            attivo={sUsati < sTot}
             caricando={invio === "shot"}
             onClick={() => onUsa("shot")}
-            titolo="Shot omaggio 🥃"
-            sotto={shotLibero ? "stasera ha la tessera piena" : `già dato alle ${s.shot_at ? ora(s.shot_at) : "—"}`}
+            titolo={`Shot omaggio 🥃${sTot > 1 ? ` ${sUsati + 1 > sTot ? sTot : sUsati + 1}/${sTot}` : ""}`}
+            sotto={
+              sUsati < sTot
+                ? sTot > 1
+                  ? `stasera ne ha ${sTot}, presi ${sUsati}`
+                  : "stasera è la sua 5ª serata"
+                : `già ${sTot > 1 ? "dati tutti e due" : "dato"} · ${s.shot_ultimo ? ora(s.shot_ultimo) : "—"}`
+            }
             stile="rosso"
           />
         )}
@@ -452,11 +458,15 @@ function Esito({ f, onChiudi }: { f: Fatto; onChiudi: () => void }) {
         : `Fai lo scontrino con ${SCONTO_EURO} € in meno.${f.sconti ? ` Sconti stasera: ${f.sconti}.` : ""}`;
   } else if (f.esito === "ok") {
     titolo = f.cosa === "drink" ? "Dai il drink 🍸" : "Dai lo shot 🥃";
-    sotto = "Omaggio: non si batte.";
+    sotto =
+      "Omaggio: non si batte." +
+      (f.rimasti ? ` Stasera ne ha ancora ${f.rimasti === 1 ? "uno" : f.rimasti}.` : "");
   } else if (f.esito === "gia") {
     sfondo = "bg-amber-400 text-black";
     titolo = f.cosa === "drink" ? "Drink già dato" : "Shot già dato";
-    sotto = f.quando ? `Dato alle ${ora(f.quando)}. Se ne vuole un altro, lo paga (con lo sconto).` : "";
+    sotto = f.quando
+      ? `L'ultimo alle ${ora(f.quando)}. Se ne vuole un altro, lo paga (con lo sconto).`
+      : "";
   } else if (f.esito === "niente_shot") {
     sfondo = "bg-amber-400 text-black";
     titolo = "Niente shot";

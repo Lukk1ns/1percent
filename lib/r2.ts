@@ -110,9 +110,3 @@ export async function cancellaCartellaR2(albumId: string): Promise<number> {
   } while (dopo);
   return tolti;
 }
-
-/** Butta un file solo (la foto vecchia di un PR del PAPI-ON). Gli errori non fermano niente. */
-export async function cancellaSuR2(key: string): Promise<void> {
-  if (!key) return;
-  await r2().send(new DeleteObjectsCommand({ Bucket: R2_BUCKET, Delete: { Objects: [{ Key: key }], Quiet: true } }));
-}

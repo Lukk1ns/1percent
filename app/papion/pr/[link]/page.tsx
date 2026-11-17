@@ -4,7 +4,6 @@ import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
-import { downscaleImage } from "@/lib/downscale";
 import {
   type AppPR,
   type TavoloPR,
@@ -13,13 +12,11 @@ import {
   ROSSO_PAPION,
   SCONTO_DA,
   SCONTO_EURO,
-  bollini,
   dataCorta,
   dataLunga,
-  fotoUrl,
-  iniziali,
   ora,
   prossimeSerate,
+  tessera,
 } from "@/lib/papion-pr";
 
 /** Dove il telefono tiene l'ultima copia: in cassa il campo va e viene. */
@@ -46,8 +43,8 @@ function chiTelefono(): { tipo: Telefono; dentroApp: boolean; installata: boolea
  *
  * La prima cosa è il QR: si apre l'icona e lo si mostra, in cassa (entra
  * gratis, si segna la presenza, si carica il drink) e al bar (drink,
- * shot ogni 5 presenze, 1 € di sconto). Sotto: stasera, la tessera a
- * battiti, i numeri, i tavoli. Chi ha il link è lui: niente accesso.
+ * shot ogni 5 presenze, alla 10ª 2 drink + 2 shot, 1 € di sconto). Sotto:
+ * stasera, la tessera a 10 battiti, i numeri, i tavoli. Niente foto. Chi ha il link è lui: niente accesso.
  * Si aggiorna da sola ogni 20 secondi e regge anche senza campo.
  */
 export default function AppPRPage({ params }: { params: Promise<{ link: string }> }) {
@@ -123,7 +120,7 @@ export default function AppPRPage({ params }: { params: Promise<{ link: string }
   if (!letto) {
     return (
       <main className="flex min-h-[100dvh] flex-1 items-center justify-center">
-        <Battito pieni={0} ogni={5} piccolo />
+        <Battito da={1} a={5} pieni={0} piccolo />
       </main>
     );
   }
@@ -172,7 +169,7 @@ export default function AppPRPage({ params }: { params: Promise<{ link: string }
         <Installa tipo={tel.tipo} dentroApp={tel.dentroApp} installa={installa} onFatto={() => setInstalla(null)} />
       )}
 
-      <Pass d={d} link={link} onFoto={leggi} />
+      <Pass d={d} />
 
       <StaseraBox d={d} />
 
@@ -216,14 +213,9 @@ export default function AppPRPage({ params }: { params: Promise<{ link: string }
 
 /* ─────────────────────────────── IL PASS ─────────────────────────────── */
 
-function Pass({ d, link, onFoto }: { d: AppPR; link: string; onFoto: () => void }) {
+function Pass({ d }: { d: AppPR }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [carico, setCarico] = useState(false);
-  const [erroreFoto, setErroreFoto] = useState<string | null>(null);
-  const [fotoRotta, setFotoRotta] = useState(false);
   const dentro = d.stasera !== null;
-  const foto = fotoUrl(d.foto);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -235,29 +227,6 @@ function Pass({ d, link, onFoto }: { d: AppPR; link: string; onFoto: () => void 
       color: { dark: "#000000", light: "#ffffff" },
     });
   }, [d.qr]);
-
-  async function caricaFoto(f: File) {
-    setErroreFoto(null);
-    setCarico(true);
-    try {
-      const piccola = await downscaleImage(f, 1024, 0.88);
-      const form = new FormData();
-      form.append("link", link);
-      form.append("file", piccola, "foto.jpg");
-      const r = await fetch("/api/papion-pr/foto", { method: "POST", body: form });
-      if (!r.ok) {
-        const j = await r.json().catch(() => ({}));
-        setErroreFoto(j.error === "r2-non-configurato" ? "Foto non disponibili adesso." : "Foto non caricata, riprova.");
-      } else {
-        setFotoRotta(false);
-        onFoto();
-      }
-    } catch {
-      setErroreFoto("Foto non caricata: controlla il campo e riprova.");
-    } finally {
-      setCarico(false);
-    }
-  }
 
   return (
     <section
@@ -285,63 +254,17 @@ function Pass({ d, link, onFoto }: { d: AppPR; link: string; onFoto: () => void 
         />
       </svg>
 
-      <div className="relative flex items-center gap-4">
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="relative shrink-0 rounded-full p-[3px]"
-          style={{ background: dentro ? ROSSO_PAPION : "rgba(255,255,255,0.18)" }}
-          aria-label={foto ? "Cambia la foto" : "Aggiungi la tua foto"}
-        >
-          <span className="block h-[68px] w-[68px] overflow-hidden rounded-full bg-[#1c1c20]">
-            {foto && !fotoRotta ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={foto}
-                alt=""
-                width={68}
-                height={68}
-                style={{ width: 68, height: 68, objectFit: "cover" }}
-                onError={() => setFotoRotta(true)}
-              />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center text-xl font-extrabold text-white/80" style={MONT}>
-                {iniziali(d.nome, d.cognome)}
-              </span>
-            )}
-          </span>
-          {!foto && (
-            <span
-              className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-white text-sm font-bold text-black"
-              aria-hidden
-            >
-              +
-            </span>
-          )}
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = "";
-            if (f) void caricaFoto(f);
-          }}
-        />
-        <div className="min-w-0">
-          <h1 className="text-[26px] font-black uppercase leading-[0.95] tracking-[-0.01em] text-white" style={MONT}>
-            {d.nome}
-            {d.cognome && <span className="block text-white/85">{d.cognome}</span>}
-          </h1>
-          <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/45" style={MONT}>
-            {carico ? "carico la foto…" : !foto ? "tocca il cerchio · metti la foto" : "pr · papi-on"}
-          </p>
-        </div>
+      <div className="relative">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.3em]" style={{ ...MONT, color: ROSSO_PAPION }}>
+          pr · papi-on
+        </p>
+        <h1 className="mt-1.5 text-[30px] font-black uppercase leading-[0.95] tracking-[-0.01em] text-white" style={MONT}>
+          {d.nome}
+          {d.cognome && <span className="text-white/80"> {d.cognome}</span>}
+        </h1>
       </div>
-      {erroreFoto && <p className="relative mt-3 text-[12px] text-[#ff6b6b]">{erroreFoto}</p>}
 
-      <div className="relative mt-9 flex justify-center">
+      <div className="relative mt-6 flex justify-center">
         <div className="bg-white p-3">
           <canvas ref={canvasRef} className="block" />
         </div>
@@ -374,11 +297,16 @@ function StaseraBox({ d }: { d: AppPR }) {
           <p className="mt-2 flex items-center gap-2 text-[13px] text-white/70">
             <span className="ppr-luce inline-block h-2 w-2 rounded-full" style={{ background: ROSSO_PAPION }} aria-hidden />
             Dentro dalle <span className="font-tech text-white">{ora(s.entrato_at)}</span>
-            <span className="text-white/40">· presenza n. {s.numero}</span>
+            <span className="text-white/40">· serata n. {s.numero}</span>
           </p>
+          {s.extra && (
+            <p className="mt-2 text-[13px] font-bold uppercase tracking-[0.12em] text-white" style={MONT}>
+              🎉 Premio dei {d.ogni_extra}: stasera 2 drink e 2 shot
+            </p>
+          )}
           <div className={`mt-3 grid gap-2 ${s.shot ? "grid-cols-2" : "grid-cols-1"}`}>
-            <Omaggio cosa="Drink omaggio" icona="🍸" preso={s.drink_at} />
-            {s.shot && <Omaggio cosa="Shot omaggio" icona="🥃" preso={s.shot_at} />}
+            <Omaggio cosa="Drink omaggio" icona="🍸" presi={[s.drink_at, s.drink2_at]} tot={s.extra ? 2 : 1} />
+            {s.shot && <Omaggio cosa="Shot omaggio" icona="🥃" presi={[s.shot_at, s.shot2_at]} tot={s.extra ? 2 : 1} />}
           </div>
         </>
       )}
@@ -386,8 +314,20 @@ function StaseraBox({ d }: { d: AppPR }) {
   );
 }
 
-function Omaggio({ cosa, icona, preso }: { cosa: string; icona: string; preso: string | null }) {
-  const pronto = !preso;
+function Omaggio({
+  cosa,
+  icona,
+  presi,
+  tot,
+}: {
+  cosa: string;
+  icona: string;
+  presi: (string | null)[];
+  tot: number;
+}) {
+  const fatti = presi.filter((x): x is string => Boolean(x)).sort();
+  const restano = Math.max(tot - fatti.length, 0);
+  const pronto = restano > 0;
   return (
     <div
       className="px-4 py-3.5"
@@ -399,12 +339,19 @@ function Omaggio({ cosa, icona, preso }: { cosa: string; icona: string; preso: s
     >
       <p className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.25em]" style={MONT}>
         {cosa}
+        {tot > 1 ? " ×2" : ""}
         <span aria-hidden className={pronto ? "" : "grayscale"}>
           {icona}
         </span>
       </p>
       <p className="mt-1.5 text-[19px] font-black uppercase leading-none" style={MONT}>
-        {pronto ? "pronto" : `preso · ${ora(preso!)}`}
+        {!pronto
+          ? `${tot > 1 ? "presi" : "preso"} · ${ora(fatti[fatti.length - 1])}`
+          : tot > 1 && fatti.length > 0
+            ? "ancora 1"
+            : tot > 1
+              ? "2 pronti"
+              : "pronto"}
       </p>
       {pronto && <p className="mt-1.5 text-[11px] leading-snug text-white/85">Fai scansionare il QR al bar</p>}
     </div>
@@ -414,54 +361,85 @@ function Omaggio({ cosa, icona, preso }: { cosa: string; icona: string; preso: s
 /* ─────────────────────────── LA TESSERA A BATTITI ─────────────────────────── */
 
 function Tessera({ d }: { d: AppPR }) {
-  const { pieni, mancano } = bollini(d.presenze, d.ogni);
-  const shotStasera = d.stasera?.shot ?? false;
+  const { pieni, prossimo, mancano } = tessera(d.presenze, d.ogni, d.ogni_extra);
+  const s = d.stasera;
   return (
     <section className="mt-8">
       <div className="flex items-end justify-between">
         <Etichetta>la tua tessera</Etichetta>
         <span className="font-tech text-[12px] text-white/60">
-          <span className="text-white">{pieni}</span> / {d.ogni}
+          <span className="text-white">{pieni}</span> / {d.ogni_extra}
         </span>
       </div>
-      <div className="mt-3">
-        <Battito pieni={pieni} ogni={d.ogni} />
+      <div className="mt-3 space-y-1">
+        <Battito da={1} a={d.ogni} pieni={pieni} etichetta="SHOT" />
+        <Battito da={d.ogni + 1} a={d.ogni_extra} pieni={pieni} etichetta="2+2" />
       </div>
       <p className="mt-3 text-[14px] leading-snug text-white/80">
-        {shotStasera ? (
+        {s?.extra ? (
           <>
-            <strong className="text-white">Tessera piena: stasera lo shot è tuo.</strong> Fallo scansionare al bar.
+            <strong className="text-white">Premio dei {d.ogni_extra}: stasera 2 drink e 2 shot.</strong> Fatteli scansionare
+            al bar.
           </>
-        ) : pieni === d.ogni ? (
-          <>Tessera piena: lo shot era della {d.ogni}ª serata. Si riparte.</>
+        ) : s?.shot ? (
+          <>
+            <strong className="text-white">Stasera lo shot è tuo.</strong> Fallo scansionare al bar.
+          </>
         ) : (
           <>
-            Ancora <strong className="text-white">{mancano}</strong> {mancano === 1 ? "serata" : "serate"} e hai lo{" "}
-            <strong className="text-white">shot omaggio</strong>. Ogni serata conta quando passi dalla cassa.
+            Ancora <strong className="text-white">{mancano}</strong> {mancano === 1 ? "serata" : "serate"}{" "}
+            {prossimo === "shot" ? (
+              <>
+                e hai lo <strong className="text-white">shot omaggio</strong>.
+              </>
+            ) : (
+              <>
+                al <strong className="text-white">premio dei {d.ogni_extra}</strong>: 2 drink e 2 shot.
+              </>
+            )}
           </>
         )}
+      </p>
+      <p className="mt-1.5 text-[12px] text-white/45">
+        Alla {d.ogni}ª serata lo shot, alla {d.ogni_extra}ª 2 drink e 2 shot. Poi si riparte.
       </p>
     </section>
   );
 }
 
 /**
- * Il segno del PAPI-ON diventa la tessera: un battito per ogni presenza.
+ * Il segno del PAPI-ON diventa la tessera: un battito per ogni serata.
  * Quelli fatti sono rossi, quelli da fare sono il tracciato spento.
+ * Due righe da 5: in fondo alla prima lo shot, in fondo alla seconda il premio.
  */
-function Battito({ pieni, ogni, piccolo }: { pieni: number; ogni: number; piccolo?: boolean }) {
+function Battito({
+  da,
+  a,
+  pieni,
+  etichetta,
+  piccolo,
+}: {
+  da: number;
+  a: number;
+  pieni: number;
+  etichetta?: string;
+  piccolo?: boolean;
+}) {
   const w = 64;
-  const beat = (x: number) => `M${x} 34 H${x + 14} L${x + 20} 26 L${x + 26} 46 L${x + 34} 6 L${x + 42} 42 L${x + 47} 30 L${x + 51} 34 H${x + w}`;
+  const n = a - da + 1;
+  const beat = (x: number) =>
+    `M${x} 34 H${x + 14} L${x + 20} 26 L${x + 26} 46 L${x + 34} 6 L${x + 42} 42 L${x + 47} 30 L${x + 51} 34 H${x + w}`;
   return (
     <svg
-      viewBox={`0 0 ${w * ogni} 56`}
+      viewBox={`0 0 ${w * n} 56`}
       className={piccolo ? "w-40" : "w-full"}
       role={piccolo ? undefined : "img"}
-      aria-label={piccolo ? undefined : `${pieni} serate su ${ogni}`}
+      aria-label={piccolo ? undefined : `serate da ${da} a ${a}: ${Math.max(0, Math.min(pieni - da + 1, n))} fatte`}
       aria-hidden={piccolo || undefined}
     >
-      {Array.from({ length: ogni }, (_, i) => {
-        const acceso = i < pieni;
+      {Array.from({ length: n }, (_, i) => {
+        const numero = da + i;
+        const acceso = numero <= pieni;
         return (
           <g key={i}>
             <path
@@ -483,7 +461,7 @@ function Battito({ pieni, ogni, piccolo }: { pieni: number; ogni: number; piccol
                 fill={acceso ? "#ffffff" : "#55555c"}
                 style={{ fontFamily: "var(--font-jet), monospace", letterSpacing: "0.1em" }}
               >
-                {i === ogni - 1 ? "SHOT" : i + 1}
+                {i === n - 1 && etichetta ? etichetta : numero}
               </text>
             )}
           </g>
@@ -848,11 +826,11 @@ function Serate({ d }: { d: AppPR }) {
             <span className="text-[14px] text-white/85">{dataCorta(s.serata)}</span>
             <span className="flex items-center gap-3 font-tech text-[11px] text-white/45">
               <span className={s.drink ? "" : "opacity-30 grayscale"} title="drink omaggio">
-                🍸
+                🍸{s.extra ? `×${s.drink}` : ""}
               </span>
               {s.shot && (
-                <span className={s.shot_preso ? "" : "opacity-30 grayscale"} title="shot omaggio">
-                  🥃
+                <span className={s.shot_presi ? "" : "opacity-30 grayscale"} title="shot omaggio">
+                  🥃{s.extra ? `×${s.shot_presi}` : ""}
                 </span>
               )}
               <span className="w-8 text-right">n.{s.numero}</span>

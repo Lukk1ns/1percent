@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { accentoSerata, giornoEData, ora } from "@/lib/eventi";
 import { preparaAudio, suonaAttenzione, suonaNo, suonaOk } from "@/lib/suoni";
 import { inCassa } from "@/lib/biglietto-cliente";
-import { QR_PAPION, fotoUrl } from "@/lib/papion-pr";
+import { OGNI_EXTRA, QR_PAPION } from "@/lib/papion-pr";
 import {
   type BigliettoLocale,
   cercaOffline,
@@ -57,9 +57,9 @@ type EsitoPapion = {
   esito: "ok" | "gia" | "disattivo" | "sconosciuto" | "rete" | "errore";
   nome: string | null;
   cognome: string | null;
-  foto: string | null;
   numero: number | null;
   shot: boolean | null;
+  extra: boolean | null;
   entrato_at: string | null;
   da: string | null;
   messaggio?: string;
@@ -170,7 +170,7 @@ export default function PortaPage() {
       ultimoQR.current = { token: qr, at: Date.now() };
       setControllo(true);
       let r: EsitoPapion;
-      const vuoto = { nome: null, cognome: null, foto: null, numero: null, shot: null, entrato_at: null, da: null };
+      const vuoto = { nome: null, cognome: null, numero: null, shot: null, extra: null, entrato_at: null, da: null };
       try {
         const freno = new AbortController();
         const scade = setTimeout(() => freno.abort(), 6000);
@@ -1274,12 +1274,10 @@ function Risposta({
 
 /**
  * Il PR del PAPI-ON in cassa. Verde: entra gratis, presenza segnata,
- * il drink gliel'ha caricato l'app (lo dà il bar). La foto serve alla
- * cassiera per vedere che il telefono è il suo.
+ * il drink gliel'ha caricato l'app (lo dà il bar).
  */
 function RispostaPapion({ r, onChiudi }: { r: EsitoPapion; onChiudi: () => void }) {
   const nome = [r.nome, r.cognome].filter(Boolean).join(" ");
-  const foto = fotoUrl(r.foto);
   const stile = {
     ok: { sfondo: "bg-emerald-500 text-black", titolo: "PASSA · PR PAPI-ON" },
     gia: { sfondo: "bg-amber-400 text-black", titolo: "PR · GIÀ DENTRO" },
@@ -1294,24 +1292,18 @@ function RispostaPapion({ r, onChiudi }: { r: EsitoPapion; onChiudi: () => void 
       onClick={onChiudi}
       className={`absolute inset-0 z-20 flex w-full flex-col items-center justify-center px-6 text-center ${stile.sfondo}`}
     >
-      {foto && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={foto}
-          alt=""
-          width={120}
-          height={120}
-          style={{ width: 120, height: 120, objectFit: "cover" }}
-          className="mb-5 rounded-full border-4 border-black/20"
-        />
-      )}
       <p className="font-display text-5xl uppercase leading-none">{stile.titolo}</p>
       {nome && <p className="mt-4 font-display text-3xl uppercase leading-tight">{nome}</p>}
 
       {r.esito === "ok" && (
         <p className="mt-3 max-w-[28ch] text-sm leading-relaxed">
-          Entra gratis. Presenza n. {r.numero}: il drink omaggio lo prende al bar
-          {r.shot ? <strong>, e stasera anche lo shot</strong> : null}.
+          Entra gratis. Serata n. {r.numero}: il drink omaggio lo prende al bar
+          {r.extra ? (
+            <strong>. Premio dei {OGNI_EXTRA}: stasera 2 drink e 2 shot</strong>
+          ) : r.shot ? (
+            <strong>, e stasera anche lo shot</strong>
+          ) : null}
+          .
         </p>
       )}
       {r.esito === "gia" && (

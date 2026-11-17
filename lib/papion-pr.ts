@@ -6,13 +6,16 @@
  * segreto (`/papion/pr/<link>`): chi ha il link è lui, niente mail né
  * codici. Il QR dell'app (PPR-…) è un'altra cosa: si mostra in cassa
  * (entra gratis, presenza, drink caricato) e al bar (drink, shot ogni
- * 5 presenze, 1 € di sconto su un drink alla volta).
+ * 5 presenze, alla 10ª 2 drink + 2 shot, 1 € di sconto su un drink alla
+ * volta). Niente foto: Luka, 17/11 "lascia stare, sennò casino".
  *
  * Le regole stanno anche nel database: se ne cambi una, cambiala lì.
  */
 
 /** Ogni quante presenze c'è lo shot (= `_papion_ogni()` nello script 61). */
 export const OGNI = 5;
+/** Ogni quante c'è il premio grande: un drink e uno shot in più (= `_papion_ogni_extra()`, script 62). */
+export const OGNI_EXTRA = 10;
 /** Lo sconto al bar: un euro, sui drink da 7 € in su, uno alla volta. */
 export const SCONTO_EURO = 1;
 export const SCONTO_DA = 7;
@@ -32,8 +35,12 @@ export type Stasera = {
   entrato_at: string;
   numero: number;
   shot: boolean;
+  /** 10ª, 20ª…: un drink e uno shot in più */
+  extra: boolean;
   drink_at: string | null;
+  drink2_at: string | null;
   shot_at: string | null;
+  shot2_at: string | null;
 };
 
 export type TavoloPR = {
@@ -49,11 +56,11 @@ export type AppPR = {
   id: string;
   nome: string;
   cognome: string;
-  foto: string | null;
   qr: string;
   prevendite_1p: boolean;
   dal: string;
   ogni: number;
+  ogni_extra: number;
   serata: string;
   presenze: number;
   drink: number;
@@ -61,7 +68,7 @@ export type AppPR = {
   sconti: number;
   sconti_stasera: number;
   stasera: Stasera | null;
-  storico: { serata: string; numero: number; shot: boolean; drink: boolean; shot_preso: boolean }[];
+  storico: { serata: string; numero: number; shot: boolean; extra: boolean; drink: number; shot_presi: number }[];
   tavoli: TavoloPR[];
   tavoli_tot: number;
 };
@@ -70,11 +77,6 @@ export type AppPR = {
 export function urlApp(link: string): string {
   const base = typeof window === "undefined" ? "https://www.unpercento.it" : window.location.origin;
   return `${base}/papion/pr/${link}`;
-}
-
-/** La foto passa dal sito, che la chiede firmata a R2 (deposito privato). */
-export function fotoUrl(key: string | null | undefined): string | null {
-  return key ? `/api/papion-pr/foto?k=${encodeURIComponent(key)}` : null;
 }
 
 /** Le iniziali, quando la foto non c'è. */
@@ -126,13 +128,20 @@ export function ora(iso: string): string {
 }
 
 /**
- * La tessera: quanti bollini sono pieni (0–5) e quante presenze mancano
- * allo shot. Alla 5ª presenza la tessera è piena: lo shot è di quella sera.
+ * La tessera: 10 battiti. Al 5° lo shot, al 10° il premio (2 drink +
+ * 2 shot), poi si riparte. `pieni` 0–10, `prossimo` = il prossimo
+ * traguardo e `mancano` = quante serate ci vogliono.
  */
-export function bollini(presenze: number, ogni = OGNI): { pieni: number; mancano: number } {
-  const giro = presenze % ogni;
-  if (presenze > 0 && giro === 0) return { pieni: ogni, mancano: 0 };
-  return { pieni: giro, mancano: ogni - giro };
+export function tessera(
+  presenze: number,
+  ogni = OGNI,
+  extra = OGNI_EXTRA,
+): { pieni: number; prossimo: "shot" | "premio"; mancano: number } {
+  const giro = presenze % extra;
+  const pieni = presenze > 0 && giro === 0 ? extra : giro;
+  if (pieni < ogni) return { pieni, prossimo: "shot", mancano: ogni - pieni };
+  if (pieni < extra) return { pieni, prossimo: "premio", mancano: extra - pieni };
+  return { pieni, prossimo: "shot", mancano: ogni };
 }
 
 /**
@@ -148,10 +157,10 @@ export function messaggioBenvenutoPapion(nome: string, link: string): string {
     `📲 PRIMA COSA: mettila sulla schermata Home\n` +
     `· iPhone: aprila con Safari → tasto Condividi (il quadrato con la freccia) → «Aggiungi alla schermata Home»\n` +
     `· Android: aprila con Chrome → ⋮ in alto a destra → «Aggiungi a schermata Home» (o «Installa app»)\n` +
-    `Da lì la apri dall'icona PAPI-ON e sei sempre dentro, senza password.\n\n` +
+    `Da lì la apri dall'icona PAPI-ON.\n\n` +
     `COME FUNZIONA\n` +
     `1. Ogni sera in cassa fai scansionare il tuo QR: entri gratis e ti si carica il drink omaggio 🍸\n` +
-    `2. Al bar fai scansionare lo stesso QR e hai il drink. Ogni ${OGNI} presenze anche lo shot omaggio 🥃\n` +
+    `2. Al bar fai scansionare lo stesso QR e hai il drink. Ogni ${OGNI} presenze anche lo shot omaggio 🥃, ogni ${OGNI_EXTRA} in più un secondo drink e un secondo shot\n` +
     `3. Sui drink che paghi (da ${SCONTO_DA} € in su): prima dello scontrino fai scansionare il QR e paghi ${SCONTO_EURO} € in meno. Un drink alla volta.\n` +
     `4. I tavoli che porti tu li segni dall'app.\n\n` +
     `Il link è solo tuo: non girarlo a nessuno.`
