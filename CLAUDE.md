@@ -32,6 +32,9 @@ possa segnare i tavoli prenotati da lui"*. Poi: *"i PR del PAPI-ON hanno altre r
   `papion-pr/<id>/<x>.webp` via `/api/papion-pr/foto`, 512 px senza EXIF) e QR grande; "stasera" con drink/shot pronti o
   presi; **tessera a battiti** (5 battiti del logo, si accendono a ogni presenza); −1 € al bar; tavoli; "i tuoi numeri" a
   scontrino; ultime serate; tasto "Le tue prevendite" se Luka accende "fa anche prevendite 1%".
+- **Incolla una lista** (17/11, Luka: *"non avrò tempo di attivarli tutti"*): un PR per riga, nome cognome numero in qualsiasi
+  formato (`leggiRiga`: prima parola = nome, cifre = numero, doppioni per numero/nome scartati in giallo). In elenco chi non ha
+  mai aperto l'app ha il **tasto verde in riga** ("mandata ✓" ricordato in `localStorage` del telefono di Luka).
 - **Pannello** `/admin/papion-pr` (tile in dashboard): scheda PR (manda app, copia link, apri app, foto, modifica, attivo,
   prevendite 1%, presenza a mano / togli, tavoli, link nuovo, elimina) e scheda **Serate** (entrati, drink, shot, sconti,
   tavoli col budget). "app ✓" = aperta almeno una volta dall'icona sulla Home.
