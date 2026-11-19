@@ -221,7 +221,7 @@ sull'accesso anonimo vecchio, il vero sulla mail; risultato "SISTEMATA ✓"). Il
 pieno) dal "mail di nessuno": dicono "ti abbiamo trovato, scrivi a Luka, non iscriverti di nuovo" col codice.
 **Regola: un errore di `link_email_account` non è mai "non sei iscritto".** Diagnosi senza service key: query di
 sola lettura su `auth.users` + `profiles` incollata da Luka (accesso con mail "ha il suo profilo" ma profilo vero
-"attaccato a: accesso anonimo" = questo caso). **PENDING Luka: incollare il 47.**
+"attaccato a: accesso anonimo" = questo caso). **47 INCOLLATO il 19 nov** (sbloccati alessandro, azzu, giulietta).
 
 **LA RICERCA STA NELLA DASHBOARD (16 ott, `components/CercaPersone.tsx`, NESSUNO SCRIPT).** Luka, il giorno dopo
 `/admin/cerca`: *"dovrebbe essere messo nella pagina iniziale dell'admin sotto TUTTI I MEMBRI... così posso cercare
