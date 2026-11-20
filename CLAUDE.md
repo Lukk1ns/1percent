@@ -15,7 +15,9 @@ Messaggi in `/pr/[evento]` (PR: "non fargli il biglietto, scrivi a Luka"; admin:
 Parte sulla PR (file privato): le `admin_*` chiamate dal SQL Editor **a nome di un admin** (`set_config('request.jwt.claims', …, true)`) →
 `admin_presale_annulla` sui suoi biglietti non fatti (rimborso automatico se aveva portato soldi), `admin_pr_ritira_tutto`,
 `admin_set_role(public)`. Se non trova UNA sola PR col cognome cercato si ferma senza cambiare niente. PGlite **31/31**.
-**PENDING Luka: incollare il 63** (verifica da fuori: tabella `prevendite_rimborsate` → vuota/42501, non 42P01/PGRST205).
+**63 DENTRO (20/11, intero dal file privato):** 5 biglietti annullati, PR tolta, conto con lei a zero. Al primo giro si era
+fermato da solo (nome scritto staccato nel DB): il file privato ora la cerca per tessera. Verifica da fuori:
+`prevendite_rimborsate?select=presale_id` → `[]` 200 (c'è, RLS chiusa).
 
 **PR PAPI-ON, stesso giorno (17 nov, `62_pr_papion_premio_10.sql`, commit 3caeeea).** Luka: *"lascia stare il discorso foto
 (app e messaggio), sennò casino"* → **foto tolte ovunque** (app, bar, porta, pannello, rotta `/api/papion-pr/foto` cancellata;
