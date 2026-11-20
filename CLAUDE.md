@@ -4,6 +4,17 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**IL PR INCASSA IL PREZZO GIUSTO (20 nov, `supabase/65_prezzo_speciale_il_pr_incassa.sql`).** Vista la schermata di una PR
+bloccata su una rimborsata, Luka: *"non deve venire fuori di chiamare me, di non incassare i soldi. Lei deve incassare i soldi,
+ma 20 euro"*. Giro: "Fai il biglietto" → fermo (`rimborsato:20`/`sovrapprezzo:5:20`) → in `/pr/[evento]` riquadro **giallo**
+"per lei costa 20 €, fatti dare 20 € e premi qui sotto" + tasto **"Ho incassato 20 € · fai il biglietto"** → `pr_prezzo_conferma
+(event, nome, cognome, tier)` scrive in **`prezzo_speciale_ok`** (chi = auth.uid, serata, nome unito, prezzo; vale 15 min) → la
+pagina rifà `pr_vendi` → il trigger trova la conferma, **alza `new.prezzo`** e la cancella (una conferma = un biglietto).
+Biglietto del PR, fascia sua, vale 20: dovuto/punti/porta come sempre. `pr_vendi` NON toccata (risponde ancora il prezzo
+della fascia: la pagina mostra `prezzoOk`). Calcolo in `_prezzo_richiesto()` (interna); **`_presales_rimborsati()` ultima
+definizione = 65**. Prenotazioni e vendite segnate non usano la conferma. PGlite **66/66** (conferma di un altro PR, scaduta,
+per un altro nome → fermo). **PENDING Luka: incollare il 65** (verifica: `pr_prezzo_conferma` → 42501/`Non autorizzato`).
+
 **PERSONE SEGNATE +5 € (20 nov, `supabase/64_sovrapprezzo_persone.sql`).** Luka, sull'ex PR del 63: *"se qualcuno prova a
 venderle una prevendita deve venire fuori 5 euro in più"*. Tabella **`persone_sovrapprezzo`** (nome, cognome, `event_id` vuoto
 = tutte le serate, `sovrapprezzo`, `motivo`, `attivo`); **`_presales_rimborsati()` rifatta qui (ultima definizione = 64)**: oltre

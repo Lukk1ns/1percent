@@ -106,6 +106,15 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
   const [esito, setEsito] = useState<string | null>(null);
   // Nome già presente: all'admin si offre di insistere, al PR no.
   const [omonimo, setOmonimo] = useState(false);
+  // Persona che paga di più (script 63/64/65): il PR incassa il prezzo
+  // giusto e conferma. Vale solo per quel nome e quella fascia.
+  const [prezzoSpeciale, setPrezzoSpeciale] = useState<{
+    prezzo: number;
+    testo: string;
+    nome: string;
+    cognome: string;
+    fascia: string;
+  } | null>(null);
   const [appenaFatto, setAppenaFatto] = useState<Biglietto | null>(null);
   const [copiato, setCopiato] = useState(false);
   // Con cinquanta nomi in lista, chi ha perso il link si cerca.
@@ -213,11 +222,36 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
     // senza rete): con il solo token il riquadro restava bianco.
   }, [ingresso?.token, loading, senzaRete, appenaFatto]);
 
-  async function vendi(e: React.FormEvent, forza = false) {
+  // "Ho incassato 20 € · fai il biglietto": la conferma (script 65), poi la vendita.
+  async function confermaEVendi(e: React.FormEvent) {
+    e.preventDefault();
+    setSalvando(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("pr_prezzo_conferma", {
+      p_event: evento,
+      p_nome: nome,
+      p_cognome: cognome,
+      p_tier: fascia,
+    });
+    if (error) {
+      setSalvando(false);
+      setPrezzoSpeciale(null);
+      setEsito(
+        (error as { code?: string }).code === "PGRST202"
+          ? "Manca ancora un pezzo sul database: avvisa Luka (script 65)."
+          : error.message,
+      );
+      return;
+    }
+    await vendi(e, false, typeof data === "number" ? data : null);
+  }
+
+  async function vendi(e: React.FormEvent, forza = false, prezzoOk: number | null = null) {
     e.preventDefault();
     setSalvando(true);
     setEsito(null);
     setOmonimo(false);
+    setPrezzoSpeciale(null);
     setPuntiPrima(puntiVendite);
 
     const supabase = createClient();
@@ -245,28 +279,22 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
         await carica();
         return;
       }
-      // Si era fatto rimborsare la prevendita (script 63): da adesso paga di più.
+      // Persona che paga di più: si era fatta rimborsare (63) o è segnata (64).
+      // Il PR incassa il prezzo giusto e conferma col tasto giallo (65).
       const rimborsato = error.message?.match(/rimborsato:(\d+)/);
-      if (rimborsato) {
-        setEsito(
-          `${nome.trim()} ${cognome.trim()} si era fatto rimborsare la prevendita di questa serata: ` +
-            `adesso per entrare paga ${rimborsato[1]} €. ` +
-            (r?.senza_limite
-              ? `Se vuole venire, fagli dal pannello una prenotazione «paga in cassa» da ${rimborsato[1]} €.`
-              : "Non fargli il biglietto e non prendere soldi: avvisalo e scrivi a Luka."),
-        );
-        return;
-      }
-      // Persona segnata dalla direzione (script 64): paga N € in più.
       const segnata = error.message?.match(/sovrapprezzo:(\d+):(\d+)/);
-      if (segnata) {
-        setEsito(
-          `${nome.trim()} ${cognome.trim()}: per questa persona la prevendita costa ${segnata[1]} € in più, ` +
-            `cioè ${segnata[2]} €. ` +
-            (r?.senza_limite
-              ? `Se vuole venire, fagli dal pannello una prenotazione «paga in cassa» da ${segnata[2]} €.`
-              : "Non fargliela e non prendere soldi: scrivi a Luka."),
-        );
+      if (rimborsato || segnata) {
+        const prezzo = Number(segnata ? segnata[2] : rimborsato![1]);
+        const chi = `${nome.trim()} ${cognome.trim()}`;
+        setPrezzoSpeciale({
+          prezzo,
+          testo: segnata
+            ? `Per ${chi} la prevendita costa ${segnata[1]} € in più: ${prezzo} €.`
+            : `${chi} aveva chiesto il rimborso della prevendita: per questa serata adesso costa ${prezzo} €.`,
+          nome,
+          cognome,
+          fascia,
+        });
         return;
       }
       setEsito(error.message);
@@ -307,7 +335,9 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
       anno_nascita: Number(anno),
       telefono: telefono.trim() || null,
       tier_label: fasce.find((f) => f.id === fascia)?.label ?? "",
-      prezzo: Number(res.prezzo),
+      // pr_vendi risponde il prezzo della fascia: se il PR ha confermato
+      // un prezzo più alto, il biglietto vale quello (script 65).
+      prezzo: prezzoOk ?? Number(res.prezzo),
       token: res.token,
       stato: r?.senza_limite ? "attiva" : "in_attesa",
       minorenne: Boolean(res.minorenne),
@@ -950,6 +980,30 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                   </p>
                 </div>
               )}
+              {prezzoSpeciale &&
+                prezzoSpeciale.nome === nome &&
+                prezzoSpeciale.cognome === cognome &&
+                prezzoSpeciale.fascia === fascia && (
+                  <div className="border border-amber-400 bg-amber-400/10 px-4 py-3">
+                    <p className="font-tech text-[10px] uppercase tracking-[0.2em] text-amber-300">
+                      prezzo diverso
+                    </p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-white">
+                      {prezzoSpeciale.testo} Fatti dare{" "}
+                      <strong>{prezzoSpeciale.prezzo} €</strong> e poi premi qui sotto.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={salvando}
+                      onClick={confermaEVendi}
+                      className="mt-3 w-full bg-amber-400 py-3 text-sm font-semibold uppercase tracking-widest text-black disabled:opacity-40"
+                    >
+                      {salvando
+                        ? "Salvo…"
+                        : `Ho incassato ${prezzoSpeciale.prezzo} € · fai il biglietto`}
+                    </button>
+                  </div>
+                )}
               {omonimo && r.senza_limite && (
                 <button
                   type="button"
