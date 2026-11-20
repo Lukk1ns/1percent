@@ -4,6 +4,19 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**RIMBORSATI PAGANO 20 € (20 nov, `supabase/63_rimborsati_pagano_20.sql`).** Una PR ha restituito i soldi a tutti i suoi
+clienti ed è uscita. Luka: *"quando ricapita un nome di queste persone bisogna avvisarli che pagano 20 al posto di 15,
+perché non ha senso farsi rimborsare per poi ricomprare"*. ⚠️ **Il repository è PUBBLICO: script con nomi di persone in
+`supabase/privati/` (in `.gitignore`)**; lì c'è il 63 intero con la parte sulla PR, quello che Luka incolla. Tabella **`prevendite_rimborsate`**
+(nome, cognome, serata, `prezzo_minimo` 20) + trigger **`presales_rimborsati`** (before insert, come 41/45, nessuna funzione
+riscritta): biglietto sulla stessa serata a un nome in lista sotto il minimo → `rimborsato:20`. Nome confrontato con
+`_nome_pulito` (minuscole, spazi, accenti, apostrofi) anche girato; prenotazione "paga N € in cassa" vale N; omaggio passa.
+Messaggi in `/pr/[evento]` (PR: "non fargli il biglietto, scrivi a Luka"; admin: "prenotazione da 20 €") e `/admin/pr`.
+Parte sulla PR (file privato): le `admin_*` chiamate dal SQL Editor **a nome di un admin** (`set_config('request.jwt.claims', …, true)`) →
+`admin_presale_annulla` sui suoi biglietti non fatti (rimborso automatico se aveva portato soldi), `admin_pr_ritira_tutto`,
+`admin_set_role(public)`. Se non trova UNA sola PR col cognome cercato si ferma senza cambiare niente. PGlite **31/31**.
+**PENDING Luka: incollare il 63** (verifica da fuori: tabella `prevendite_rimborsate` → vuota/42501, non 42P01/PGRST205).
+
 **PR PAPI-ON, stesso giorno (17 nov, `62_pr_papion_premio_10.sql`, commit 3caeeea).** Luka: *"lascia stare il discorso foto
 (app e messaggio), sennò casino"* → **foto tolte ovunque** (app, bar, porta, pannello, rotta `/api/papion-pr/foto` cancellata;
 la colonna `foto` e `papion_pr_foto` restano nel DB, inutili). E *"ogni 10 presenze anche un drink e un secondo shot"* →

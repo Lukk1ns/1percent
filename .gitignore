@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# script con nomi di persone: restano solo sul Mac (repo pubblico)
+supabase/privati/

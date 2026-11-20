@@ -1481,6 +1481,16 @@ export default function AdminPrPage() {
 
     if (error) {
       const code = (error as { code?: string }).code;
+      // Si era fatto rimborsare la prevendita (script 63).
+      const rimborsato = error.message?.match(/rimborsato:(\d+)/);
+      if (rimborsato) {
+        setOmErrore(
+          `${om.nome.trim()} ${om.cognome.trim()} si era fatto rimborsare la prevendita di questa serata: ` +
+            `adesso paga ${rimborsato[1]} €. Fagli la prenotazione con «in cassa paga ${rimborsato[1]} €» ` +
+            `(o un omaggio, se decidi tu).`,
+        );
+        return;
+      }
       setOmErrore(
         code === "PGRST202"
           ? `Manca ancora lo script sul database: incolla supabase/${

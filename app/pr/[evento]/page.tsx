@@ -245,6 +245,18 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
         await carica();
         return;
       }
+      // Si era fatto rimborsare la prevendita (script 63): da adesso paga di più.
+      const rimborsato = error.message?.match(/rimborsato:(\d+)/);
+      if (rimborsato) {
+        setEsito(
+          `${nome.trim()} ${cognome.trim()} si era fatto rimborsare la prevendita di questa serata: ` +
+            `adesso per entrare paga ${rimborsato[1]} €. ` +
+            (r?.senza_limite
+              ? `Se vuole venire, fagli dal pannello una prenotazione «paga in cassa» da ${rimborsato[1]} €.`
+              : "Non fargli il biglietto e non prendere soldi: avvisalo e scrivi a Luka."),
+        );
+        return;
+      }
       setEsito(error.message);
       return;
     }
