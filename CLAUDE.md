@@ -4,6 +4,15 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**PERSONE SEGNATE +5 € (20 nov, `supabase/64_sovrapprezzo_persone.sql`).** Luka, sull'ex PR del 63: *"se qualcuno prova a
+venderle una prevendita deve venire fuori 5 euro in più"*. Tabella **`persone_sovrapprezzo`** (nome, cognome, `event_id` vuoto
+= tutte le serate, `sovrapprezzo`, `motivo`, `attivo`); **`_presales_rimborsati()` rifatta qui (ultima definizione = 64)**: oltre
+al 63, persona in lista che paga meno di fascia + sovrapprezzo → `sovrapprezzo:5:20`. Riferimento = fascia del biglietto, se
+non c'è (prenotazione, vendita segnata) la più economica visibile della serata; omaggio e serata senza fasce passano. I nomi
+ora si confrontano **senza spazi** (`_nome_unito`: "De Luca" = "Deluca"), anche per il 63. Messaggi in `/pr/[evento]` e
+`/admin/pr` (testo neutro: "per questa persona costa 5 € in più", niente motivo). Nomi in `supabase/privati/64_…`. PGlite 46/46.
+**PENDING Luka: incollare il 64 dal file privato.** Per segnare un'altra persona: una riga in `persone_sovrapprezzo` dal SQL Editor.
+
 **RIMBORSATI PAGANO 20 € (20 nov, `supabase/63_rimborsati_pagano_20.sql`).** Una PR ha restituito i soldi a tutti i suoi
 clienti ed è uscita. Luka: *"quando ricapita un nome di queste persone bisogna avvisarli che pagano 20 al posto di 15,
 perché non ha senso farsi rimborsare per poi ricomprare"*. ⚠️ **Il repository è PUBBLICO: script con nomi di persone in

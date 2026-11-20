@@ -257,6 +257,18 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
         );
         return;
       }
+      // Persona segnata dalla direzione (script 64): paga N € in più.
+      const segnata = error.message?.match(/sovrapprezzo:(\d+):(\d+)/);
+      if (segnata) {
+        setEsito(
+          `${nome.trim()} ${cognome.trim()}: per questa persona la prevendita costa ${segnata[1]} € in più, ` +
+            `cioè ${segnata[2]} €. ` +
+            (r?.senza_limite
+              ? `Se vuole venire, fagli dal pannello una prenotazione «paga in cassa» da ${segnata[2]} €.`
+              : "Non fargliela e non prendere soldi: scrivi a Luka."),
+        );
+        return;
+      }
       setEsito(error.message);
       return;
     }

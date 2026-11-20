@@ -1491,6 +1491,15 @@ export default function AdminPrPage() {
         );
         return;
       }
+      // Persona segnata (script 64): paga N € in più.
+      const segnata = error.message?.match(/sovrapprezzo:(\d+):(\d+)/);
+      if (segnata) {
+        setOmErrore(
+          `${om.nome.trim()} ${om.cognome.trim()} è segnata: paga ${segnata[1]} € in più. ` +
+            `Fagli la prenotazione con «in cassa paga ${segnata[2]} €» (o un omaggio, se decidi tu).`,
+        );
+        return;
+      }
       setOmErrore(
         code === "PGRST202"
           ? `Manca ancora lo script sul database: incolla supabase/${
