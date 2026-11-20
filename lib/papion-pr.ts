@@ -7,7 +7,8 @@
  * codici. Il QR dell'app (PPR-…) è un'altra cosa: si mostra in cassa
  * (entra gratis, presenza, drink caricato) e al bar (drink, shot ogni
  * 5 presenze, alla 10ª 2 drink + 2 shot, 1 € di sconto su un drink alla
- * volta). Niente foto: Luka, 17/11 "lascia stare, sennò casino".
+ * volta, massimo 5 a serata; ogni 10 drink pagati uno in regalo, script 66).
+ * Niente foto: Luka, 17/11 "lascia stare, sennò casino".
  *
  * Le regole stanno anche nel database: se ne cambi una, cambiala lì.
  */
@@ -19,6 +20,10 @@ export const OGNI_EXTRA = 10;
 /** Lo sconto al bar: un euro, sui drink da 7 € in su, uno alla volta. */
 export const SCONTO_EURO = 1;
 export const SCONTO_DA = 7;
+/** Quanti sconti a serata (= `_papion_max_sconti()`, script 66). Dal 6° il drink si paga pieno ma conta. */
+export const SCONTI_MAX = 5;
+/** Ogni quanti drink pagati (scansionati al bar) uno in regalo (= `_papion_ogni_pagati()`, script 66). */
+export const OGNI_PAGATI = 10;
 
 /** Il QR del PR: lo scanner lo riconosce da qui, prima di chiamare il database. */
 export const QR_PAPION = /^PPR-[0-9a-f]{20}$/;
@@ -67,6 +72,15 @@ export type AppPR = {
   shot: number;
   sconti: number;
   sconti_stasera: number;
+  /** Script 66: se il database è ancora al 62 non ci sono, e valgono le costanti qui sopra. */
+  sconti_max?: number;
+  ogni_pagati?: number;
+  /** drink pagati da sempre (con lo sconto + a prezzo pieno) */
+  pagati?: number;
+  pagati_stasera?: number;
+  /** drink in regalo ancora da prendere (non scadono) */
+  regali?: number;
+  regali_presi?: number;
   stasera: Stasera | null;
   storico: { serata: string; numero: number; shot: boolean; extra: boolean; drink: number; shot_presi: number }[];
   tavoli: TavoloPR[];
@@ -161,8 +175,9 @@ export function messaggioBenvenutoPapion(nome: string, link: string): string {
     `COME FUNZIONA\n` +
     `1. Ogni sera in cassa fai scansionare il tuo QR: entri gratis e ti si carica il drink omaggio 🍸\n` +
     `2. Al bar fai scansionare lo stesso QR e hai il drink. Ogni ${OGNI} presenze anche lo shot omaggio 🥃, ogni ${OGNI_EXTRA} in più un secondo drink e un secondo shot\n` +
-    `3. Sui drink che paghi (da ${SCONTO_DA} € in su): prima dello scontrino fai scansionare il QR e paghi ${SCONTO_EURO} € in meno. Un drink alla volta.\n` +
-    `4. I tavoli che porti tu li segni dall'app.\n\n` +
+    `3. Sui drink che paghi (da ${SCONTO_DA} € in su): prima dello scontrino fai scansionare il QR e paghi ${SCONTO_EURO} € in meno. Un drink alla volta, ${SCONTI_MAX} sconti a serata.\n` +
+    `4. Ogni ${OGNI_PAGATI} drink che paghi e fai scansionare al bar, uno te lo offriamo noi 🎁 Dal ${SCONTI_MAX + 1}° della serata niente sconto, ma fattelo scansionare lo stesso: conta.\n` +
+    `5. I tavoli che porti tu li segni dall'app.\n\n` +
     `Il link è solo tuo: non girarlo a nessuno.`
   );
 }

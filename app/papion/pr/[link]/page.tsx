@@ -9,7 +9,9 @@ import {
   type TavoloPR,
   ICONA_PPR_180,
   LOGO_PAPION,
+  OGNI_PAGATI,
   ROSSO_PAPION,
+  SCONTI_MAX,
   SCONTO_DA,
   SCONTO_EURO,
   dataCorta,
@@ -18,6 +20,20 @@ import {
   prossimeSerate,
   tessera,
 } from "@/lib/papion-pr";
+
+/**
+ * Script 66: col database ancora al 62 (o una copia vecchia sul telefono)
+ * questi numeri non arrivano: si parte dalle costanti e dagli sconti.
+ */
+function alBar(d: AppPR) {
+  return {
+    scontiMax: d.sconti_max ?? SCONTI_MAX,
+    ogniPagati: d.ogni_pagati ?? OGNI_PAGATI,
+    pagati: d.pagati ?? d.sconti ?? 0,
+    regali: d.regali ?? 0,
+    regaliPresi: d.regali_presi ?? 0,
+  };
+}
 
 /** Dove il telefono tiene l'ultima copia: in cassa il campo va e viene. */
 const COPIA = (l: string) => `papion_pr_${l}`;
@@ -43,8 +59,9 @@ function chiTelefono(): { tipo: Telefono; dentroApp: boolean; installata: boolea
  *
  * La prima cosa è il QR: si apre l'icona e lo si mostra, in cassa (entra
  * gratis, si segna la presenza, si carica il drink) e al bar (drink,
- * shot ogni 5 presenze, alla 10ª 2 drink + 2 shot, 1 € di sconto). Sotto:
- * stasera, la tessera a 10 battiti, i numeri, i tavoli. Niente foto. Chi ha il link è lui: niente accesso.
+ * shot ogni 5 presenze, alla 10ª 2 drink + 2 shot, 1 € di sconto, 5 a sera;
+ * ogni 10 drink pagati uno in regalo). Sotto: stasera, la tessera a 10 battiti,
+ * lo sconto e i drink pagati, i numeri, i tavoli, le regole. Niente foto. Chi ha il link è lui: niente accesso.
  * Si aggiorna da sola ogni 20 secondi e regge anche senza campo.
  */
 export default function AppPRPage({ params }: { params: Promise<{ link: string }> }) {
@@ -175,13 +192,15 @@ export default function AppPRPage({ params }: { params: Promise<{ link: string }
 
       <Tessera d={d} />
 
-      <Sconto stasera={d.sconti_stasera} />
+      <AlBar d={d} />
 
       <Tavoli d={d} link={link} onCambio={leggi} />
 
       <Scontrino d={d} />
 
       {d.storico.length > 0 && <Serate d={d} />}
+
+      <Regole d={d} />
 
       {d.prevendite_1p && (
         <Link
@@ -283,15 +302,23 @@ function Pass({ d }: { d: AppPR }) {
 
 function StaseraBox({ d }: { d: AppPR }) {
   const s = d.stasera;
+  const { regali, ogniPagati } = alBar(d);
   return (
     <section className="mt-6">
       <Etichetta>stasera · {dataCorta(d.serata)}</Etichetta>
 
       {!s ? (
-        <p className="mt-2 border-l-2 pl-3 text-[14px] leading-relaxed text-white/80" style={{ borderColor: ROSSO_PAPION }}>
-          In cassa fai scansionare il QR: <strong className="text-white">entri gratis</strong> e ti si carica il{" "}
-          <strong className="text-white">drink omaggio</strong>.
-        </p>
+        <>
+          <p className="mt-2 border-l-2 pl-3 text-[14px] leading-relaxed text-white/80" style={{ borderColor: ROSSO_PAPION }}>
+            In cassa fai scansionare il QR: <strong className="text-white">entri gratis</strong> e ti si carica il{" "}
+            <strong className="text-white">drink omaggio</strong>.
+          </p>
+          {regali > 0 && (
+            <div className="mt-3">
+              <Regalo n={regali} ogni={ogniPagati} />
+            </div>
+          )}
+        </>
       ) : (
         <>
           <p className="mt-2 flex items-center gap-2 text-[13px] text-white/70">
@@ -304,9 +331,10 @@ function StaseraBox({ d }: { d: AppPR }) {
               🎉 Premio dei {d.ogni_extra}: stasera 2 drink e 2 shot
             </p>
           )}
-          <div className={`mt-3 grid gap-2 ${s.shot ? "grid-cols-2" : "grid-cols-1"}`}>
+          <div className={`mt-3 grid gap-2 ${s.shot || regali > 0 ? "grid-cols-2" : "grid-cols-1"}`}>
             <Omaggio cosa="Drink omaggio" icona="🍸" presi={[s.drink_at, s.drink2_at]} tot={s.extra ? 2 : 1} />
             {s.shot && <Omaggio cosa="Shot omaggio" icona="🥃" presi={[s.shot_at, s.shot2_at]} tot={s.extra ? 2 : 1} />}
+            {regali > 0 && <Regalo n={regali} ogni={ogniPagati} />}
           </div>
         </>
       )}
@@ -354,6 +382,24 @@ function Omaggio({
               : "pronto"}
       </p>
       {pronto && <p className="mt-1.5 text-[11px] leading-snug text-white/85">Fai scansionare il QR al bar</p>}
+    </div>
+  );
+}
+
+/** Il drink in regalo dei 10 pagati: resta finché non lo prendi. */
+function Regalo({ n, ogni }: { n: number; ogni: number }) {
+  return (
+    <div className="bg-white px-4 py-3.5 text-black">
+      <p className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.25em]" style={MONT}>
+        Drink in regalo{n > 1 ? ` ×${n}` : ""}
+        <span aria-hidden>🎁</span>
+      </p>
+      <p className="mt-1.5 text-[19px] font-black uppercase leading-none" style={MONT}>
+        {n > 1 ? `${n} pronti` : "pronto"}
+      </p>
+      <p className="mt-1.5 text-[11px] leading-snug text-black/70">
+        Hai pagato {ogni} drink: fai scansionare il QR al bar. Non scade.
+      </p>
     </div>
   );
 }
@@ -471,29 +517,101 @@ function Battito({
   );
 }
 
-/* ─────────────────────────────── LO SCONTO ─────────────────────────────── */
+/* ─────────────────────── AL BAR: LO SCONTO E I DRINK PAGATI ─────────────────────── */
 
-function Sconto({ stasera }: { stasera: number }) {
+function AlBar({ d }: { d: AppPR }) {
+  const { scontiMax, ogniPagati, pagati, regali } = alBar(d);
+  const usati = Math.min(d.sconti_stasera, scontiMax);
+  const finiti = usati >= scontiMax;
+  const giro = pagati % ogniPagati;
+  const pieni = pagati > 0 && giro === 0 ? ogniPagati : giro;
+  const mancano = ogniPagati - giro;
   return (
-    <section className="mt-8 flex items-stretch gap-4 border border-white/12 px-4 py-4">
-      <div className="flex shrink-0 flex-col items-center justify-center pr-1">
-        <span className="text-[34px] font-black leading-none text-white" style={MONT}>
-          −{SCONTO_EURO}€
-        </span>
-        <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.3em] text-white/45" style={MONT}>
-          al bar
-        </span>
-      </div>
-      <div className="border-l border-white/12 pl-4">
-        <p className="text-[13px] leading-relaxed text-white/80">
-          Sui drink da {SCONTO_DA} € in su: <strong className="text-white">prima dello scontrino</strong> fai
-          scansionare il QR. Un drink alla volta.
-        </p>
-        {stasera > 0 && (
-          <p className="mt-1.5 font-tech text-[11px] text-white/50">
-            stasera: {stasera} {stasera === 1 ? "sconto" : "sconti"}
+    <section className="mt-8 border border-white/12">
+      <div className="flex items-stretch gap-4 px-4 py-4">
+        <div className="flex shrink-0 flex-col items-center justify-center pr-1">
+          <span className="text-[34px] font-black leading-none text-white" style={MONT}>
+            −{SCONTO_EURO}€
+          </span>
+          <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.3em] text-white/45" style={MONT}>
+            al bar
+          </span>
+        </div>
+        <div className="min-w-0 flex-1 border-l border-white/12 pl-4">
+          <p className="text-[13px] leading-relaxed text-white/80">
+            Sui drink da {SCONTO_DA} € in su: <strong className="text-white">prima dello scontrino</strong> fai
+            scansionare il QR. Un drink alla volta, <strong className="text-white">{scontiMax} a serata</strong>.
           </p>
-        )}
+          <div className="mt-2.5 flex items-center gap-2.5">
+            <div className="flex gap-1" role="img" aria-label={`sconti usati stasera: ${usati} di ${scontiMax}`}>
+              {Array.from({ length: scontiMax }, (_, i) => (
+                <span
+                  key={i}
+                  className="block h-2.5 w-4"
+                  style={i < usati ? { background: "#fff" } : { border: "1px solid rgba(255,255,255,0.28)" }}
+                />
+              ))}
+            </div>
+            <span className="font-tech text-[11px] text-white/55">
+              {finiti ? "finiti stasera" : `stasera ${usati} di ${scontiMax}`}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-white/12 px-4 py-4">
+        <div className="flex items-end justify-between">
+          <Etichetta>drink pagati</Etichetta>
+          <span className="font-tech text-[12px] text-white/60">
+            <span className="text-white">{pieni}</span> / {ogniPagati}
+          </span>
+        </div>
+        <div
+          className="mt-2.5 grid gap-1"
+          style={{ gridTemplateColumns: `repeat(${ogniPagati}, minmax(0, 1fr))` }}
+          role="img"
+          aria-label={`drink pagati verso il regalo: ${pieni} di ${ogniPagati}`}
+        >
+          {Array.from({ length: ogniPagati }, (_, i) => {
+            const acceso = i < pieni;
+            const ultimo = i === ogniPagati - 1;
+            return (
+              <span
+                key={i}
+                className="flex h-7 items-center justify-center text-[13px]"
+                style={
+                  acceso
+                    ? { background: ROSSO_PAPION, boxShadow: `0 0 10px -2px ${ROSSO_PAPION}` }
+                    : { border: "1px solid rgba(255,255,255,0.16)" }
+                }
+              >
+                {ultimo ? <span className={acceso ? "" : "opacity-40 grayscale"}>🎁</span> : null}
+              </span>
+            );
+          })}
+        </div>
+        <p className="mt-2.5 text-[14px] leading-snug text-white/80">
+          {pieni === ogniPagati ? (
+            <>
+              <strong className="text-white">Fatto: {ogniPagati} drink pagati.</strong> Il drink in regalo è tuo.
+            </>
+          ) : (
+            <>
+              Ancora <strong className="text-white">{mancano}</strong> e il prossimo{" "}
+              <strong className="text-white">te lo offriamo noi</strong>.
+            </>
+          )}
+          {regali > 0 && (
+            <>
+              {" "}
+              Ne hai <strong className="text-white">{regali}</strong> da prendere: fai scansionare il QR al bar.
+            </>
+          )}
+        </p>
+        <p className="mt-1.5 text-[12px] text-white/45">
+          Ogni {ogniPagati} drink che paghi e fai scansionare al bar, uno in regalo. Dal {scontiMax + 1}° della serata
+          niente sconto, ma fallo scansionare lo stesso: conta.
+        </p>
       </div>
     </section>
   );
@@ -783,11 +901,14 @@ function NuovoTavolo({
 /* ─────────────────────────── LO SCONTRINO DEL PR ─────────────────────────── */
 
 function Scontrino({ d }: { d: AppPR }) {
+  const { pagati, regali, regaliPresi } = alBar(d);
   const righe: [string, string][] = [
     ["presenze", String(d.presenze)],
     ["drink omaggio", String(d.drink)],
     ["shot omaggio", String(d.shot)],
+    ["drink pagati", String(pagati)],
     ["sconti al bar", d.sconti ? `${d.sconti} × −${SCONTO_EURO} €` : "0"],
+    ["drink in regalo", regali > 0 ? `presi ${regaliPresi} · da prendere ${regali}` : String(regaliPresi)],
     ["tavoli portati", String(d.tavoli_tot)],
   ];
   return (
@@ -838,6 +959,35 @@ function Serate({ d }: { d: AppPR }) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/* ─────────────────────────────── LE REGOLE ─────────────────────────────── */
+
+function Regole({ d }: { d: AppPR }) {
+  const { scontiMax, ogniPagati } = alBar(d);
+  const regole: [string, React.ReactNode][] = [
+    ["🍸", <>Ogni sera in cassa fai scansionare il QR: <strong className="text-white">entri gratis</strong> e hai il drink omaggio.</>],
+    ["🥃", <>Ogni {d.ogni} serate anche lo <strong className="text-white">shot</strong>, ogni {d.ogni_extra} un drink e uno shot in più.</>],
+    ["−1€", <>Sui drink da {SCONTO_DA} € in su paghi <strong className="text-white">{SCONTO_EURO} € in meno</strong>: uno alla volta, {scontiMax} a serata, prima dello scontrino.</>],
+    ["🎁", <>Ogni <strong className="text-white">{ogniPagati} drink pagati</strong> e scansionati al bar, uno te lo offriamo noi. Non scade.</>],
+    ["🪑", <>I tavoli che porti li segni qui sopra.</>],
+  ];
+  return (
+    <section className="mt-10">
+      <Etichetta>le tue regole</Etichetta>
+      <ul className="mt-3 space-y-2.5">
+        {regole.map(([icona, testo], i) => (
+          <li key={i} className="flex gap-3 text-[13px] leading-snug text-white/70">
+            <span className="w-8 shrink-0 text-center text-[13px] font-black text-white" style={MONT} aria-hidden>
+              {icona}
+            </span>
+            <span>{testo}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-[11px] text-white/40">Drink e shot omaggio della serata valgono solo quella sera.</p>
     </section>
   );
 }

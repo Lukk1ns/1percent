@@ -1,8 +1,24 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 17 novembre 2026
+> Ultimo aggiornamento: 20 novembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**PR PAPI-ON: 5 SCONTI A SERATA + UN DRINK IN REGALO OGNI 10 PAGATI (20 nov, `supabase/66_pr_papion_sconti_5_e_regalo_10.sql`).**
+Luka, il giorno in cui attiva i baristi: *"lo sconto a 1 € può essere usato su massimo 5 drink a serata, uno alla volta"* e
+*"ogni 10 drink comprati hanno un altro ulteriore drink omaggio... che sia indicato nel proprio profilo"*. Deciso da me (dirlo
+se Luka cambia idea): **drink comprato = drink scansionato al bar** (non c'è altro modo di saperlo). Il tasto SCONTO del bar
+segna il drink: i primi `_papion_max_sconti()` = 5 della serata in `papion_pr_sconti` (−1 €), dal 6° il tasto diventa
+**DRINK PAGATO** e va in **`papion_pr_pagati`** (esito `pieno`, prezzo pieno, conta lo stesso). Pagati = sconti + pagati, da
+sempre (anche quelli prima del 66). Ogni `_papion_ogni_pagati()` = 10 → **un drink in regalo che non scade**: esce dal tasto
+DRINK OMAGGIO **dopo** quello/i della serata, riga in **`papion_pr_regali`**. Liberi = `_papion_regali_liberi(pr)`.
+Il 66 rifà `papion_pr_bar` (colonne `sconti_max, pagati, pagati_stasera, regali, ogni_pagati`), `papion_pr_bar_usa`
+(`pagati, regalo, regali`; drop + create) e `papion_pr_app` (`sconti_max, ogni_pagati, pagati, pagati_stasera, regali,
+regali_presi`). **Pannello non toccato**: lì "sconti" = solo quelli veri. Costanti `SCONTI_MAX`/`OGNI_PAGATI` in
+`lib/papion-pr.ts`; pagine che reggono anche col DB al 62. App: card bianca "drink in regalo", riquadro −1 € con 5
+quadratini + striscia "drink pagati" a 10, scontrino con pagati/regali, sezione **"le tue regole"**. Benvenuto con la regola 4.
+PGlite **34/34** sopra 61+62 (vecchi sconti contano, 5 poi pieno, doppio tocco, regalo al 10°, ordine serata→regalo,
+regalo che resta la settimana dopo, premio dei 10 + 2 regali, permessi). Build ok, app fotografata con dati finti.
 
 **IL PR INCASSA IL PREZZO GIUSTO (20 nov, `supabase/65_prezzo_speciale_il_pr_incassa.sql`).** Vista la schermata di una PR
 bloccata su una rimborsata, Luka: *"non deve venire fuori di chiamare me, di non incassare i soldi. Lei deve incassare i soldi,

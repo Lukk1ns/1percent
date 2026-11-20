@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { preparaAudio, suonaAttenzione, suonaNo, suonaOk } from "@/lib/suoni";
-import { OGNI_EXTRA, QR_PAPION, SCONTO_DA, SCONTO_EURO, ora } from "@/lib/papion-pr";
+import { OGNI_EXTRA, OGNI_PAGATI, QR_PAPION, SCONTI_MAX, SCONTO_DA, SCONTO_EURO, ora } from "@/lib/papion-pr";
 
-/** Cosa gli spetta stasera (script 62): drink 1 o 2, shot 0, 1 o 2. */
+/** Cosa gli spetta stasera (script 62): drink 1 o 2, shot 0, 1 o 2. Sconti, drink pagati e regali: script 66. */
 type Scheda = {
   qr: string;
   esito: "ok" | "disattivo" | "sconosciuto";
@@ -23,16 +23,28 @@ type Scheda = {
   sconti: number | null;
   ultimo_sconto: string | null;
   presenze: number | null;
+  /** script 66 (col database al 62 non arrivano: valgono le costanti) */
+  sconti_max?: number | null;
+  pagati?: number | null;
+  pagati_stasera?: number | null;
+  regali?: number | null;
+  ogni_pagati?: number | null;
 };
 
 type Cosa = "drink" | "shot" | "sconto";
 
 type Fatto = {
   cosa: Cosa;
-  esito: "ok" | "gia" | "niente_shot" | "disattivo" | "sconosciuto" | "rete" | "errore";
+  /** pieno = sconti finiti stasera: si paga tutto, ma il drink conta per il regalo */
+  esito: "ok" | "pieno" | "gia" | "niente_shot" | "disattivo" | "sconosciuto" | "rete" | "errore";
   quando: string | null;
   sconti: number | null;
   rimasti: number | null;
+  /** drink pagati da sempre, dopo questo */
+  pagati?: number | null;
+  /** sconto/pieno: con questo ne ha pagati 10, 20… · drink: era quello in regalo */
+  regalo?: boolean | null;
+  regali?: number | null;
   nome: string;
 };
 
@@ -54,7 +66,11 @@ type Scanner = {
  *   · DRINK OMAGGIO  — uno a sera, caricato quando entra (due alla 10ª, 20ª…);
  *   · SHOT OMAGGIO   — alla 5ª, 15ª… presenza uno, alla 10ª, 20ª… due;
  *   · SCONTO 1 €     — sul drink che sta pagando (da 7 € in su), uno
- *                       alla volta: il barista lo toglie prima dello scontrino.
+ *                       alla volta, 5 a serata: il barista lo toglie prima
+ *                       dello scontrino. Dal 6° il tasto diventa DRINK PAGATO:
+ *                       prezzo pieno, ma conta (script 66).
+ *   · Ogni 10 drink pagati uno in regalo: esce dal tasto DRINK OMAGGIO,
+ *     dopo quello della serata, e non scade.
  * Scansionare non segna niente: conta il tocco. Così un QR letto due
  * volte dalla fotocamera non regala niente.
  */
@@ -162,13 +178,13 @@ export default function BarPage() {
       f = { cosa, esito: "rete", quando: null, sconti: null, rimasti: null, nome };
     }
     if (f.esito === "ok" || (cosa === "sconto" && f.esito === "gia")) suonaOk();
-    else if (f.esito === "gia") suonaAttenzione();
+    else if (f.esito === "gia" || f.esito === "pieno") suonaAttenzione();
     else suonaNo();
     if (navigator.vibrate) navigator.vibrate(f.esito === "ok" ? 60 : [80, 60, 80]);
     setScheda(null);
     setFatto(f);
     setInvio(null);
-    timer.current = setTimeout(libera, f.esito === "ok" ? 2200 : 4500);
+    timer.current = setTimeout(libera, f.esito === "ok" && !f.regalo ? 2200 : 4500);
   }
 
   // La fotocamera sempre accesa, come in porta
@@ -240,7 +256,7 @@ export default function BarPage() {
         <p className="font-tech text-[10px] uppercase tracking-[0.25em] text-[#ff6b6b]">bar · pr papi-on</p>
         <p className="mt-0.5 text-[12px] leading-snug text-brand-gray">
           Scansiona il QR del PR, poi tocca: drink omaggio, shot omaggio o sconto {SCONTO_EURO} € (drink da{" "}
-          {SCONTO_DA} € in su, uno alla volta).
+          {SCONTO_DA} € in su, uno alla volta, {SCONTI_MAX} a sera). Ogni {OGNI_PAGATI} drink pagati ne ha uno in regalo.
         </p>
       </div>
 
@@ -346,6 +362,14 @@ function SchedaPR({
   const sTot = s.shot_tot ?? 0;
   const sUsati = s.shot_usati ?? 0;
   const premio = dTot > 1;
+  const regali = s.regali ?? 0;
+  const scontiMax = s.sconti_max ?? SCONTI_MAX;
+  const sconti = s.sconti ?? 0;
+  const finiti = sconti >= scontiMax;
+  const ogniPagati = s.ogni_pagati ?? OGNI_PAGATI;
+  const pagati = s.pagati ?? 0;
+  const versoRegalo = `${pagati % ogniPagati}/${ogniPagati} verso il regalo`;
+  const drinkSerata = dUsati < dTot;
 
   return (
     <div className="absolute inset-0 z-20 flex flex-col overflow-y-auto bg-black px-5 pb-6 pt-6">
@@ -359,19 +383,31 @@ function SchedaPR({
           premio dei {OGNI_EXTRA}: 2 drink + 2 shot
         </p>
       )}
+      {regali > 0 && (
+        <p className="mt-3 inline-block self-start bg-amber-300 px-3 py-1.5 font-display text-lg uppercase text-black">
+          🎁 {regali === 1 ? "1 drink in regalo" : `${regali} drink in regalo`} · {ogniPagati} pagati
+        </p>
+      )}
 
       <div className="mt-6 flex flex-col gap-2.5">
         <Tasto
-          attivo={dUsati < dTot}
+          attivo={drinkSerata || regali > 0}
           caricando={invio === "drink"}
           onClick={() => onUsa("drink")}
-          titolo={`Drink omaggio 🍸${dTot > 1 ? ` ${dUsati + 1 > dTot ? dTot : dUsati + 1}/${dTot}` : ""}`}
+          titolo={
+            drinkSerata
+              ? `Drink omaggio 🍸${dTot > 1 ? ` ${dUsati + 1}/${dTot}` : ""}`
+              : regali > 0
+                ? "Drink in regalo 🎁"
+                : "Drink omaggio 🍸"
+          }
           sotto={
-            dUsati < dTot
-              ? dTot > 1
-                ? `stasera ne ha ${dTot}, presi ${dUsati}`
-                : "uno a sera, gratis"
-              : `già ${dTot > 1 ? "dati tutti e due" : "dato"} · ${s.drink_ultimo ? ora(s.drink_ultimo) : "—"}`
+            drinkSerata
+              ? (dTot > 1 ? `stasera ne ha ${dTot}, presi ${dUsati}` : "uno a sera, gratis") +
+                (regali > 0 ? ` · poi ${regali} in regalo` : "")
+              : regali > 0
+                ? `quello della serata l'ha preso · ${regali === 1 ? "1 in regalo" : `${regali} in regalo`} (ogni ${ogniPagati} pagati)`
+                : `già ${dTot > 1 ? "dati tutti e due" : "dato"} · ${s.drink_ultimo ? ora(s.drink_ultimo) : "—"}`
           }
           stile="rosso"
         />
@@ -395,8 +431,12 @@ function SchedaPR({
           attivo
           caricando={invio === "sconto"}
           onClick={() => onUsa("sconto")}
-          titolo={`Sconto ${SCONTO_EURO} €`}
-          sotto={`sul drink che paga (da ${SCONTO_DA} € in su) · stasera ${s.sconti ?? 0}`}
+          titolo={finiti ? "Drink pagato" : `Sconto ${SCONTO_EURO} € · ${sconti + 1}/${scontiMax}`}
+          sotto={
+            finiti
+              ? `sconti finiti stasera (${scontiMax}/${scontiMax}): prezzo pieno, ma segnalo · ${versoRegalo}`
+              : `sul drink che paga (da ${SCONTO_DA} € in su) · ${versoRegalo}`
+          }
           stile="bianco"
         />
       </div>
@@ -449,23 +489,35 @@ function Esito({ f, onChiudi }: { f: Fatto; onChiudi: () => void }) {
   let titolo = "";
   let sotto = "";
 
-  if (f.cosa === "sconto" && (f.esito === "ok" || f.esito === "gia")) {
+  const regaloNuovo = f.regalo
+    ? ` 🎁 Con questo fa ${f.pagati ?? OGNI_PAGATI} drink pagati: ha un drink in regalo (tasto DRINK OMAGGIO).`
+    : "";
+
+  if (f.cosa === "sconto" && f.esito === "gia") {
+    sfondo = "bg-sky-400 text-black";
+    titolo = "Già segnato";
+    sotto = "Segnato un attimo fa: è lo stesso drink. Lo sconto si toglie una volta sola.";
+  } else if (f.cosa === "sconto" && f.esito === "ok") {
     sfondo = "bg-sky-400 text-black";
     titolo = `−${SCONTO_EURO} €`;
     sotto =
-      f.esito === "gia"
-        ? "Sconto già segnato un attimo fa: è lo stesso drink. Togli 1 € una volta sola."
-        : `Fai lo scontrino con ${SCONTO_EURO} € in meno.${f.sconti ? ` Sconti stasera: ${f.sconti}.` : ""}`;
+      `Fai lo scontrino con ${SCONTO_EURO} € in meno.` +
+      (f.sconti ? ` Sconti stasera: ${f.sconti} di ${SCONTI_MAX}.` : "") +
+      regaloNuovo;
+  } else if (f.cosa === "sconto" && f.esito === "pieno") {
+    sfondo = "bg-white text-black";
+    titolo = "Prezzo pieno";
+    sotto = `Sconti finiti stasera (${SCONTI_MAX} di ${SCONTI_MAX}): niente sconto. Il drink è segnato e conta per il regalo.${regaloNuovo}`;
   } else if (f.esito === "ok") {
-    titolo = f.cosa === "drink" ? "Dai il drink 🍸" : "Dai lo shot 🥃";
+    titolo = f.cosa === "drink" ? (f.regalo ? "Dai il drink 🎁" : "Dai il drink 🍸") : "Dai lo shot 🥃";
     sotto =
-      "Omaggio: non si batte." +
-      (f.rimasti ? ` Stasera ne ha ancora ${f.rimasti === 1 ? "uno" : f.rimasti}.` : "");
+      (f.regalo ? `Drink in regalo (ogni ${OGNI_PAGATI} pagati): non si batte.` : "Omaggio: non si batte.") +
+      (f.rimasti ? ` Ne ha ancora ${f.rimasti === 1 ? "uno" : f.rimasti}.` : "");
   } else if (f.esito === "gia") {
     sfondo = "bg-amber-400 text-black";
     titolo = f.cosa === "drink" ? "Drink già dato" : "Shot già dato";
     sotto = f.quando
-      ? `L'ultimo alle ${ora(f.quando)}. Se ne vuole un altro, lo paga (con lo sconto).`
+      ? `L'ultimo alle ${ora(f.quando)}. Se ne vuole un altro, lo paga.`
       : "";
   } else if (f.esito === "niente_shot") {
     sfondo = "bg-amber-400 text-black";
