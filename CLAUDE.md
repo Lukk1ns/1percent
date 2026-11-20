@@ -13,7 +13,7 @@ pagina rifà `pr_vendi` → il trigger trova la conferma, **alza `new.prezzo`** 
 Biglietto del PR, fascia sua, vale 20: dovuto/punti/porta come sempre. `pr_vendi` NON toccata (risponde ancora il prezzo
 della fascia: la pagina mostra `prezzoOk`). Calcolo in `_prezzo_richiesto()` (interna); **`_presales_rimborsati()` ultima
 definizione = 65**. Prenotazioni e vendite segnate non usano la conferma. PGlite **66/66** (conferma di un altro PR, scaduta,
-per un altro nome → fermo). **PENDING Luka: incollare il 65** (verifica: `pr_prezzo_conferma` → 42501/`Non autorizzato`).
+per un altro nome → fermo). **65 DENTRO (20/11, verificato: `pr_prezzo_conferma` → 42501).**
 
 **PERSONE SEGNATE +5 € (20 nov, `supabase/64_sovrapprezzo_persone.sql`).** Luka, sull'ex PR del 63: *"se qualcuno prova a
 venderle una prevendita deve venire fuori 5 euro in più"*. Tabella **`persone_sovrapprezzo`** (nome, cognome, `event_id` vuoto
@@ -22,7 +22,7 @@ al 63, persona in lista che paga meno di fascia + sovrapprezzo → `sovrapprezzo
 non c'è (prenotazione, vendita segnata) la più economica visibile della serata; omaggio e serata senza fasce passano. I nomi
 ora si confrontano **senza spazi** (`_nome_unito`: "De Luca" = "Deluca"), anche per il 63. Messaggi in `/pr/[evento]` e
 `/admin/pr` (testo neutro: "per questa persona costa 5 € in più", niente motivo). Nomi in `supabase/privati/64_…`. PGlite 46/46.
-**PENDING Luka: incollare il 64 dal file privato.** Per segnare un'altra persona: una riga in `persone_sovrapprezzo` dal SQL Editor.
+**64 DENTRO (20/11).** Per segnare un'altra persona: una riga in `persone_sovrapprezzo` dal SQL Editor.
 
 **RIMBORSATI PAGANO 20 € (20 nov, `supabase/63_rimborsati_pagano_20.sql`).** Una PR ha restituito i soldi a tutti i suoi
 clienti ed è uscita. Luka: *"quando ricapita un nome di queste persone bisogna avvisarli che pagano 20 al posto di 15,
