@@ -846,12 +846,12 @@ export default function PortaPage() {
           >
             {modoCerca ? "torna alla fotocamera" : "cerca per nome"}
           </button>
-          <Link
+          <a
             href="/admin/bar"
             className="flex items-center border border-white/15 px-4 font-tech text-[10px] uppercase tracking-[0.2em] text-white"
           >
             bar
-          </Link>
+          </a>
           <Link
             href="/admin/pr"
             className="flex items-center border border-white/15 px-4 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray"
@@ -1319,13 +1319,13 @@ function RispostaPapion({ r, onChiudi }: { r: EsitoPapion; onChiudi: () => void 
         </p>
       )}
       {(r.esito === "ok" || r.esito === "gia") && (
-        <Link
+        <a
           href="/admin/bar"
           onClick={(e) => e.stopPropagation()}
           className="mt-6 border-2 border-current px-6 py-3 text-[12px] font-semibold uppercase tracking-widest"
         >
           sei al bar? apri il bar →
-        </Link>
+        </a>
       )}
       {r.esito === "disattivo" && (
         <p className="mt-3 max-w-[28ch] text-sm leading-relaxed">Luka l&apos;ha tolto dai PR: paga l&apos;ingresso o chiama Luka.</p>

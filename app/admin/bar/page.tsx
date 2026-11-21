@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { preparaAudio, suonaAttenzione, suonaNo, suonaOk } from "@/lib/suoni";
@@ -201,6 +200,11 @@ export default function BarPage() {
         experimentalFeatures: { useBarCodeDetectorIfSupported: true },
       }) as unknown as Scanner;
       scannerRef.current = inst;
+      // Se dopo 6 secondi è ancora nera (fotocamera rimasta presa da
+      // un'altra pagina), si dice di farla ripartire invece di restare al buio.
+      const guardia = setTimeout(() => {
+        if (!annullato) setCamErrore("La fotocamera non è partita. Tocca qui sopra; se resta nera, ricarica la pagina.");
+      }, 6000);
       try {
         await inst.start(
           { facingMode: "environment" },
@@ -220,7 +224,9 @@ export default function BarPage() {
           },
           () => {},
         );
+        clearTimeout(guardia);
       } catch (e) {
+        clearTimeout(guardia);
         if (!annullato) {
           const err = e as { name?: string; message?: string };
           setCamErrore(
@@ -266,7 +272,7 @@ export default function BarPage() {
         {camErrore && (
           <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
             <button
-              onClick={() => setTentativoCam((n) => n + 1)}
+              onClick={() => window.location.reload()}
               className="w-full max-w-xs bg-brand-red px-6 py-4 text-sm font-semibold uppercase tracking-widest text-white"
             >
               Accendi la fotocamera
@@ -297,13 +303,13 @@ export default function BarPage() {
             <p className="mt-4 max-w-[28ch] text-sm leading-relaxed">
               Qui si leggono solo i QR dei PR del PAPI-ON. Gli shot omaggio delle liste si leggono dalla Porta.
             </p>
-            <Link
+            <a
               href="/admin/porta"
               onClick={(e) => e.stopPropagation()}
               className="mt-6 border-2 border-white px-6 py-3 text-[12px] font-semibold uppercase tracking-widest"
             >
               apri la porta
-            </Link>
+            </a>
           </button>
         )}
 
@@ -312,12 +318,12 @@ export default function BarPage() {
       </div>
 
       <div className="flex gap-2 border-t border-white/10 bg-black px-4 py-3">
-        <Link
+        <a
           href="/admin/porta"
           className="flex flex-1 items-center justify-center border border-white/15 py-3 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray"
         >
           vai alla porta
-        </Link>
+        </a>
       </div>
     </main>
   );
