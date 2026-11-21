@@ -40,7 +40,11 @@ export async function GET(request: Request) {
           return NextResponse.redirect(new URL(next, url.origin));
         }
         if (isStaff) {
-          return NextResponse.redirect(new URL("/admin/porta", url.origin));
+          // Lo staff va dove chiedeva il link se è una pagina sua (porta,
+          // scanner, bar): prima finivano tutti in porta, e il barista
+          // entrato da /login?next=/admin/bar dava l'ingresso al posto del drink.
+          const daStaff = ["/admin/porta", "/admin/scan", "/admin/bar"].some((p) => next.startsWith(p));
+          return NextResponse.redirect(new URL(daStaff ? next : "/admin/porta", url.origin));
         }
         return NextResponse.redirect(new URL("/", url.origin));
       }

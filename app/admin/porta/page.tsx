@@ -847,6 +847,12 @@ export default function PortaPage() {
             {modoCerca ? "torna alla fotocamera" : "cerca per nome"}
           </button>
           <Link
+            href="/admin/bar"
+            className="flex items-center border border-white/15 px-4 font-tech text-[10px] uppercase tracking-[0.2em] text-white"
+          >
+            bar
+          </Link>
+          <Link
             href="/admin/pr"
             className="flex items-center border border-white/15 px-4 font-tech text-[10px] uppercase tracking-[0.2em] text-brand-gray"
           >
@@ -1311,6 +1317,15 @@ function RispostaPapion({ r, onChiudi }: { r: EsitoPapion; onChiudi: () => void 
           È già passato stasera alle {r.entrato_at ? ora(r.entrato_at) : "—"}
           {r.da === "bar" ? " (segnato dal bar)" : ""}. Se è uscito e rientra, passa: la presenza resta una.
         </p>
+      )}
+      {(r.esito === "ok" || r.esito === "gia") && (
+        <Link
+          href="/admin/bar"
+          onClick={(e) => e.stopPropagation()}
+          className="mt-6 border-2 border-current px-6 py-3 text-[12px] font-semibold uppercase tracking-widest"
+        >
+          sei al bar? apri il bar →
+        </Link>
       )}
       {r.esito === "disattivo" && (
         <p className="mt-3 max-w-[28ch] text-sm leading-relaxed">Luka l&apos;ha tolto dai PR: paga l&apos;ingresso o chiama Luka.</p>
