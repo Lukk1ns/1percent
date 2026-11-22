@@ -59,10 +59,24 @@ type Tavolo = {
   pr?: string;
 };
 
+/** Un tocco al bar e il barista che l'ha fatto (script 67) */
+type Tocco = {
+  pr_id: string;
+  serata: string;
+  at: string;
+  /** drink / shot = omaggio della serata · regalo = ogni 10 pagati · sconto / pagato = comprato */
+  cosa: "drink" | "shot" | "regalo" | "sconto" | "pagato";
+  /** il nome dato da Luka, se no l'inizio della mail; null = tocco senza barista */
+  chi: string | null;
+  email: string | null;
+};
+
 type SchedaDati = {
   presenze: Presenza[];
   sconti_fuori: { serata: string; n: number }[];
   tavoli: Tavolo[];
+  /** c'è solo col 67 */
+  bar?: Tocco[];
 };
 
 type SerataRiga = { serata: string; entrati: number; sconti: number; tavoli: number; adesso: boolean };
@@ -71,7 +85,11 @@ type SerataDati = {
   entrati: (Presenza & { pr_id: string; nome: string; cognome: string })[];
   sconti_senza_ingresso: { pr_id: string; nome: string; cognome: string; n: number }[];
   tavoli: Tavolo[];
+  /** c'è solo col 67 */
+  bar?: Tocco[];
 };
+
+const ICONA_OMAGGIO: Record<string, string> = { drink: "🍸", shot: "🥃", regalo: "🎁" };
 
 const DA = { cassa: "cassa", bar: "dal bar", direzione: "a mano" } as const;
 
@@ -687,40 +705,50 @@ function SchedaPR({ p, onCambio }: { p: PR; onCambio: () => void }) {
       </div>
       <ul className="mt-2 divide-y divide-white/[0.06]">
         {d?.presenze.map((x) => (
-          <li key={x.serata} className="flex items-center justify-between gap-2 py-2 text-[12px]">
-            <span className="text-white">
-              {dataCorta(x.serata)} <span className="text-brand-gray">· {ora(x.entrato_at)} {DA[x.da]} · n.{x.numero}</span>
-            </span>
-            <span className="flex items-center gap-2 font-tech text-[11px] text-white/70">
-              <span className={x.drink ? "" : "opacity-25 grayscale"}>🍸{x.extra ? `×${x.drink}` : ""}</span>
-              {x.shot && <span className={x.shot_presi ? "" : "opacity-25 grayscale"}>🥃{x.extra ? `×${x.shot_presi}` : ""}</span>}
-              {x.sconti > 0 && <span>−{x.sconti}€</span>}
-              <button
-                onClick={async () => {
-                  const r = await rpc(
-                    "admin_papion_pr_presenza",
-                    { p_pr: p.id, p_serata: x.serata, p_on: false },
-                    `Togliere la presenza di ${dataCorta(x.serata)}? Se ha preso drink o shot, sparisce anche quello.`,
-                  );
-                  if (r !== null) {
-                    leggi();
-                    onCambio();
-                  }
-                }}
-                className="ml-1 text-brand-gray"
-                aria-label="togli presenza"
-              >
-                ✕
-              </button>
-            </span>
+          <li key={x.serata} className="py-2">
+            <div className="flex items-center justify-between gap-2 text-[12px]">
+              <span className="text-white">
+                {dataCorta(x.serata)} <span className="text-brand-gray">· {ora(x.entrato_at)} {DA[x.da]} · n.{x.numero}</span>
+              </span>
+              <span className="flex items-center gap-2 font-tech text-[11px] text-white/70">
+                <span className={x.drink ? "" : "opacity-25 grayscale"}>🍸{x.extra ? `×${x.drink}` : ""}</span>
+                {x.shot && <span className={x.shot_presi ? "" : "opacity-25 grayscale"}>🥃{x.extra ? `×${x.shot_presi}` : ""}</span>}
+                {x.sconti > 0 && <span>−{x.sconti}€</span>}
+                <button
+                  onClick={async () => {
+                    const r = await rpc(
+                      "admin_papion_pr_presenza",
+                      { p_pr: p.id, p_serata: x.serata, p_on: false },
+                      `Togliere la presenza di ${dataCorta(x.serata)}? Se ha preso drink o shot, sparisce anche quello.`,
+                    );
+                    if (r !== null) {
+                      leggi();
+                      onCambio();
+                    }
+                  }}
+                  className="ml-1 text-brand-gray"
+                  aria-label="togli presenza"
+                >
+                  ✕
+                </button>
+              </span>
+            </div>
+            {d.bar && <ChiAlBar tocchi={d.bar.filter((t) => t.serata === x.serata)} />}
           </li>
         ))}
         {d && d.presenze.length === 0 && <li className="py-2 text-[12px] text-brand-gray">Nessuna presenza.</li>}
       </ul>
       {d && d.sconti_fuori.length > 0 && (
-        <p className="mt-2 text-[11px] text-amber-300">
-          Sconti in sere senza ingresso: {d.sconti_fuori.map((s) => `${dataCorta(s.serata)} ×${s.n}`).join(" · ")}
-        </p>
+        <div className="mt-2 text-[11px] text-amber-300">
+          <p>Sconti in sere senza ingresso: {d.sconti_fuori.map((s) => `${dataCorta(s.serata)} ×${s.n}`).join(" · ")}</p>
+          {d.bar &&
+            d.sconti_fuori.map((s) => (
+              <div key={s.serata} className="mt-1">
+                <span>{dataCorta(s.serata)}</span>
+                <ChiAlBar tocchi={d.bar!.filter((t) => t.serata === s.serata)} />
+              </div>
+            ))}
+        </div>
       )}
 
       {/* Tavoli */}
@@ -880,6 +908,8 @@ function Serate() {
             {d.tavoli.length} tavoli{budget ? ` · ${budget} € di budget` : ""}
           </p>
 
+          {d.bar && d.bar.length > 0 && <Baristi tocchi={d.bar} onCambio={leggi} />}
+
           <p className="mt-5 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">entrati</p>
           <ul className="mt-2 divide-y divide-white/[0.06]">
             {d.entrati.map((e) => (
@@ -893,6 +923,7 @@ function Serate() {
                     {ora(e.entrato_at)} {DA[e.da]} · serata n.{e.numero}
                     {e.extra ? " · premio dei 10" : e.shot ? " · shot" : ""}
                   </p>
+                  {d.bar && <ChiAlBar tocchi={d.bar.filter((t) => t.pr_id === e.pr_id)} />}
                 </div>
                 <span className="flex items-center gap-2 font-tech text-[11px] text-white/70">
                   <span className={e.drink ? "" : "opacity-25 grayscale"} title="drink omaggio presi">
@@ -911,9 +942,18 @@ function Serate() {
           </ul>
 
           {d.sconti_senza_ingresso.length > 0 && (
-            <p className="mt-2 text-[11px] text-amber-300">
-              Sconti senza ingresso segnato: {d.sconti_senza_ingresso.map((s) => `${s.nome} ×${s.n}`).join(" · ")}
-            </p>
+            <div className="mt-2 text-[11px] text-amber-300">
+              <p>Sconti senza ingresso segnato: {d.sconti_senza_ingresso.map((s) => `${s.nome} ×${s.n}`).join(" · ")}</p>
+              {d.bar &&
+                d.sconti_senza_ingresso.map((s) => (
+                  <div key={s.pr_id} className="mt-1">
+                    <span>
+                      {s.nome} {s.cognome}
+                    </span>
+                    <ChiAlBar tocchi={d.bar!.filter((t) => t.pr_id === s.pr_id)} />
+                  </div>
+                ))}
+            </div>
           )}
 
           <p className="mt-6 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">tavoli dei pr</p>
@@ -924,5 +964,105 @@ function Serate() {
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * Da quale barista ha preso gli omaggi e da quale ha comprato (script 67).
+ * Luka, 22/11: "da quale barista andavano a farsi fare il drink gratis e
+ * da quale barista acquistano la roba".
+ */
+function ChiAlBar({ tocchi }: { tocchi: Tocco[] }) {
+  const gratis = tocchi.filter((t) => t.cosa in ICONA_OMAGGIO);
+  const comprati = tocchi.filter((t) => t.cosa === "sconto" || t.cosa === "pagato");
+  if (gratis.length === 0 && comprati.length === 0) return null;
+  const perChi = new Map<string, number>();
+  for (const t of comprati) perChi.set(t.chi ?? "?", (perChi.get(t.chi ?? "?") ?? 0) + 1);
+  return (
+    <div className="mt-1 space-y-0.5 text-[11px] leading-snug text-white/65">
+      {gratis.length > 0 && (
+        <p>
+          <span className="text-brand-gray">omaggio da </span>
+          {gratis.map((t, i) => (
+            <span key={i} className="whitespace-nowrap">
+              {i > 0 && <span className="text-brand-gray"> · </span>}
+              {ICONA_OMAGGIO[t.cosa]} {t.chi ?? "?"} <span className="text-brand-gray">{ora(t.at)}</span>
+            </span>
+          ))}
+        </p>
+      )}
+      {comprati.length > 0 && (
+        <p>
+          <span className="text-brand-gray">comprati da </span>
+          {[...perChi].map(([chi, n], i) => (
+            <span key={chi} className="whitespace-nowrap">
+              {i > 0 && <span className="text-brand-gray"> · </span>}
+              {chi} ×{n}
+            </span>
+          ))}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** La serata vista dal bar: cosa ha dato e venduto ogni barista. Toccando il nome, Luka lo chiama come vuole. */
+function Baristi({ tocchi, onCambio }: { tocchi: Tocco[]; onCambio: () => void }) {
+  type Riga = { chi: string; email: string | null; drink: number; shot: number; regalo: number; sconto: number; pagato: number };
+  const mappa = new Map<string, Riga>();
+  for (const t of tocchi) {
+    const k = t.email ?? "?";
+    const r = mappa.get(k) ?? { chi: t.chi ?? "?", email: t.email, drink: 0, shot: 0, regalo: 0, sconto: 0, pagato: 0 };
+    r[t.cosa]++;
+    mappa.set(k, r);
+  }
+  const righe = [...mappa.values()].sort(
+    (a, b) => b.drink + b.shot + b.regalo + b.sconto + b.pagato - (a.drink + a.shot + a.regalo + a.sconto + a.pagato),
+  );
+
+  async function rinomina(r: Riga) {
+    if (!r.email) return;
+    const nome = window.prompt(`Come si chiama questo barista?\n${r.email}\n(lascia vuoto per tornare alla mail)`, r.chi);
+    if (nome === null) return;
+    const { error } = await createClient().rpc("admin_papion_barista_nome", { p_email: r.email, p_nome: nome });
+    if (error) window.alert(error.message);
+    else onCambio();
+  }
+
+  return (
+    <>
+      <p className="mt-5 font-tech text-[10px] uppercase tracking-[0.25em] text-brand-gray">al bar · chi ha servito i pr</p>
+      <ul className="mt-2 divide-y divide-white/[0.06]">
+        {righe.map((r) => {
+          const venduti = r.sconto + r.pagato;
+          const nominabile = !!r.email && r.email !== "sconosciuto";
+          return (
+            <li key={r.email ?? "?"} className="flex items-center justify-between gap-3 py-2">
+              <button
+                onClick={() => rinomina(r)}
+                disabled={!nominabile}
+                className="min-w-0 truncate text-left text-[13px] text-white"
+                title={r.email ?? undefined}
+              >
+                {r.chi}
+                {nominabile && <span className="ml-1.5 text-[11px] text-brand-gray">✎</span>}
+              </button>
+              <span className="flex shrink-0 items-center gap-2 font-tech text-[11px] text-white/70">
+                {r.drink > 0 && <span title="drink omaggio">🍸{r.drink}</span>}
+                {r.shot > 0 && <span title="shot omaggio">🥃{r.shot}</span>}
+                {r.regalo > 0 && <span title="drink in regalo (ogni 10 pagati)">🎁{r.regalo}</span>}
+                {venduti > 0 && (
+                  <span title="drink venduti ai pr">
+                    venduti {venduti}
+                    {r.sconto > 0 && <span className="text-brand-gray"> ({r.sconto} a −{SCONTO_EURO}€)</span>}
+                  </span>
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-1 text-[10px] text-brand-gray">Tocca il nome per chiamarlo come vuoi (all&apos;inizio si vede la sua mail).</p>
+    </>
   );
 }
