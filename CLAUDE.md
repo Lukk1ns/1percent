@@ -14,7 +14,7 @@ tocchi con `cosa` = drink/shot/regalo/sconto/pagato) e rifà **`admin_papion_pr_
 + chiave **`bar`**: `pr_id, serata, at, cosa, chi, email`; ultima definizione ora = 67). Pannello `/admin/papion-pr`: in
 **Serate** riquadro **"al bar · chi ha servito i pr"** (per barista 🍸 🥃 🎁 + venduti, "(N a −1 €)"; tocco sul nome = prompt per
 chiamarlo) e sotto ogni PR **"omaggio da 🍸 Marco 23:41 · comprati da Marco ×3"**; stessa riga per serata nella scheda del PR.
-Senza il 67 il pannello è uguale a prima. PGlite **25/25** sopra 61+62+66. Build ok.
+Senza il 67 il pannello è uguale a prima. PGlite **25/25** sopra 61+62+66. Build ok. **67 DENTRO (22/11, `admin_papion_barista_nome` → 42501), sito online.**
 
 **PR PAPI-ON: 5 SCONTI A SERATA + UN DRINK IN REGALO OGNI 10 PAGATI (20 nov, `supabase/66_pr_papion_sconti_5_e_regalo_10.sql`).**
 Luka, il giorno in cui attiva i baristi: *"lo sconto a 1 € può essere usato su massimo 5 drink a serata, uno alla volta"* e
