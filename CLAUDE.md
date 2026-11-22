@@ -1,8 +1,20 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 20 novembre 2026
+> Ultimo aggiornamento: 22 novembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**PR PAPI-ON: DA QUALE BARISTA (22 nov, `supabase/67_pr_papion_baristi.sql`, commit d2b541f).** Luka, dopo il primo weekend
+con l'app: *"segnare da quale barista andavano a farsi fare il drink gratis e da quale barista acquistano la roba"*. **Il dato
+c'era già dal 61** (mail di chi tocca il tasto in `drink_da`/`drink2_da`/`shot_da`/`shot2_da`/`operatore`, da
+`_papion_operatore()`): il bar NON è stato toccato. Il 67 aggiunge **`papion_baristi`** (email → nome dato da Luka, tabella a
+parte, **non tocca `operators`**), `_papion_barista(email)` (nome, se no l'inizio della mail, `sconosciuto` → `?`),
+**`admin_papion_barista_nome(email, nome)`** (vuoto = toglie il nome), `_papion_bar_tocchi(pr, serata)` (interna: tutti i
+tocchi con `cosa` = drink/shot/regalo/sconto/pagato) e rifà **`admin_papion_pr_scheda`/`admin_papion_pr_serata`** (copia del 62
++ chiave **`bar`**: `pr_id, serata, at, cosa, chi, email`; ultima definizione ora = 67). Pannello `/admin/papion-pr`: in
+**Serate** riquadro **"al bar · chi ha servito i pr"** (per barista 🍸 🥃 🎁 + venduti, "(N a −1 €)"; tocco sul nome = prompt per
+chiamarlo) e sotto ogni PR **"omaggio da 🍸 Marco 23:41 · comprati da Marco ×3"**; stessa riga per serata nella scheda del PR.
+Senza il 67 il pannello è uguale a prima. PGlite **25/25** sopra 61+62+66. Build ok.
 
 **PR PAPI-ON: 5 SCONTI A SERATA + UN DRINK IN REGALO OGNI 10 PAGATI (20 nov, `supabase/66_pr_papion_sconti_5_e_regalo_10.sql`).**
 Luka, il giorno in cui attiva i baristi: *"lo sconto a 1 € può essere usato su massimo 5 drink a serata, uno alla volta"* e
