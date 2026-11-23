@@ -54,6 +54,20 @@ export const ICONA_SL_180 = "/slings/icona-180.png";
 export const ICONA_SL_192 = "/slings/icona-192.png";
 export const ICONA_SL_512 = "/slings/icona-512.png";
 
+/**
+ * AFRO-MERICA, venerdì 27 novembre 2026 (script 68): la donna omaggio di
+ * SLINGS, 100 posti in automatico, i PR vendono lo stesso (i ragazzi
+ * pagano). Testi in inglese con l'ingresso anche in italiano (in sala ci
+ * sono americani). Niente età scritta da nessuna parte (Luka, 23/11).
+ * Ingresso omaggio scansionato in cassa entro l'1.
+ */
+export const SLUG_AFRO = "afromerica";
+/** La locandina ufficiale CINEMATIC (Codex, 7/11). */
+export const LOCANDINA_AFRO = "/afromerica/locandina.webp";
+export const ICONA_AF_180 = "/afromerica/icona-180.png";
+export const ICONA_AF_192 = "/afromerica/icona-192.png";
+export const ICONA_AF_512 = "/afromerica/icona-512.png";
+
 export const INDIRIZZO_PAPION = "Via XX Settembre 289 · Roveredo in Piano (PN)";
 
 export type StatoRichiesta = "in_attesa" | "lista_attesa" | "approvata" | "rifiutata";
@@ -107,6 +121,13 @@ export function allOra(prep: "entro" | "prima" | "dopo" | "fino", ora: string): 
   if (prep === "prima") return una ? "prima dell'1" : `prima delle ${ora}`;
   if (prep === "fino") return una ? "fino all'1" : `fino alle ${ora}`;
   return una ? `${prep} l'1` : `${prep} le ${ora}`;
+}
+
+/** "1 AM", "12:30 AM", "11:30 PM": l'ora di Roma detta in inglese (per le pagine bilingui). */
+export function oraEN(ora: string): string {
+  const [h, m] = ora.split(":").map(Number);
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}${m ? `:${String(m).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`;
 }
 
 /** "venerdì 16 ottobre alle 23:59" */

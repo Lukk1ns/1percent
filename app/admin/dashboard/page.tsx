@@ -297,13 +297,13 @@ export default function AdminDashboardPage() {
               acceso: true,
             },
             {
-              href: "/admin/slings",
-              emoji: "💛",
-              titolo: "Donna omaggio 13/11",
-              cosa: "CULTURE · SLINGS: prime 50, prenotazioni, lista d'attesa",
+              href: "/admin/afromerica",
+              emoji: "🌍",
+              titolo: "Donna omaggio 27/11",
+              cosa: "AFRO-MERICA: prime 100, prenotazioni, lista d'attesa",
               acceso: true,
             },
-            // Le liste delle serate passate (17/10, 30/10, 7/11) non stanno più qui (Luka, 3/11 e 10/11):
+            // Le liste delle serate passate (17/10, 30/10, 7/11, 13/11) non stanno più qui (Luka, 3/11 e 10/11):
             // le pagine restano su /admin/maldita, /admin/backto2010 e /admin/maldita7, niente è
             // cancellato, e i contatti si trovano in Membri → "non iscritti", con la serata per cui
             // si erano iscritti.
@@ -397,7 +397,7 @@ export default function AdminDashboardPage() {
             ["/admin/pr", "Prevendite e PR"],
             ["/admin/papion-pr", "PR PAPI-ON"],
             ["/admin/bar", "Bar (PR PAPI-ON)"],
-            ["/admin/slings", "Donna omaggio 13/11"],
+            ["/admin/afromerica", "Donna omaggio 27/11"],
             ["/admin/porta", "Porta"],
             ["/admin/scan", "Estrazione premi"],
             ["/admin/eventi", "Eventi"],

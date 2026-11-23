@@ -37,6 +37,8 @@ const HANNO_GIA_IL_LORO = [
   "/maldita7",
   // La donna omaggio di CULTURE con gli SLINGS (13 novembre): come MALDITA.
   "/slings",
+  // AFRO-MERICA (27 novembre): come SLINGS.
+  "/afromerica",
   "/privacy",
   "/profilo",
   "/tessera",
