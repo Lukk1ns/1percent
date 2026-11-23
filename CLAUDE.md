@@ -13,8 +13,7 @@ al **28/11 01:00**, `eta_min 16` ma **nessuna età scritta** (il menu degli anni
 locandina CINEMATIC `#e0b44a`, icona = logo AM, anteprima `public/afromerica/anteprima-afromerica.jpg`. **Il 68 ridefinisce
 `_pr_agganciato`** (ultima definizione ora è il 68: `slug not in ('slings','afromerica')`, i ragazzi pagano e i PR vendono). Serata
 del PAPI-ON del 27 se c'è, se no la crea non pubblicata (`afro-merica-27-novembre`, 23:30). Dashboard: tile 13/11 SLINGS tolta
-(passata, contatti in Membri), messa 27/11. Build ok, pagina fotografata. **PENDING Luka: incollare il 68** (verifica: `omaggio_info`
-`{"p_slug":"afromerica"}` → una riga; prima → `[]`).
+(passata, contatti in Membri), messa 27/11. Build ok, pagina fotografata. **68 DENTRO (23/11, verificato: `omaggio_info` `{"p_slug":"afromerica"}` → aperta, fino al 28/11 01:00).**
 
 **PR PAPI-ON: DA QUALE BARISTA (22 nov, `supabase/67_pr_papion_baristi.sql`, commit d2b541f).** Luka, dopo il primo weekend
 con l'app: *"segnare da quale barista andavano a farsi fare il drink gratis e da quale barista acquistano la roba"*. **Il dato
