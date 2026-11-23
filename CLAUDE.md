@@ -4,6 +4,18 @@
 
 ## ⚠️ Leggi prima di tutto
 
+**LADIES FREE · DONNA OMAGGIO AFRO-MERICA VEN 27/11 (23 nov, `supabase/68_afromerica_27_novembre.sql`, `/afromerica`,
+`/admin/afromerica`, commit a184c75).** Luka: *"attiviamo le prenotazioni del venerdì... non scrivere niente dell'età"*; in sala
+ci sono americani → **pagine in inglese, l'ingresso anche in italiano** (LADIES FREE / DONNA OMAGGIO, before 1 AM / entro l'1;
+errori bilingui in `app/afromerica/page.tsx`, `oraEN()` in `lib/omaggio.ts`). Copia di `/slings`: lista `afromerica` **auto,
+100 posti** (scelta mia: Luka non ha dato il numero, si cambia dal pannello), `tier_label 'OMAGGIO DONNA'`, prenotazioni e QR fino
+al **28/11 01:00**, `eta_min 16` ma **nessuna età scritta** (il menu degli anni si ferma da solo), casella "avvisatemi". Oro della
+locandina CINEMATIC `#e0b44a`, icona = logo AM, anteprima `public/afromerica/anteprima-afromerica.jpg`. **Il 68 ridefinisce
+`_pr_agganciato`** (ultima definizione ora è il 68: `slug not in ('slings','afromerica')`, i ragazzi pagano e i PR vendono). Serata
+del PAPI-ON del 27 se c'è, se no la crea non pubblicata (`afro-merica-27-novembre`, 23:30). Dashboard: tile 13/11 SLINGS tolta
+(passata, contatti in Membri), messa 27/11. Build ok, pagina fotografata. **PENDING Luka: incollare il 68** (verifica: `omaggio_info`
+`{"p_slug":"afromerica"}` → una riga; prima → `[]`).
+
 **PR PAPI-ON: DA QUALE BARISTA (22 nov, `supabase/67_pr_papion_baristi.sql`, commit d2b541f).** Luka, dopo il primo weekend
 con l'app: *"segnare da quale barista andavano a farsi fare il drink gratis e da quale barista acquistano la roba"*. **Il dato
 c'era già dal 61** (mail di chi tocca il tasto in `drink_da`/`drink2_da`/`shot_da`/`shot2_da`/`operatore`, da
