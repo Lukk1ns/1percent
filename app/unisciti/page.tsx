@@ -10,6 +10,7 @@ import {
   SIGNUPS_OPEN,
   SOLO_STAFF,
   SOLO_SU_INVITO,
+  STAND_ATTIVO,
 } from "@/lib/event";
 import { createClient } from "@/lib/supabase/client";
 import { type Bozza } from "@/lib/registrazione";
@@ -410,10 +411,19 @@ function JoinForm() {
               Vengo alle serate
             </span>
             <span className="text-[11px] leading-relaxed text-brand-gray">
-              Vedi le locandine complete mentre gli altri le vedono sfocate, e a ogni
-              serata passi allo stand UNPERCENTO: fai scansionare il tuo QR e ritiri sul
-              momento quello che vinci — drink, shot, magliette. Dentro c&apos;è anche il
-              Muro, per sapere chi c&apos;è prima di arrivare.
+              {STAND_ATTIVO ? (
+                <>
+                  Vedi le locandine complete mentre gli altri le vedono sfocate, e a ogni
+                  serata passi allo stand UNPERCENTO: fai scansionare il tuo QR e ritiri sul
+                  momento quello che vinci — drink, shot, magliette. Dentro c&apos;è anche il
+                  Muro, per sapere chi c&apos;è prima di arrivare.
+                </>
+              ) : (
+                <>
+                  Vedi le locandine complete mentre gli altri le vedono sfocate. Dentro
+                  c&apos;è anche il Muro, per sapere chi c&apos;è prima di arrivare.
+                </>
+              )}
             </span>
           </button>
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
-import { STAND_NON_INGRESSO, CHIAVE_INVITO, SOLO_SU_INVITO } from "@/lib/event";
+import { STAND_ATTIVO, STAND_NON_INGRESSO, CHIAVE_INVITO, SOLO_SU_INVITO } from "@/lib/event";
 import { NavBasso } from "@/components/NavBasso";
 
 /**
@@ -68,9 +68,13 @@ export default function InvitaPage() {
   const messaggio = `Ti metto dentro l'1%.
 
 Sono le serate che organizziamo in zona Pordenone. Iscriviti da qui, ci vogliono 30 secondi e non serve il nome vero:
-${link}
+${link}${
+    STAND_ATTIVO
+      ? `
 
-Quando vieni, passa dallo stand UNPERCENTO dentro il locale e fai scansionare il tuo ticket estrazione premi: ritiri sul momento quello che vinci — drink, shot, magliette e anche la foto con l'ospite. Si gioca a ogni serata.`;
+Quando vieni, passa dallo stand UNPERCENTO dentro il locale e fai scansionare il tuo ticket estrazione premi: ritiri sul momento quello che vinci — drink, shot, magliette e anche la foto con l'ospite. Si gioca a ogni serata.`
+      : ""
+  }`;
 
   async function copia(testo: string) {
     await navigator.clipboard.writeText(testo);
@@ -144,14 +148,19 @@ Quando vieni, passa dallo stand UNPERCENTO dentro il locale e fai scansionare il
             {
               n: "02",
               t: "Vieni alla serata",
-              d: STAND_NON_INGRESSO,
+              d: STAND_ATTIVO
+                ? STAND_NON_INGRESSO
+                : "Da iscritto vedi le locandine complete, gli altri le vedono sfocate.",
             },
             {
               n: "03",
               t: "Passa dallo stand UNPERCENTO",
               d: "Fai scansionare il ticket estrazione premi dal telefono: ritiri sul momento — drink, shot, magliette, foto con l'ospite. Si gioca a ogni serata, anche tu.",
             },
-          ].map((r) => (
+          ]
+            // A stand spento (lib/event.ts) il terzo passo non esiste.
+            .filter((r) => STAND_ATTIVO || r.n !== "03")
+            .map((r) => (
             <li key={r.n} className="flex gap-3">
               <span className="font-tech text-[11px] text-brand-red">{r.n}</span>
               <span>
@@ -163,8 +172,15 @@ Quando vieni, passa dallo stand UNPERCENTO dentro il locale e fai scansionare il
         </ol>
         <p className="mt-5 text-xs leading-relaxed text-brand-gray/60">
           Quello che conta non è chi si iscrive: è{" "}
-          <span className="text-white">chi si presenta</span> e passa dallo stand. Lì la sua
-          stella si accende{crew ? " sulla tua tessera" : ""}.
+          <span className="text-white">chi si presenta</span>
+          {STAND_ATTIVO ? (
+            <>
+              {" "}e passa dallo stand. Lì la sua stella si accende
+              {crew ? " sulla tua tessera" : ""}.
+            </>
+          ) : (
+            <>.</>
+          )}
         </p>
       </div>
 

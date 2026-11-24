@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import Costellazione, { type Stella } from "@/components/Costellazione";
 import { dataCorta } from "@/lib/eventi";
 import { NavBasso } from "@/components/NavBasso";
-import { CHIAVE_INVITO, SOLO_SU_INVITO } from "@/lib/event";
+import { CHIAVE_INVITO, SOLO_SU_INVITO, STAND_ATTIVO } from "@/lib/event";
 
 type Carta = {
   ok: boolean;
@@ -324,14 +324,23 @@ export default function TesseraPage() {
           </div>
         </div>
 
-        <p className="mt-6 text-xs leading-relaxed text-brand-gray/70">
-          Ogni stella accesa è una persona che hai portato e che si è
-          <span className="text-white"> presentata davvero</span>: la contiamo quando passa
-          dallo <span className="text-white">stand UNPERCENTO</span> e fa l&apos;estrazione.
-          I puntini spenti si sono solo iscritti — quelli non valgono. Le tacche attorno al
-          sigillo sono le serate in cui sei passato tu allo stand: <span className="text-white">
-          giochi anche tu</span>, drink e shot si vincono come tutti gli altri.
-        </p>
+        {STAND_ATTIVO ? (
+          <p className="mt-6 text-xs leading-relaxed text-brand-gray/70">
+            Ogni stella accesa è una persona che hai portato e che si è
+            <span className="text-white"> presentata davvero</span>: la contiamo quando passa
+            dallo <span className="text-white">stand UNPERCENTO</span> e fa l&apos;estrazione.
+            I puntini spenti si sono solo iscritti — quelli non valgono. Le tacche attorno al
+            sigillo sono le serate in cui sei passato tu allo stand: <span className="text-white">
+            giochi anche tu</span>, drink e shot si vincono come tutti gli altri.
+          </p>
+        ) : (
+          <p className="mt-6 text-xs leading-relaxed text-brand-gray/70">
+            Ogni stella accesa è una persona che hai portato e che si è
+            <span className="text-white"> presentata davvero</span>. I puntini spenti si sono
+            solo iscritti — quelli non valgono. Le tacche attorno al sigillo sono le serate in
+            cui c&apos;eri anche tu.
+          </p>
+        )}
       </div>
 
       <NavBasso />

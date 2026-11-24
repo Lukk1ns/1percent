@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { STAND_ATTIVO } from "@/lib/event";
 
 /**
  * La barra in fondo, quella che si usa davvero.
@@ -24,7 +25,8 @@ const VOCI = [
   { href: "/membri", label: "Muro" },
   { href: "/profilo", label: "Profilo" },
   { href: "/invita", label: "Invita" },
-];
+  // Il Ticket è quello dello stand: a stand spento la voce sparisce.
+].filter((v) => STAND_ATTIVO || v.href !== "/pass");
 
 /**
  * Chi non è iscritto non ha una card, né un QR, né un profilo: mandarlo

@@ -13,6 +13,7 @@ import {
   BRAND_PAYOFF,
   DATI_SOCIETA,
   SOLO_SU_INVITO,
+  STAND_ATTIVO,
   STAND_NON_INGRESSO,
 } from "@/lib/event";
 
@@ -252,7 +253,7 @@ export default function Home() {
         {/* Barra di chi è già dentro: profilo, scanner dello staff, uscita */}
         {(io || staff) && (
           <div className="absolute right-3 top-3 z-30 flex items-center gap-2">
-            {staff && (
+            {staff && STAND_ATTIVO && (
               <Link
                 href="/admin/scan"
                 className="border border-brand-red bg-black/70 px-2.5 py-2 font-tech text-[9px] uppercase tracking-[0.25em] text-brand-red transition-colors hover:bg-brand-red hover:text-white"
@@ -438,7 +439,9 @@ export default function Home() {
                 <span className="text-brand-red">Porta chi merita.</span>
               </p>
               <div className="mt-6 grid gap-2 sm:grid-cols-2">
-                <Link href="/pass" className="btn btn-primary">Ticket estrazione premi</Link>
+                {STAND_ATTIVO && (
+                  <Link href="/pass" className="btn btn-primary">Ticket estrazione premi</Link>
+                )}
                 <Link href="/invita" className="btn btn-outline">Invita qualcuno</Link>
                 {io?.crew && prevenditeAperte && (
                   <Link href="/pr" className="btn btn-primary">Le tue prevendite</Link>
@@ -455,7 +458,9 @@ export default function Home() {
                   <div className="mt-3 grid gap-2 sm:grid-cols-3">
                     <Link href="/admin/pr" className="btn btn-outline">Prevendite e PR</Link>
                     <Link href="/admin/porta" className="btn btn-outline">Porta</Link>
-                    <Link href="/admin/scan" className="btn btn-outline">🎁 Estrazione premi</Link>
+                    {STAND_ATTIVO && (
+                      <Link href="/admin/scan" className="btn btn-outline">🎁 Estrazione premi</Link>
+                    )}
                     <Link href="/admin/eventi" className="btn btn-ghost">Eventi</Link>
                     <Link href="/admin/foto" className="btn btn-ghost">Foto</Link>
                     <Link href="/admin/crew" className="btn btn-ghost">Candidature</Link>
@@ -475,12 +480,14 @@ export default function Home() {
               </p>
               <p className="mt-3 max-w-[46ch] text-sm leading-relaxed text-brand-gray">
                 Questo account non ha una card da membro: serve a gestire. Per avere
-                anche il tuo ticket estrazione premi, iscriviti con un&apos;altra email.
+                anche la tua card, iscriviti con un&apos;altra email.
               </p>
               <div className="mt-6 grid gap-2 sm:grid-cols-3">
                 <Link href="/admin/pr" className="btn btn-primary">Prevendite e PR</Link>
                 <Link href="/admin/porta" className="btn btn-outline">Porta</Link>
-                <Link href="/admin/scan" className="btn btn-outline">🎁 Estrazione premi</Link>
+                {STAND_ATTIVO && (
+                  <Link href="/admin/scan" className="btn btn-outline">🎁 Estrazione premi</Link>
+                )}
                 <Link href="/admin/eventi" className="btn btn-outline">Eventi</Link>
                 <Link href="/admin/foto" className="btn btn-ghost">Foto</Link>
                 <Link href="/admin/crew" className="btn btn-ghost">Candidature</Link>
@@ -526,6 +533,7 @@ export default function Home() {
       </section>
 
       {/* ─────────────  LO STAND  ───────────── */}
+      {STAND_ATTIVO && (
       <section className="led-band px-5 py-10 sm:px-8">
         <div className="mx-auto w-full max-w-3xl">
           <p className="led-label">lo stand</p>
@@ -542,6 +550,7 @@ export default function Home() {
           </p>
         </div>
       </section>
+      )}
 
       {/* ─────────────  DENTRO  ───────────── */}
       <section className="led-band px-5 py-10 sm:px-8">

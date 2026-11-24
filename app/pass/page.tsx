@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
-import { STAND_FRASE, STAND_NON_INGRESSO } from "@/lib/event";
+import { STAND_ATTIVO, STAND_FRASE, STAND_NON_INGRESSO } from "@/lib/event";
 import { NavBasso } from "@/components/NavBasso";
+import { StandSpento } from "@/components/StandSpento";
 
 type PassData = {
   alias: string;
@@ -51,7 +52,12 @@ function Confetti() {
   );
 }
 
-export default function PassPage() {
+/** Stand spento (lib/event.ts): il ticket non serve, si torna alla card. */
+export default function Pagina() {
+  return STAND_ATTIVO ? <PassPage /> : <StandSpento />;
+}
+
+function PassPage() {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [passData, setPassData] = useState<PassData | null>(null);

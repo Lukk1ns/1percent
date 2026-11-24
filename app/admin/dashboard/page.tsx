@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 import { QUIZ_QUESTIONS } from "@/lib/quiz";
 import { CercaPersone } from "@/components/CercaPersone";
+import { STAND_ATTIVO } from "@/lib/event";
 
 type HybridAnswer = { text?: string; tag?: string };
 // q1/q2 sono a scelta, ma da luglio si può anche scrivere la propria
@@ -363,7 +364,10 @@ export default function AdminDashboardPage() {
               cosa: "Leggi i biglietti delle prevendite: ognuno entra una volta",
               acceso: false,
             },
-          ].map((p) => (
+          ]
+            // Stand spento (lib/event.ts): via lo scanner dei premi.
+            .filter((p) => STAND_ATTIVO || p.href !== "/admin/scan")
+            .map((p) => (
             <button
               key={p.href}
               onClick={() => router.push(p.href)}

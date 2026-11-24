@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { NavBasso } from "@/components/NavBasso";
+import { StandSpento } from "@/components/StandSpento";
+import { STAND_ATTIVO } from "@/lib/event";
 
 type Prize = { id: string; label: string; emoji: string };
 type MyPrize = { drawn: boolean; drawn_at?: string; prize?: Prize | null };
@@ -42,7 +44,12 @@ function Confetti() {
   );
 }
 
-export default function RegaloPage() {
+/** Stand spento (lib/event.ts): niente estrazione, si torna alla card. */
+export default function Pagina() {
+  return STAND_ATTIVO ? <RegaloPage /> : <StandSpento />;
+}
+
+function RegaloPage() {
   const router = useRouter();
   const [mine, setMine] = useState<MyPrize | null>(null);
   const [pool, setPool] = useState<PoolItem[]>([]);

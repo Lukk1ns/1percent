@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAvatar } from "@/lib/avatars";
 import { PokeCounter } from "@/components/PokeCounter";
-import { BRAND_AREA, CHIAVE_INVITO, SOLO_SU_INVITO } from "@/lib/event";
+import { BRAND_AREA, CHIAVE_INVITO, SOLO_SU_INVITO, STAND_ATTIVO } from "@/lib/event";
 import { SegnoCrew } from "@/components/SegnoCrew";
 import { NavBasso } from "@/components/NavBasso";
 
@@ -270,13 +270,16 @@ export default function CardPage() {
         )}
         <PokeCounter />
         {/* Prima quello che serve davvero (il QR dello stand), poi il resto.
-            Salvare la card è un vezzo: sta in fondo e non urla. */}
-        <button
-          onClick={() => router.push("/pass")}
-          className="btn btn-primary w-full"
-        >
-          Ticket estrazione premi →
-        </button>
+            Salvare la card è un vezzo: sta in fondo e non urla.
+            A stand spento (lib/event.ts) il ticket non c'è. */}
+        {STAND_ATTIVO && (
+          <button
+            onClick={() => router.push("/pass")}
+            className="btn btn-primary w-full"
+          >
+            Ticket estrazione premi →
+          </button>
+        )}
         {profile.role === "crew" && (
           <button
             onClick={() => router.push("/tessera")}

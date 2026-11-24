@@ -1,8 +1,15 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 22 novembre 2026
+> Ultimo aggiornamento: 24 novembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**STAND UNPERCENTO SPENTO (24 nov, `STAND_ATTIVO = false` in `lib/event.ts`, NESSUNO SCRIPT).** Luka: *"togli tutte le
+tracce dello STAND UN PERCENTO dal sito... non siamo più riusciti a farlo"*. Spariti: banda "LO STAND" in home, tasto
+"Ticket estrazione premi" (home, `/card`, voce **Ticket** di `NavBasso`), tasti 🎁 estrazione premi dello staff in home e tile
+scanner premi in dashboard, testi dello stand in `/unisciti`, `/tessera`, `/invita` (messaggio WhatsApp e passo 03).
+`/pass` e `/regalo` rimandano a `/card` (`components/StandSpento.tsx`). **Non toccati:** `/admin/scan`, `/admin/regali`
+(operatori si aggiungono ancora da lì), database, frasi `STAND_*`. Per riaccendere tutto: `STAND_ATTIVO = true`.
 
 **LADIES FREE · DONNA OMAGGIO AFRO-MERICA VEN 27/11 (23 nov, `supabase/68_afromerica_27_novembre.sql`, `/afromerica`,
 `/admin/afromerica`, commit a184c75).** Luka: *"attiviamo le prenotazioni del venerdì... non scrivere niente dell'età"*; in sala

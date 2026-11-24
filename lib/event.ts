@@ -25,6 +25,16 @@ export const BRAND_CLAIM = "Pordenone eventi";
  *
  * Ci passano tutti, clienti e PR: anche chi lavora gioca ogni serata.
  */
+
+/**
+ * Interruttore dello stand. Dal 24 nov 2026 è SPENTO: lo stand non si è
+ * riusciti a farlo, quindi dal sito spariscono stand, ticket estrazione
+ * premi (/pass, /regalo rimandano alla card) e i bottoni dello scanner
+ * regali in home. Gli strumenti dello staff (/admin/scan, /admin/regali)
+ * e il database restano come sono: per riaccendere tutto basta `true`.
+ */
+export const STAND_ATTIVO = false;
+
 export const STAND_NAME = "stand UNPERCENTO";
 export const STAND_DOVE = "dentro il locale";
 export const STAND_FRASE =
