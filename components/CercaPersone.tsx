@@ -21,6 +21,7 @@ import {
   type Tipo,
 } from "@/lib/persone";
 import { MandaBiglietto } from "@/components/MandaBiglietto";
+import { annullaBiglietto } from "@/lib/annulla-biglietto";
 
 /**
  * LA LISTA MEMBRI CHE SI CERCA (15-16 ott). Sta nella dashboard, al
@@ -552,9 +553,23 @@ function Scheda({
                         </p>
                       )}
                     </div>
-                    <span className={`flex-shrink-0 font-tech text-[10px] uppercase tracking-[0.15em] ${stato.classe}`}>
-                      {stato.testo}
-                    </span>
+                    <div className="flex flex-shrink-0 flex-col items-end gap-2">
+                      <span className={`font-tech text-[10px] uppercase tracking-[0.15em] ${stato.classe}`}>
+                        {stato.testo}
+                      </span>
+                      {/* Come nel pannello prevendite: solo serate non passate e non ancora entrato. */}
+                      {(b.stato === "attiva" || b.stato === "in_attesa") && !s.passato && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (await annullaBiglietto(b)) onCambiato();
+                          }}
+                          className="border border-brand-red/40 px-2.5 py-1.5 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-red/80 hover:border-brand-red hover:text-brand-red"
+                        >
+                          annulla
+                        </button>
+                      )}
+                    </div>
                   </div>
                   {b.stato !== "annullata" && !s.passato && (
                     <MandaBiglietto

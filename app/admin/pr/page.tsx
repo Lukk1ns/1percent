@@ -10,6 +10,7 @@ import { graficaBigliettoUrl } from "@/lib/biglietto";
 import { downscaleImage } from "@/lib/downscale";
 import { CinqueStelle } from "@/components/Stelle";
 import { MandaBiglietto } from "@/components/MandaBiglietto";
+import { annullaBiglietto } from "@/lib/annulla-biglietto";
 import {
   apriChatCliente,
   cercaBiglietti,
@@ -523,7 +524,7 @@ function RigaBiglietto({
           {b.stato !== "annullata" && b.stato !== "usata" && (
             <button
               onClick={() => onAnnulla(b)}
-              className="font-tech text-[9px] uppercase tracking-[0.15em] text-brand-gray hover:text-brand-red"
+              className="border border-brand-red/40 px-2.5 py-1.5 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-red/80 hover:border-brand-red hover:text-brand-red"
             >
               annulla
             </button>
@@ -1595,34 +1596,9 @@ export default function AdminPrPage() {
   }
 
   async function annulla(b: BigliettoAdmin) {
-    const motivo = window.prompt(
-      `Annullare il biglietto di ${b.nome} ${b.cognome} (${b.pr_alias})?\n\nMotivo:`,
-      "",
-    );
-    if (motivo === null) return;
-    const supabase = createClient();
-    // Annullare adesso rende anche i soldi, se erano già arrivati: la
-    // funzione dice quanto ha stornato, e se quei contanti sono ancora
-    // in mano a un manager lo scrive, perché quello lo decide una persona.
-    const { data: esito, error: errAnn } = await supabase.rpc("admin_presale_annulla", {
-      p_id: b.id,
-      p_motivo: motivo,
-    });
-    if (errAnn) {
-      window.alert(errAnn.message);
-      return;
-    }
-    const r = esito?.[0];
-    if (r && Number(r.rimborso) > 0) {
-      window.alert(
-        `Biglietto annullato e ${euro(Number(r.rimborso))} rimessi a posto: ` +
-          `${b.pr_alias ?? "il PR"} non li deve più.` +
-          (r.manager_da_sistemare
-            ? `\n\n⚠️ Quei contanti risultano in mano a ${r.manager_da_sistemare}. ` +
-              "Se li ha restituiti al cliente, storna anche il suo movimento dalla scheda Manager."
-            : ""),
-      );
-    }
+    // Annullare rende anche i soldi, se erano già arrivati: lo dice
+    // annullaBiglietto (lib/annulla-biglietto.ts), uguale ovunque.
+    if (!(await annullaBiglietto(b))) return;
     await caricaEvento(evento);
     await carica();
   }

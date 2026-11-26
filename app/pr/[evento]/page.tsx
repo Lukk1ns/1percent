@@ -10,6 +10,7 @@ import { accentoSerata, dataLunga, giornoEData, ora } from "@/lib/eventi";
 import { delegaPerLocale, forseUnder16 } from "@/lib/event";
 import { PiuPunti } from "@/components/Stelle";
 import { MandaBiglietto } from "@/components/MandaBiglietto";
+import { annullaBiglietto } from "@/lib/annulla-biglietto";
 import {
   apriChatCliente,
   cercaBiglietti,
@@ -1084,25 +1085,39 @@ export default function PrEventoPage({ params }: { params: Promise<{ evento: str
                         {b.tier_label} · {Number(b.prezzo).toFixed(0)} €
                       </p>
                     </div>
-                    <span
-                      className={`flex-shrink-0 font-tech text-[9px] uppercase tracking-[0.15em] ${
-                        b.stato === "attiva"
-                          ? "text-emerald-400"
+                    <div className="flex flex-shrink-0 flex-col items-end gap-2">
+                      <span
+                        className={`font-tech text-[9px] uppercase tracking-[0.15em] ${
+                          b.stato === "attiva"
+                            ? "text-emerald-400"
+                            : b.stato === "usata"
+                              ? "text-brand-gray"
+                              : b.stato === "annullata"
+                                ? "text-brand-gray/40 line-through"
+                                : "text-amber-300"
+                        }`}
+                      >
+                        {b.stato === "attiva"
+                          ? "valido"
                           : b.stato === "usata"
-                            ? "text-brand-gray"
+                            ? "entrato"
                             : b.stato === "annullata"
-                              ? "text-brand-gray/40 line-through"
-                              : "text-amber-300"
-                      }`}
-                    >
-                      {b.stato === "attiva"
-                        ? "valido"
-                        : b.stato === "usata"
-                          ? "entrato"
-                          : b.stato === "annullata"
-                            ? "annullato"
-                            : "in attesa"}
-                    </span>
+                              ? "annullato"
+                              : "in attesa"}
+                      </span>
+                      {/* Annullare è solo della direzione: ai PR il tasto non c'è. */}
+                      {r.senza_limite && b.stato !== "annullata" && b.stato !== "usata" && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (await annullaBiglietto(b)) await carica();
+                          }}
+                          className="border border-brand-red/40 px-2.5 py-1.5 font-tech text-[9px] uppercase tracking-[0.15em] text-brand-red/80 hover:border-brand-red hover:text-brand-red"
+                        >
+                          annulla
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {b.stato !== "annullata" && (

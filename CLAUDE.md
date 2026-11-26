@@ -1,8 +1,16 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 24 novembre 2026
+> Ultimo aggiornamento: 26 novembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**ANNULLA UN BIGLIETTO DA OVUNQUE LO VEDI (26 nov, `lib/annulla-biglietto.ts`, NESSUNO SCRIPT).** Luka, dal telefono: *"quando
+seleziono un nome di un cliente che ha la prevendita dovrei avere anche la possibilità di vedere e annullare"*. Il tasto c'era
+solo in `/admin/pr` (e in corpo 9, grigio). Ora `annullaBiglietto()` (prompt motivo → `admin_presale_annulla` → avviso rimborso/
+manager, `non_trovato` = già entrato) è unica e sta in: **`/admin/pr`** (Biglietti + nomi del PR), **`/pr/<serata>`** nella lista
+"chi hai messo in lista" **solo per la direzione** (`r.senza_limite`; ai PR niente tasto, e la funzione resta `is_admin()`), e
+nella **scheda della persona** in dashboard → Membri (`CercaPersone`, solo biglietti attivi/in attesa di serate non passate, poi
+rilegge restando sulla scheda). Tasto ora bordato di rosso, più facile da prendere col dito.
 
 **STAND UNPERCENTO SPENTO (24 nov, `STAND_ATTIVO = false` in `lib/event.ts`, NESSUNO SCRIPT).** Luka: *"togli tutte le
 tracce dello STAND UN PERCENTO dal sito... non siamo più riusciti a farlo"*. Spariti: banda "LO STAND" in home, tasto
