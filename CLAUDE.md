@@ -1,8 +1,16 @@
 # Progetto "1%" — Portale dell'organizzazione
 
-> Ultimo aggiornamento: 26 novembre 2026
+> Ultimo aggiornamento: 27 novembre 2026
 
 ## ⚠️ Leggi prima di tutto
+
+**UN PR NON RIESCE A ENTRARE: MAIL NUOVA SUL PROFILO VECCHIO (27 nov, script in `supabase/privati/`, NIENTE NEL SITO).** Luka voleva
+eliminarlo e farlo reiscrivere, ma il numero risultava "già usato" (`numero_gia_usato` del 41 guarda i profili vivi). Eliminare (46)
+lascia valide le prevendite ai clienti ma le vendite restano sul profilo morto (`cancellato_N`): il PR rifatto riparte da zero. Strada
+giusta: **cambiare `profiles.email`** sul profilo vecchio → il PR entra da `/login?next=/pr` con la mail nuova e `link_email_account`
+(47) gli riattacca il profilo con vendite, conti e numero. Lo script cerca il profilo per nome/alias/mail, si ferma se ne trova più
+d'uno o se la mail nuova è già di un altro profilo vivo (anche via `auth.users`), riesegue il giro `on update cascade` del 24/44,
+scrive `pr_mail_nuova` in `admin_log`. PGlite **19/19**. Per un altro PR: copiare il file e cambiare nome e mail. **PENDING Luka: incollarlo.**
 
 **ANNULLA UN BIGLIETTO DA OVUNQUE LO VEDI (26 nov, `lib/annulla-biglietto.ts`, NESSUNO SCRIPT).** Luka, dal telefono: *"quando
 seleziono un nome di un cliente che ha la prevendita dovrei avere anche la possibilità di vedere e annullare"*. Il tasto c'era
