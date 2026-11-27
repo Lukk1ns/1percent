@@ -10,7 +10,7 @@ lascia valide le prevendite ai clienti ma le vendite restano sul profilo morto (
 giusta: **cambiare `profiles.email`** sul profilo vecchio → il PR entra da `/login?next=/pr` con la mail nuova e `link_email_account`
 (47) gli riattacca il profilo con vendite, conti e numero. Lo script cerca il profilo per nome/alias/mail, si ferma se ne trova più
 d'uno o se la mail nuova è già di un altro profilo vivo (anche via `auth.users`), riesegue il giro `on update cascade` del 24/44,
-scrive `pr_mail_nuova` in `admin_log`. PGlite **19/19**. Per un altro PR: copiare il file e cambiare nome e mail. **PENDING Luka: incollarlo.**
+scrive `pr_mail_nuova` in `admin_log`. PGlite **19/19**. Per un altro PR: copiare il file e cambiare nome e mail. **INCOLLATO da Luka il 27/11** (detto da lui; da fuori non si vede).
 
 **ANNULLA UN BIGLIETTO DA OVUNQUE LO VEDI (26 nov, `lib/annulla-biglietto.ts`, NESSUNO SCRIPT).** Luka, dal telefono: *"quando
 seleziono un nome di un cliente che ha la prevendita dovrei avere anche la possibilità di vedere e annullare"*. Il tasto c'era
